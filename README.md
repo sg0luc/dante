@@ -103,15 +103,15 @@ docker compose up -d
                                           │ Proxy reverso /api
                                           ▼
                       ┌────────────────────────────────────────┐
-                      │       Backend API (FastAPI / Py3.12)    │
-                      │  • Linter LogQL  • Motor IA  • Sessões  │
+                      │      Backend API (FastAPI / Py3.12)    │
+                      │ • Linter LogQL  • Motor IA  • Sessões  │
                       └─────────┬───────────────────┬──────────┘
                                 │                   │
        Bearer Token (0400)      │                   │ LogQL Queries / Push
                                 ▼                   ▼
              ┌─────────────────────────┐     ┌────────────────────────┐
              │       Grafana OSS       │     │      Grafana Loki      │
-             │   (Alerting & Folders)  │────▶│ (Telemetria do Wazuh)  │
+             │   (Alerting & Folders)  │ ──> │ (Telemetria do Wazuh)  │
              └─────────────────────────┘     └────────────────────────┘
 ```
 
