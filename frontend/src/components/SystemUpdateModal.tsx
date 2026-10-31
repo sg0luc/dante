@@ -326,7 +326,7 @@ export const SystemUpdateModal: React.FC<SystemUpdateModalProps> = ({
                     <p className="text-on-surface-variant">{versionInfo.error}</p>
                     <div className="p-2.5 rounded-lg bg-surface-container-lowest border border-outline-variant/30 text-code-sm font-mono text-outline">
                       GITHUB_REPO=sg0luc/dante<br />
-                      GITHUB_TOKEN=github_pat_SEU_TOKEN
+                      <span className="text-on-surface-variant text-[11px]"># GITHUB_TOKEN é opcional (repositório público)</span>
                     </div>
                   </div>
                 </div>

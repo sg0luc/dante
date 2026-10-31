@@ -53,7 +53,7 @@ class VersionChecker:
     async def _check_ghcr_packages_scope(self, client: httpx.AsyncClient) -> tuple[str, str | None]:
         """Verifica se o GITHUB_TOKEN possui o escopo necessário para baixar containers do GHCR."""
         if not self._settings.github_token:
-            return ("anonymous", None)
+            return ("public", None)
         token = self._settings.github_token.get_secret_value()
         repo = self._settings.github_repo.strip()
         user = repo.split("/")[0] if "/" in repo else "sg0luc"
@@ -129,21 +129,11 @@ class VersionChecker:
                         return info
 
                     if resp.status_code == 404:
-                        if not self._settings.github_token:
-                            logger.info(
-                                "404 ao consultar %s sem token. Repositório privado requer GITHUB_TOKEN.",
-                                repo,
-                            )
-                            err_msg = (
-                                f"Repositório '{repo}' não encontrado ou é privado. "
-                                "Configure a variável GITHUB_TOKEN no .env com permissão de leitura (Contents: Read-only)."
-                            )
-                        else:
-                            logger.info("Nenhuma release encontrada no repositório %s.", repo)
-                            err_msg = (
-                                f"Nenhuma release oficial encontrada no repositório {repo} "
-                                "(ou o token informado não possui permissão de leitura para este repositório)."
-                            )
+                        logger.info("Nenhuma release encontrada no repositório %s.", repo)
+                        err_msg = (
+                            f"Nenhuma release oficial encontrada no repositório '{repo}'. "
+                            "O repositório é público e não requer autenticação para consultar releases."
+                        )
                         info = AppVersionInfo(
                             current_version=current,
                             latest_version=None,
