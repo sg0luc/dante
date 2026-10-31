@@ -1,0 +1,178 @@
+name: Release & Container Build
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Tag de versão manual (ex: v0.1.0)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  check-version:
+    name: Determine Release & Version
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.version_detector.outputs.should_release }}
+      tag: ${{ steps.version_detector.outputs.tag }}
+      clean_version: ${{ steps.version_detector.outputs.clean_version }}
+      create_tag: ${{ steps.version_detector.outputs.create_tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect Version and Tag
+        id: version_detector
+        run: |
+          git fetch --tags --force
+          
+          CREATE_TAG="false"
+          SHOULD_RELEASE="false"
+          TAG=""
+          
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ -n "${{ github.event.inputs.version }}" ]; then
+              TAG="${{ github.event.inputs.version }}"
+            else
+              VER=$(cat VERSION | tr -d '\r\n[:space:]')
+              TAG="v${VER}"
+            fi
+            SHOULD_RELEASE="true"
+          elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+            SHOULD_RELEASE="true"
+          elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            if [ -f VERSION ]; then
+              VER=$(cat VERSION | tr -d '\r\n[:space:]')
+              TAG="v${VER}"
+              if git rev-parse "$TAG" >/dev/null 2>&1; then
+                echo "Tag $TAG já existe no repositório. Nenhuma nova release necessária."
+                SHOULD_RELEASE="false"
+              else
+                echo "Nova versão detectada no merge da main: $TAG"
+                SHOULD_RELEASE="true"
+                CREATE_TAG="true"
+              fi
+            else
+              echo "Arquivo VERSION não encontrado."
+              SHOULD_RELEASE="false"
+            fi
+          fi
+          
+          CLEAN_VER="${TAG#v}"
+          echo "should_release=${SHOULD_RELEASE}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "clean_version=${CLEAN_VER}" >> $GITHUB_OUTPUT
+          echo "create_tag=${CREATE_TAG}" >> $GITHUB_OUTPUT
+          echo "Decisão: should_release=${SHOULD_RELEASE}, tag=${TAG}, create_tag=${CREATE_TAG}"
+
+  test-and-lint:
+    name: Sanity & Lint Check
+    needs: check-version
+    if: needs.check-version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies & verify syntax
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          python -m py_compile backend/app/*.py backend/app/routers/*.py
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify Frontend Build
+        working-directory: frontend
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+          npm run build
+
+  build-and-publish:
+    name: Build & Push Docker Images
+    needs: [check-version, test-and-lint]
+    if: needs.check-version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create Git Tag if needed
+        if: needs.check-version.outputs.create_tag == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "${{ needs.check-version.outputs.tag }}" -m "Release ${{ needs.check-version.outputs.tag }}"
+          git push origin "${{ needs.check-version.outputs.tag }}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Downcase repository owner for image tags
+        id: repo_owner
+        run: |
+          echo "owner=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_OUTPUT
+
+      - name: Build and push Backend Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          build-args: |
+            APP_VERSION=${{ needs.check-version.outputs.clean_version }}
+          tags: |
+            ghcr.io/${{ steps.repo_owner.outputs.owner }}/dante-backend:${{ needs.check-version.outputs.tag }}
+            ghcr.io/${{ steps.repo_owner.outputs.owner }}/dante-backend:latest
+
+      - name: Build and push Frontend Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          build-args: |
+            APP_VERSION=${{ needs.check-version.outputs.clean_version }}
+          tags: |
+            ghcr.io/${{ steps.repo_owner.outputs.owner }}/dante-frontend:${{ needs.check-version.outputs.tag }}
+            ghcr.io/${{ steps.repo_owner.outputs.owner }}/dante-frontend:latest
+
+      - name: Create Official GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.check-version.outputs.tag }}
+          name: "D.A.N.T.E. ${{ needs.check-version.outputs.tag }}"
+          generate_release_notes: true
+          files: |
+            docker-compose.yml
+            .env.example
+            VERSION
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

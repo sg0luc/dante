@@ -1,0 +1,29 @@
+# --- Segredos / ambiente (NUNCA versionar) ---
+.env
+*.env
+!.env.example
+secrets/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Node / Frontend ---
+node_modules/
+dist/
+*.log
+
+# --- IDE / SO ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Artefatos temporários de teste/E2E ---
+e2e-cleanup.json
+

@@ -1,0 +1,107 @@
+{
+  "uid": "ghp-det-o365-authfail",
+  "title": "Office365 - Falhas de Autenticacao em Massa",
+  "folderUID": "global",
+  "ruleGroup": "global-detections",
+  "condition": "C",
+  "noDataState": "OK",
+  "execErrState": "Error",
+  "for": "0s",
+  "isPaused": false,
+  "labels": {
+    "severity": "high",
+    "category": "identity",
+    "mitre_tactic": "credential-access",
+    "mitre_technique": "T1110.003",
+    "scope": "baseline",
+    "client": "global",
+    "siem_tier": "global",
+    "technology": "office365",
+    "technology_name": "Office365",
+    "team": "soc"
+  },
+  "annotations": {
+    "summary": "Multiplas falhas de login no Microsoft 365 / Entra ID",
+    "description": "Conta falhas de autenticacao (ResultStatus Failed/FailedOnly) no audit log do Microsoft 365. Mais de 5 falhas em 5 minutos indica password spraying ou forca bruta contra identidade em nuvem. Tecnica MITRE T1110.003 (Password Spraying).",
+    "logql_query": "sum(count_over_time({job=\"wazuh\", rule_groups=~\".*office365.*\"} | json | data_office365_ResultStatus=~\"Failed|FailedOnly\" [5m]))",
+    "runbook_url": "https://attack.mitre.org/techniques/T1110/003/"
+  },
+  "notification_settings": {
+    "receiver": "dev"
+  },
+  "data": [
+    {
+      "refId": "A",
+      "queryType": "range",
+      "relativeTimeRange": {
+        "from": 300,
+        "to": 0
+      },
+      "datasourceUid": "loki",
+      "model": {
+        "refId": "A",
+        "editorMode": "code",
+        "expr": "sum(count_over_time({job=\"wazuh\", rule_groups=~\".*office365.*\"} | json | data_office365_ResultStatus=~\"Failed|FailedOnly\" [5m]))",
+        "queryType": "range",
+        "legendFormat": "__auto",
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "intervalMs": 1000,
+        "maxDataPoints": 43200
+      }
+    },
+    {
+      "refId": "B",
+      "queryType": "",
+      "relativeTimeRange": {
+        "from": 0,
+        "to": 0
+      },
+      "datasourceUid": "__expr__",
+      "model": {
+        "refId": "B",
+        "type": "reduce",
+        "expression": "A",
+        "reducer": "last",
+        "datasource": {
+          "type": "__expr__",
+          "uid": "__expr__"
+        },
+        "intervalMs": 1000,
+        "maxDataPoints": 43200
+      }
+    },
+    {
+      "refId": "C",
+      "queryType": "",
+      "relativeTimeRange": {
+        "from": 0,
+        "to": 0
+      },
+      "datasourceUid": "__expr__",
+      "model": {
+        "refId": "C",
+        "type": "threshold",
+        "expression": "B",
+        "datasource": {
+          "type": "__expr__",
+          "uid": "__expr__"
+        },
+        "conditions": [
+          {
+            "evaluator": {
+              "type": "gt",
+              "params": [
+                5
+              ]
+            }
+          }
+        ],
+        "intervalMs": 1000,
+        "maxDataPoints": 43200
+      }
+    }
+  ]
+}

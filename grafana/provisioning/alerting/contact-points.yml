@@ -1,0 +1,50 @@
+# =============================================================================
+# D.A.N.T.E. - Contact Points como estágios de deploy
+# -----------------------------------------------------------------------------
+# O Contact Point amarrado a uma regra de detecção (notification_settings.receiver)
+# define ONDE ela está publicada. O portal traduz o nome em estágio de deploy:
+#
+#   prod -> Ativa        dev/stg -> Homologação        pausada -> Pausada
+#
+# Toda regra criada no portal e todo baseline replicado nasce em "dev"
+# (Homologação). A promoção para stg/prod é ação explícita na página Homologação.
+#
+# Formato: file provisioning do Alerting (aplicado no boot do Grafana).
+#   - Os endereços abaixo são PLACEHOLDERS de laboratório (TLD .invalid não é
+#     roteável). Troque por e-mail/webhook/Slack reais do time antes de operar
+#     alertas reais, ou replique estes perfis como webhook no seu destino.
+#   - Provisionamento de alerting só é aplicado na inicialização: após editar
+#     este arquivo rode "docker compose restart grafana".
+# =============================================================================
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: dev
+    receivers:
+      - uid: dante-contact-dev
+        type: email
+        disableResolveMessage: false
+        settings:
+          addresses: dante-dev@dante.invalid
+          singleEmail: false
+
+  - orgId: 1
+    name: stg
+    receivers:
+      - uid: dante-contact-stg
+        type: email
+        disableResolveMessage: false
+        settings:
+          addresses: dante-stg@dante.invalid
+          singleEmail: false
+
+  - orgId: 1
+    name: prod
+    receivers:
+      - uid: dante-contact-prod
+        type: email
+        disableResolveMessage: false
+        settings:
+          addresses: dante-prod@dante.invalid
+          singleEmail: false

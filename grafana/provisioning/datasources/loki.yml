@@ -1,0 +1,26 @@
+# =============================================================================
+# Datasource Loki provisionado automaticamente na inicialização do Grafana.
+# Documentação: https://grafana.com/docs/grafana/latest/administration/provisioning/#data-sources
+#
+# O endpoint é o serviço `loki` do docker-compose (rede core-net). O acesso é
+# por proxy do Grafana: o navegador nunca fala direto com o Loki, então a porta
+# do Loki pode ficar restrita ao loopback do host.
+#
+# O portal descobre este datasource por `type: loki` (GrafanaClient
+# .find_loki_datasource), tanto para validar telemetria de tecnologias quanto
+# para injetar logs sintéticos de teste.
+# =============================================================================
+apiVersion: 1
+
+datasources:
+  - name: Loki
+    type: loki
+    uid: loki
+    access: proxy
+    url: http://loki:3100
+    isDefault: true
+    editable: false
+    jsonData:
+      # Mantém o Explore responsivo em volumes de laboratório.
+      maxLines: 1000
+      timeout: 30

@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "technologies": [
+    {
+      "slug": "ad_windows",
+      "name": "AD/Windows",
+      "rule_groups_regex": ".*windows.*",
+      "job": "wazuh",
+      "description": "Endpoints Windows e Controladores de Domínio (Active Directory) coletados pelo agente Wazuh.",
+      "icon": "",
+      "enabled": true,
+      "perimeter": "identity_iam",
+      "perimeter_name": "Identidade"
+    },
+    {
+      "slug": "fortigate",
+      "name": "Fortigate",
+      "rule_groups_regex": ".*fortigate.*",
+      "job": "wazuh",
+      "description": "Firewalls Fortinet FortiGate (tráfego, IPS, VPN, autenticação administrativa).",
+      "icon": "",
+      "enabled": true,
+      "perimeter": "firewall",
+      "perimeter_name": "Firewall"
+    },
+    {
+      "slug": "office365",
+      "name": "Office365",
+      "rule_groups_regex": ".*office365.*",
+      "job": "wazuh",
+      "description": "Audit logs do Microsoft 365 / Entra ID (sign-in, Exchange, SharePoint, Teams).",
+      "icon": "",
+      "enabled": true,
+      "perimeter": "cloud_saas",
+      "perimeter_name": "Cloud / SaaS"
+    }
+  ]
+}
