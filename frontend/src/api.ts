@@ -1,4 +1,4 @@
-import {
+﻿import {
   AlertHistoryResponse,
   AlertInstance,
   AppVersionInfo,
@@ -45,6 +45,7 @@ import {
   ApplyRuleAISuggestionsResponse,
   RuleHomologationHistory,
   RuleSummary,
+  PausedRulesMatchesResponse,
   SetRuleContactPointResult,
   Silence,
   Technology,
@@ -151,6 +152,9 @@ export const api = {
 
 
   // Regras
+    getPausedRulesMatches: (window = "15m"): Promise<PausedRulesMatchesResponse> =>
+    request<PausedRulesMatchesResponse>(`/api/rules/paused-matches?window=${encodeURIComponent(window)}`),
+
   getRules: (): Promise<RuleSummary[]> =>
     request<RuleSummary[]>("/api/rules"),
 

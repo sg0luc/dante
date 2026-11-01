@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api";
 import {
@@ -8,6 +8,7 @@ import {
   RuleSummary,
   Silence,
   TechnologyOverview,
+  PausedRulesMatchesResponse,
 } from "../types";
 
 /** A pasta `global` é o baseline de referência, não um cliente integrado. */
@@ -85,6 +86,7 @@ export const OverviewPage: React.FC = () => {
   const [silences, setSilences] = useState<Silence[]>([]);
   const [globalMatrix, setGlobalMatrix] = useState<GlobalRuleMatrixItem[]>([]);
   const [techOverview, setTechOverview] = useState<TechnologyOverview | null>(null);
+  const [pausedMatches, setPausedMatches] = useState<PausedRulesMatchesResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timelineTimeRange, setTimelineTimeRange] = useState<TimelineTimeRange>("24h");
@@ -95,13 +97,14 @@ export const OverviewPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const [r, a, s, gm, tech, hist] = await Promise.all([
+      const [r, a, s, gm, tech, hist, pm] = await Promise.all([
         api.getRules(),
         api.getAlerts(),
         api.getSilences(),
         api.getGlobalMatrix().catch(() => []),
         api.getTechnologyOverview().catch(() => null),
         api.getAlertHistory(168).catch(() => null),
+        api.getPausedRulesMatches("15m").catch(() => null),
       ]);
       setRules(r);
       setAlerts(a);
@@ -109,6 +112,7 @@ export const OverviewPage: React.FC = () => {
       setGlobalMatrix(gm);
       setTechOverview(tech);
       setAlertHistory(hist);
+      setPausedMatches(pm);
       setSyncSeconds(0);
     } catch (err: any) {
       setError(err.message || "Erro ao carregar visão geral do portal");
@@ -164,6 +168,56 @@ export const OverviewPage: React.FC = () => {
     () => rules.filter((r) => r.is_paused).length,
     [rules]
   );
+
+  // Alertas ativos nos ltimos 15 minutos segregados por severidade (crtico > alto > mdio)
+  const recentActiveAlerts = useMemo(() => {
+    const now = Date.now();
+    const fifteenMinutesAgo = now - 15 * 60 * 1000;
+    return alerts.filter((a) => {
+      const state = (a.state || "").toLowerCase();
+      if (state !== "active" && state !== "firing") return false;
+      if (!a.starts_at) return true;
+      const ts = new Date(a.starts_at).getTime();
+      return isNaN(ts) || ts >= fifteenMinutesAgo;
+    });
+  }, [alerts]);
+
+  const activeAlertsSeverityCounts = useMemo(() => {
+    let critical = 0;
+    let high = 0;
+    let medium = 0;
+    recentActiveAlerts.forEach((a) => {
+      const sev = (a.labels?.severity || "").toLowerCase();
+      if (sev === "critical") critical++;
+      else if (sev === "high") high++;
+      else if (sev === "medium" || sev === "warning") medium++;
+    });
+    return { critical, high, medium, total: recentActiveAlerts.length };
+  }, [recentActiveAlerts]);
+
+  // Alertas suprimidos nos ltimos 15 minutos (por silences)
+  const recentSuppressedAlertsCount = useMemo(() => {
+    const now = Date.now();
+    const fifteenMinutesAgo = now - 15 * 60 * 1000;
+    return alerts.filter((a) => {
+      const state = (a.state || "").toLowerCase();
+      if (state !== "suppressed") return false;
+      if (!a.starts_at) return true;
+      const ts = new Date(a.starts_at).getTime();
+      return isNaN(ts) || ts >= fifteenMinutesAgo;
+    }).length;
+  }, [alerts]);
+
+  // Silences segregados: permanentes vs temporrios
+  const permanentSilencesCount = useMemo(
+    () => activeSilences.filter((s) => s.kind === "permanent").length,
+    [activeSilences]
+  );
+  const temporarySilencesCount = useMemo(
+    () => activeSilences.filter((s) => s.kind !== "permanent").length,
+    [activeSilences]
+  );
+
 
   // Clientes integrados
   const clientDistribution = useMemo(() => {
@@ -389,10 +443,6 @@ export const OverviewPage: React.FC = () => {
             <h1 className="font-headline-xl text-headline-xl text-on-surface tracking-tight">
               Visão Geral
             </h1>
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-container-high text-tertiary font-code-sm text-code-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>
-              LIVE MONITOR
-            </span>
           </div>
           <p className="font-body-sm text-body-sm text-on-surface-variant max-w-3xl">
             Monitoramento consolidado de regras de detecção, clientes e alertas ativos integrado ao Grafana Alerting e Loki Ruler.
@@ -508,7 +558,7 @@ export const OverviewPage: React.FC = () => {
                 {customRules.length}
               </span>
               <span className="font-code-sm text-code-sm text-secondary bg-surface-container-highest px-1.5 py-0.5 rounded">
-                Tenant Específicas
+                Customizações
               </span>
             </div>
           </div>
@@ -522,7 +572,7 @@ export const OverviewPage: React.FC = () => {
               ></div>
             </div>
             <p className="font-code-sm text-code-sm text-outline-variant">
-              Exclusivas de clientes vinculados
+              Fora do Baseline
             </p>
           </div>
         </div>
@@ -559,7 +609,7 @@ export const OverviewPage: React.FC = () => {
                     : "text-tertiary bg-tertiary-container/20"
                 }`}
               >
-                {pausedRulesCount > 0 ? `${pausedRulesCount} Pausada(s)` : "Zero Inativas"}
+                {`${pausedMatches?.matching_rules_count ?? 0} Matches Agora`}
               </span>
             </div>
           </div>
@@ -598,10 +648,20 @@ export const OverviewPage: React.FC = () => {
               >
                 {firingRulesCount}
               </span>
-              {firingRulesCount > 0 ? (
+              {activeAlertsSeverityCounts.critical > 0 ? (
                 <span className="font-code-sm text-code-sm text-on-error-container bg-error-container px-2 py-0.5 rounded-full font-semibold flex items-center gap-1 animate-pulse">
                   <span className="material-symbols-outlined text-[13px]">warning</span>
-                  FIRING
+                  {activeAlertsSeverityCounts.critical} críticos
+                </span>
+              ) : activeAlertsSeverityCounts.high > 0 ? (
+                <span className="font-code-sm text-code-sm text-orange-200 bg-orange-950/80 border border-orange-500/40 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1 animate-pulse">
+                  <span className="material-symbols-outlined text-[13px]">warning</span>
+                  {activeAlertsSeverityCounts.high} altos
+                </span>
+              ) : activeAlertsSeverityCounts.medium > 0 ? (
+                <span className="font-code-sm text-code-sm text-amber-200 bg-amber-950/80 border border-amber-500/40 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[13px]">info</span>
+                  {activeAlertsSeverityCounts.medium} médios
                 </span>
               ) : (
                 <span className="font-code-sm text-code-sm text-tertiary bg-tertiary-container/30 px-1.5 py-0.5 rounded">
@@ -648,7 +708,7 @@ export const OverviewPage: React.FC = () => {
                 {activeSilences.length}
               </span>
               <span className="font-code-sm text-code-sm text-secondary bg-surface-container-highest px-1.5 py-0.5 rounded">
-                Ruler Muted
+                {`${recentSuppressedAlertsCount} Alertas Suprimidos`}
               </span>
             </div>
           </div>
@@ -660,7 +720,7 @@ export const OverviewPage: React.FC = () => {
               ></div>
             </div>
             <p className="font-code-sm text-code-sm text-outline-variant">
-              Suprimindo falsos-positivos
+              {`${permanentSilencesCount} perm. - ${temporarySilencesCount} temp.`}
             </p>
           </div>
         </div>
@@ -676,10 +736,7 @@ export const OverviewPage: React.FC = () => {
                 folder_special
               </span>
               <h2 className="font-headline-md text-headline-md text-on-surface">
-                Clientes Integrados{" "}
-                <span className="font-code-sm text-code-sm text-outline font-normal">
-                  (grafana_folder)
-                </span>
+                Clientes Integrados
               </h2>
             </div>
             <p className="font-body-sm text-body-sm text-on-surface-variant">
@@ -798,15 +855,15 @@ export const OverviewPage: React.FC = () => {
                       </td>
 
                       <td className="px-space-md py-2.5 text-center">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-tertiary-container/30 text-tertiary font-code-sm text-code-sm font-semibold">
-                          <span className="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
-                          {client.active} ativas
-                        </span>
-                        {client.paused > 0 && (
-                          <span className="text-outline text-code-sm font-code-sm ml-1.5">
-                            ({client.paused} pausadas)
+                        <div className="flex flex-col items-center justify-center gap-1">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-tertiary-container/30 text-tertiary font-code-sm text-code-sm font-semibold">
+                            <span className="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                            {client.active} ativas
                           </span>
-                        )}
+                          <span className="text-outline text-code-sm font-code-sm">
+                            {client.paused > 0 ? `(${client.paused} pausadas)` : "0 pausadas"}
+                          </span>
+                        </div>
                       </td>
 
                       <td className="px-space-md py-2.5 text-center">
@@ -857,7 +914,7 @@ export const OverviewPage: React.FC = () => {
                           to={`/rules?folder=${encodeURIComponent(client.folderTitle)}`}
                           className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-surface-container hover:bg-surface-container-highest text-on-surface hover:text-secondary font-code-sm text-code-sm transition-all shadow-sm"
                         >
-                          <span>Ver Regras</span>
+                          <span>Regras</span>
                           <span className="material-symbols-outlined text-[14px]">
                             arrow_forward
                           </span>
