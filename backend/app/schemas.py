@@ -1,4 +1,4 @@
-"""Modelos (Pydantic) de entrada e saÃ­da da API do portal.
+﻿"""Modelos (Pydantic) de entrada e saÃ­da da API do portal.
 
 O frontend depende APENAS destes modelos, nunca do formato bruto do Grafana.
 Isso isola o portal de mudanÃ§as entre versÃµes da API do Grafana.
@@ -258,6 +258,25 @@ class BatchToggleRulesPauseResponse(BaseModel):
     total: int
     succeeded: list[str]
     failed: list[dict[str, str]]
+
+
+class PausedRuleMatchItem(BaseModel):
+    rule_uid: str
+    rule_title: str
+    folder_uid: str
+    folder_title: str
+    matched_events_count: int = 0
+    matched_window: str = "15m"
+    sample_logs: list[str] = Field(default_factory=list)
+
+
+class PausedRulesMatchesResponse(BaseModel):
+    total_paused: int
+    matching_rules_count: int
+    total_events: int
+    evaluated_at: str
+    window: str = "15m"
+    rules: list[PausedRuleMatchItem] = Field(default_factory=list)
 
 
 

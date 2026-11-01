@@ -1,4 +1,4 @@
-export type RuleState =
+﻿export type RuleState =
   | "firing"
   | "pending"
   | "recovering"
@@ -1205,4 +1205,23 @@ export interface ApplyRuleAISuggestionsResponse {
   message: string;
   rule_uid: string;
   rule: RuleDetail;
+}
+
+export interface PausedRuleMatchItem {
+  rule_uid: string;
+  rule_title: string;
+  folder_uid: string;
+  folder_title: string;
+  matched_events_count: number;
+  matched_window: string;
+  sample_logs: string[];
+}
+
+export interface PausedRulesMatchesResponse {
+  total_paused: number;
+  matching_rules_count: number;
+  total_events: number;
+  evaluated_at: string;
+  window: string;
+  rules: PausedRuleMatchItem[];
 }

@@ -1,4 +1,4 @@
-"""Consulta de regras de detecÃ§Ã£o, alertas e silences (somente leitura nesta etapa)."""
+﻿"""Consulta de regras de detecÃ§Ã£o, alertas e silences (somente leitura nesta etapa)."""
 
 from __future__ import annotations
 
@@ -34,6 +34,8 @@ from ..schemas import (
     AlertInstance,
     BatchToggleRulesPauseRequest,
     BatchToggleRulesPauseResponse,
+    PausedRuleMatchItem,
+    PausedRulesMatchesResponse,
     ClearSyntheticAlertsResponse,
     ClientRuleCoverage,
     ClientRuleStatusType,
@@ -199,6 +201,133 @@ async def list_rules(
         silenced_counts=silenced_counts,
     )
 
+
+def _extract_rule_logql(rule: dict[str, Any]) -> str | None:
+    """Obtém a expressão LogQL configurada na regra (anotação ou modelo da query A)."""
+    annotations = rule.get("annotations") or {}
+    if isinstance(annotations, dict):
+        annotated = str(annotations.get("logql_query") or "").strip()
+        if annotated:
+            return annotated
+    for q in rule.get("data") or []:
+        if not isinstance(q, dict):
+            continue
+        model = q.get("model") or {}
+        if isinstance(model, dict):
+            expr = str(model.get("expr") or "").strip()
+            if expr and str(q.get("datasourceUid") or "") != "__expr__":
+                return expr
+    return None
+
+@router.get(
+    "/rules/paused-matches",
+    response_model=PausedRulesMatchesResponse,
+    tags=["rules"],
+)
+async def get_paused_rules_matches(
+    window: str = Query("15m", pattern=r"^(15m|1h|6h|24h)$"),
+    grafana: GrafanaClient = Depends(get_grafana),
+    sys_settings: SystemSettingsStore = Depends(get_system_settings_store),
+) -> PausedRulesMatchesResponse:
+    """Verifica em background via queries no Loki se regras atualmente pausadas possuem matches (eventos) nos ultimos 15 minutos."""
+    now_iso = datetime.now(timezone.utc).isoformat()
+    raw_rules, raw_folders, raw_datasources = await asyncio.gather(
+        grafana.list_alert_rules(),
+        grafana.list_folders(),
+        grafana.list_datasources(),
+    )
+    real_rules = detection_rules(raw_rules)
+    folder_map = {str(f.get("uid") or ""): str(f.get("title") or "") for f in raw_folders}
+    baseline_uid = sys_settings.get_baseline_folder_uid()
+
+    # Detecta regras pausadas pelo campo isPaused ou por deploy_status / labels de pausa
+    stage_mapping = sys_settings.get_stage_contact_points()
+    paused_rules: list[dict[str, Any]] = []
+    for r in real_rules:
+        is_p = bool(r.get("isPaused", False))
+        if not is_p:
+            labels = r.get("labels") or {}
+            if str(labels.get("alertstate") or "").lower() == "paused":
+                is_p = True
+        if not is_p and stage_mapping:
+            cp = extract_contact_point(r)
+            if cp and derive_deploy_status(False, cp, stage_mapping) == "paused":
+                is_p = True
+        if is_p:
+            paused_rules.append(r)
+
+    if not paused_rules:
+        return PausedRulesMatchesResponse(
+            total_paused=0,
+            matching_rules_count=0,
+            total_events=0,
+            evaluated_at=now_iso,
+            window=window,
+            rules=[],
+        )
+
+    time_from = f"now-{window}"
+
+    async def _check_rule(r: dict[str, Any]) -> PausedRuleMatchItem | None:
+        r_uid = str(r.get("uid") or "")
+        r_title = str(r.get("title") or "")
+        f_uid = str(r.get("folderUID") or "")
+        f_title = folder_map.get(f_uid, "")
+
+        logql = _extract_rule_logql(r)
+        if not logql:
+            return None
+
+        # Resolve o datasource adequado do cliente ou o Loki padrão
+        target_ds = None
+        if f_uid and f_uid not in (baseline_uid, "global"):
+            target_ds = find_tenant_datasource(f_title, f_uid, raw_datasources)
+        if not target_ds:
+            lokis = [ds for ds in raw_datasources if str(ds.get("type") or "") in LOKI_DATASOURCE_TYPES]
+            target_ds = resolve_baseline_loki_datasource(raw_datasources) or (lokis[0] if lokis else None)
+
+        ds_uid = str((target_ds or {}).get("uid") or "loki")
+        stream_query = _extract_stream_expression(logql)
+        if not stream_query:
+            return None
+
+        try:
+            ok, lines, _, _ = await _query_loki_lines(
+                grafana,
+                ds_uid,
+                stream_query,
+                limit=15,
+                time_from=time_from,
+                timeout=3.0,
+            )
+            if ok and len(lines) > 0:
+                return PausedRuleMatchItem(
+                    rule_uid=r_uid,
+                    rule_title=r_title,
+                    folder_uid=f_uid,
+                    folder_title=f_title,
+                    matched_events_count=len(lines),
+                    matched_window=window,
+                    sample_logs=lines[:3],
+                )
+        except Exception as exc:
+            logger.debug("Erro ao consultar telemetria para regra pausada %s: %s", r_uid, exc)
+        return None
+
+    results = await asyncio.gather(*[_check_rule(r) for r in paused_rules], return_exceptions=True)
+    matched_items: list[PausedRuleMatchItem] = [
+        item for item in results if isinstance(item, PausedRuleMatchItem)
+    ]
+    total_ev = sum(item.matched_events_count for item in matched_items)
+
+    return PausedRulesMatchesResponse(
+        total_paused=len(paused_rules),
+        matching_rules_count=len(matched_items),
+        total_events=total_ev,
+        evaluated_at=now_iso,
+        window=window,
+        rules=matched_items,
+    )
 
 @router.get("/rules/global-matrix", response_model=list[GlobalRuleMatrixItem], tags=["rules"])
 async def get_global_rules_matrix(
