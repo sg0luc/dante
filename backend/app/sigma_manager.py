@@ -18,9 +18,16 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+import re
+
 import yaml
 
 from .config import get_settings
+
+try:  # libyaml em C: ~10x mais rápido para varrer milhares de regras
+    from yaml import CSafeLoader as _YamlLoader
+except ImportError:  # pragma: no cover
+    from yaml import SafeLoader as _YamlLoader
 
 logger = logging.getLogger("hunter_portal.sigma_manager")
 
@@ -188,7 +195,36 @@ def pull_sigma_repo(
         return False, f"Exceção no git pull: {exc}"
 
 
+_SCAN_CACHE: dict[str, Any] = {"key": None, "rules": []}
+
+
+def _repo_fingerprint(target_dir: Path) -> tuple:
+    """Muda quando o repositório é clonado/atualizado (git pull)."""
+    parts: list[Any] = [str(target_dir)]
+    git = target_dir / ".git"
+    for rel in ("HEAD", "ORIG_HEAD", "FETCH_HEAD", "packed-refs", "refs/heads/master", "refs/heads/main"):
+        try:
+            parts.append((rel, (git / rel).stat().st_mtime_ns))
+        except OSError:
+            parts.append((rel, None))
+    return tuple(parts)
+
+
 def scan_local_sigma_rules(
+    repo_dir: Path | str | None = None,
+    max_rules: int | None = None,
+) -> list[dict[str, Any]]:
+    """Varre o repositório Sigma com cache (invalidado quando o git HEAD/refs mudam)."""
+    target_dir = Path(repo_dir) if repo_dir else get_configured_sigma_dir()
+    key = _repo_fingerprint(target_dir)
+    if _SCAN_CACHE["key"] != key:
+        _SCAN_CACHE["rules"] = _scan_local_sigma_rules_uncached(target_dir)
+        _SCAN_CACHE["key"] = key
+    rules = _SCAN_CACHE["rules"]
+    return list(rules[:max_rules]) if max_rules else list(rules)
+
+
+def _scan_local_sigma_rules_uncached(
     repo_dir: Path | str | None = None,
     max_rules: int | None = None,
 ) -> list[dict[str, Any]]:
@@ -220,7 +256,7 @@ def scan_local_sigma_rules(
 
             try:
                 content = filepath.read_text(encoding="utf-8", errors="replace")
-                data = yaml.safe_load(content)
+                data = yaml.load(content, Loader=_YamlLoader)
                 if not isinstance(data, dict):
                     continue
 
@@ -240,26 +276,29 @@ def scan_local_sigma_rules(
 
                 level_val = str(data.get("level") or "medium").lower()
                 sev_map = {
-                    "informational": "LOW",
-                    "low": "LOW",
-                    "medium": "MEDIUM",
-                    "high": "HIGH",
-                    "critical": "CRITICAL",
+                    "informational": "low",
+                    "low": "low",
+                    "medium": "medium",
+                    "high": "high",
+                    "critical": "critical",
                 }
-                severity = sev_map.get(level_val, "MEDIUM")
+                severity = sev_map.get(level_val, "medium")
 
                 # Tags MITRE ATT&CK
                 tags = data.get("tags") or []
                 if isinstance(tags, str):
                     tags = [tags]
-                mitre_tech = None
-                mitre_tactic = None
+                # Metadados MITRE exatamente como nas tags originais (primeira técnica/tática)
+                mitre_tech = ""
+                mitre_tactic = ""
                 for tag in tags:
                     tag_str = str(tag).lower()
-                    if tag_str.startswith("attack.t"):
-                        mitre_tech = tag_str.replace("attack.", "").upper()
-                    elif tag_str.startswith("attack."):
-                        mitre_tactic = tag_str.replace("attack.", "").replace("_", "-")
+                    if re.match(r"^attack\.t\d{4}(\.\d{3})?$", tag_str):
+                        if not mitre_tech:
+                            mitre_tech = tag_str.replace("attack.", "").upper()
+                    elif tag_str.startswith("attack.") and not re.match(r"^attack\.[gs]\d{4}$", tag_str):
+                        if not mitre_tactic:
+                            mitre_tactic = tag_str.replace("attack.", "").replace("_", "-")
 
                 # Logsource
                 logsource = data.get("logsource") or {}
@@ -279,6 +318,13 @@ def scan_local_sigma_rules(
                     "source_url": source_url,
                     "rel_path": rel_path,
                     "rule_format": "Sigma (YAML)",
+                    "original_format": "Sigma (YAML)",
+                    "original_syntax": content,
+                    "level": level_val,
+                    "tags": [str(t) for t in tags],
+                    "references": data.get("references") or [],
+                    "falsepositives": data.get("falsepositives") or [],
+                    "author": str(data.get("author") or ""),
                     "severity": severity,
                     "mitre_technique": mitre_tech,
                     "mitre_tactic": mitre_tactic,

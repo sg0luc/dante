@@ -795,9 +795,10 @@ PERIMETER_FIELD_TRANSLATION_MAP: dict[str, dict[str, str]] = {
 }
 
 # =============================================================================
-# URLs Canônicas e Validador Estrito de Fontes Confiáveis Oficiais
+# Validador de URLs de Fontes Confiáveis
+# NÃO existe catálogo embutido de regras: toda regra curada vem de um arquivo real da fonte
+# (hoje o clone local do SigmaHQ), com a URL derivada do caminho físico do arquivo.
 # =============================================================================
-CANONICAL_SOURCE_URLS: dict[str, str] = {'sigma-win-security-kerberoasting-rc4-4769': 'https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_security_kerberoasting_rc4.yml', 'sigma-win-security-audit-log-cleared-1102': 'https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_security_audit_log_cleared.yml', 'sigma-sysmon-lsass-memory-dump-t1003-001': 'https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_hktl_procdump_lsass.yml', 'sigma-win-security-pass-the-hash-logontype9': 'https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_security_pth_logon_type_9.yml', 'sigma-win-security-domain-admin-member-added-4728': 'https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_security_domain_admin_member_added.yml', 'sigma-win-security-malicious-service-install-4697': 'https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_security_service_install_4697.yml', 'sigma-win-powershell-scriptblock-download-cradle-4104': 'https://github.com/SigmaHQ/sigma/blob/master/rules/windows/powershell/powershell_script/posh_ps_download_cradles.yml', 'sigma-win-security-admin-account-bruteforce-4625': 'https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_security_admin_logon_fail_burst.yml', 'sigma-fortigate-admin-account-created-cli': 'https://github.com/SigmaHQ/sigma/blob/master/rules/network/fortinet/fortios_admin_account_created.yml', 'sigma-fortigate-firewall-policy-modified': 'https://github.com/SigmaHQ/sigma/blob/master/rules/network/fortinet/fortios_firewall_policy_modified.yml', 'sigma-fortigate-smb-port-445-blocked-lateral': 'https://github.com/SigmaHQ/sigma/blob/master/rules/network/net_firewall_inbound_sensitive_ports.yml', 'sigma-o365-sharepoint-mass-file-download': 'https://github.com/SigmaHQ/sigma/blob/master/rules/cloud/m365/m365_sharepoint_mass_file_download.yml', 'sigma-o365-oauth-app-admin-consent-granted': 'https://github.com/SigmaHQ/sigma/blob/master/rules/cloud/m365/m365_oauth_app_admin_consent_granted.yml', 'sigma-linux-sudoers-file-tampering': 'https://github.com/SigmaHQ/sigma/blob/master/rules/linux/process_creation/proc_creation_lnx_sudoers_tampering.yml', 'sigma-linux-reverse-shell-bash-netcat': 'https://github.com/SigmaHQ/sigma/blob/master/rules/linux/process_creation/proc_creation_lnx_reverse_shell.yml', 'sigma-akamai-waf-sqli-attack-blocked': 'https://github.com/SigmaHQ/sigma/blob/master/rules/web/web_sqli_attack_blocked.yml', 'sigma-akamai-waf-rce-command-injection': 'https://github.com/SigmaHQ/sigma/blob/master/rules/web/web_rce_command_injection.yml', 'sigma-dns-high-entropy-txt-tunneling': 'https://github.com/SigmaHQ/sigma/blob/master/rules/network/dns/net_dns_high_entropy_txt_tunneling.yml', 'sigma-win-security-account-lockout-4740': 'https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_security_account_lockout.yml', 'sigma-win-security-user-modified-pwd-reset': 'https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_security_user_management.yml', 'sigma-fortigate-high-volume-denied-traffic': 'https://github.com/SigmaHQ/sigma/blob/master/rules/network/fortinet/fortios_high_volume_denied_traffic.yml', 'sigma-fortigate-outbound-suspicious-ports': 'https://github.com/SigmaHQ/sigma/blob/master/rules/network/fortinet/fortios_outbound_suspicious_ports.yml', 'sigma-aws-cloudtrail-root-access-key-created': 'https://github.com/SigmaHQ/sigma/blob/master/rules/cloud/aws/aws_cloudtrail_root_access_key_created.yml', 'sigma-fw-paloalto-c2-beaconing': 'https://github.com/SigmaHQ/sigma/blob/master/rules/network/net_firewall_c2_beaconing.yml', 'sigma-fw-checkpoint-portscan-drop': 'https://github.com/SigmaHQ/sigma/blob/master/rules/network/net_firewall_portscan_drop.yml', 'sigma-fw-inbound-rdp-smb-wan': 'https://github.com/SigmaHQ/sigma/blob/master/rules/network/net_firewall_inbound_sensitive_ports.yml', 'sigma-waf-sqli-union-select': 'https://github.com/SigmaHQ/sigma/blob/master/rules/web/web_waf_sqli_union_select.yml', 'sigma-waf-xss-script-injection': 'https://github.com/SigmaHQ/sigma/blob/master/rules/web/web_waf_xss_script_injection.yml', 'sigma-edr-process-injection-remotethread': 'https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_susp_createremotethread.yml', 'sigma-edr-vssadmin-shadow-delete': 'https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_vssadmin_delete_shadows.yml', 'sigma-ad-dcsync-replication-event-4662': 'https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_security_ad_replication_non_machine_account.yml', 'sigma-m365-inbox-forwarding-rule': 'https://github.com/SigmaHQ/sigma/blob/master/rules/cloud/m365/m365_inbox_forwarding_rule_external.yml', 'detfyi-win-ad-replication-non-machine-account-dcsync': 'https://detection.fyi/sigmahq/sigma/windows/builtin/security/win_security_ad_replication_non_machine_account/', 'detfyi-win-kerberos-golden-ticket-tgt-4768': 'https://detection.fyi/sigmahq/sigma/windows/builtin/security/win_security_kerberos_golden_ticket/', 'detfyi-win-password-spraying-ntlm-4625': 'https://detection.fyi/sigmahq/sigma/windows/builtin/security/win_security_password_spraying_ntlm_4625/', 'detfyi-win-certutil-urlcache-download': 'https://detection.fyi/sigmahq/sigma/windows/process_creation/proc_creation_win_certutil_download/', 'detfyi-win-registry-run-key-persistence': 'https://detection.fyi/sigmahq/sigma/windows/registry/registry_set_asep_reg_keys_persistence_currentversion/', 'detfyi-win-shadow-copy-deletion-vssadmin': 'https://detection.fyi/sigmahq/sigma/windows/process_creation/proc_creation_win_vssadmin_delete_shadow_copies/', 'detfyi-o365-inbox-forwarding-exfiltration-t1114': 'https://detection.fyi/sigmahq/sigma/cloud/m365/threat_management/microsoft365_susp_inbox_forwarding/', 'detfyi-o365-exchange-transport-rule-created': 'https://detection.fyi/sigmahq/sigma/cloud/m365/exchange/exchange_transport_rule_created/', 'detfyi-o365-mfa-fatigue-push-spam': 'https://detection.fyi/sigmahq/sigma/cloud/m365/azuread/azure_ad_mfa_fatigue_spam/', 'detfyi-fortigate-sslvpn-bruteforce-t1133': 'https://detection.fyi/sigmahq/sigma/network/fortinet/fortios_sslvpn_bruteforce/', 'detfyi-fortigate-denied-internal-scan-t1046': 'https://detection.fyi/sigmahq/sigma/network/fortinet/fortios_denied_internal_scan/', 'detfyi-fortigate-c2-beaconing-suspicious-port': 'https://detection.fyi/sigmahq/sigma/network/fortinet/fortios_c2_beaconing/', 'detfyi-linux-ssh-authorized-keys-modified': 'https://detection.fyi/sigmahq/sigma/linux/file_event/file_event_lnx_ssh_authorized_keys_modify/', 'detfyi-linux-execution-from-tmp-shm': 'https://detection.fyi/sigmahq/sigma/linux/process_creation/proc_creation_lnx_execution_from_tmp/', 'detfyi-akamai-waf-path-traversal-lfi': 'https://detection.fyi/sigmahq/sigma/web/web_path_traversal_lfi_blocked/', 'detfyi-akamai-waf-ssrf-metadata-probe': 'https://detection.fyi/sigmahq/sigma/web/web_ssrf_cloud_metadata_probe/', 'detfyi-win-security-logon-failure-4625': 'https://detection.fyi/sigmahq/sigma/windows/builtin/security/win_security_failed_logons/', 'detfyi-win-security-explicit-credential-logon-4648': 'https://detection.fyi/sigmahq/sigma/windows/builtin/security/win_security_explicit_logon/', 'detfyi-fortigate-admin-ports-traffic-blocked': 'https://detection.fyi/sigmahq/sigma/network/fortinet/fortigate_admin_ports/', 'detection-fyi-waf-ssrf-cloud-metadata': 'https://detection.fyi/elastic/detection-rules/cross-platform/credential_access_web_server_cloud_imds_ssrf_request/', 'detection-fyi-edr-lolbas-certutil-download': 'https://detection.fyi/elastic/detection-rules/windows/defense_evasion_suspicious_certutil_commands/', 'splunk-win-rdp-network-bruteforce-4625-t1021': 'https://research.splunk.com/endpoint/windows_rdp_network_brute_force/', 'splunk-win-asrep-roasting-preauth-disabled-4738': 'https://research.splunk.com/endpoint/kerberos_pre_authentication_disabled_user/', 'splunk-win-smb-admin-share-access-5140': 'https://research.splunk.com/endpoint/windows_administrative_smb_share_access/', 'splunk-win-special-privileges-new-logon-4672': 'https://research.splunk.com/endpoint/windows_special_privileges_assigned_logon/', 'splunk-win-account-password-reset-4724': 'https://research.splunk.com/endpoint/windows_user_account_password_reset/', 'splunk-win-wmi-remote-process-creation': 'https://research.splunk.com/endpoint/wmi_provider_host_spawning_suspicious_process/', 'splunk-o365-privileged-role-assigned-t1098-003': 'https://research.splunk.com/cloud/o365_privileged_role_assigned/', 'splunk-o365-federation-trust-modified': 'https://research.splunk.com/cloud/o365_azure_ad_domain_federation_modified/', 'splunk-o365-conditional-access-policy-disabled': 'https://research.splunk.com/cloud/entra_id_conditional_access_policy_disabled/', 'splunk-fortigate-admin-login-bruteforce': 'https://research.splunk.com/network/fortigate_admin_login_brute_force/', 'splunk-fortigate-ips-critical-exploit-blocked': 'https://research.splunk.com/network/fortigate_ips_critical_exploit_blocked/', 'splunk-linux-pam-su-root-bruteforce': 'https://research.splunk.com/endpoint/linux_pam_su_privilege_escalation_failure/', 'splunk-linux-systemd-persistence-unit': 'https://research.splunk.com/endpoint/linux_systemd_service_unit_created/', 'splunk-akamai-waf-xss-payload-blocked': 'https://research.splunk.com/web/waf_cross_site_scripting_payload_blocked/', 'splunk-akamai-waf-log4shell-jndi-injection': 'https://research.splunk.com/web/waf_log4j_jndi_lookup_exploitation_attempt/', 'splunk-win-security-user-account-created-4720': 'https://research.splunk.com/endpoint/windows_user_account_created/', 'splunk-win-security-special-privileges-logon-4672': 'https://research.splunk.com/endpoint/windows_special_privileges_assigned_logon/', 'splunk-fortigate-admin-login-failure': 'https://research.splunk.com/network/fortigate_admin_login_failure/', 'splunk-okta-mfa-policy-bypass': 'https://research.splunk.com/cloud/okta_mfa_policy_disabled_or_modified/', 'splunk-fw-tor-exit-node-connection': 'https://research.splunk.com/network/firewall_communication_with_tor_exit_node/', 'splunk-waf-path-traversal-attack': 'https://research.splunk.com/web/waf_directory_path_traversal_attempt/', 'splunk-edr-powershell-encoded-execution': 'https://research.splunk.com/endpoint/powershell_suspicious_encoded_command/', 'splunk-ad-sensitive-group-member-added': 'https://research.splunk.com/endpoint/11656928-181a-4663-87a7-0e6e737c385e/', 'splunk-aws-cloudtrail-root-access-key': 'https://research.splunk.com/cloud/aws_cloudtrail_root_access_key_created/', 'elastic-win-scheduled-task-persistence-4698': 'https://github.com/elastic/detection-rules/blob/main/rules/windows/persistence_scheduled_task_creation.toml', 'elastic-sysmon-powershell-encoded-command-t1059-001': 'https://github.com/elastic/detection-rules/blob/main/rules/windows/execution_powershell_encoded_command.toml', 'elastic-win-new-local-user-account-4720': 'https://github.com/elastic/detection-rules/blob/main/rules/windows/persistence_local_scheduled_user_creation.toml', 'elastic-win-regsvr32-remote-scriptlet-exec': 'https://github.com/elastic/detection-rules/blob/main/rules/windows/defense_evasion_regsvr32_remote_scriptlet.toml', 'elastic-win-rundll32-suspicious-invocation': 'https://github.com/elastic/detection-rules/blob/main/rules/windows/defense_evasion_suspicious_rundll32_execution.toml', 'elastic-win-eventlog-service-stopped-1100': 'https://github.com/elastic/detection-rules/blob/main/rules/windows/defense_evasion_eventlog_service_stopped.toml', 'elastic-linux-sshd-invalid-user-bruteforce-t1110': 'https://github.com/elastic/detection-rules/blob/main/rules/linux/credential_access_sshd_invalid_user_bruteforce.toml', 'elastic-linux-kernel-module-load-insmod': 'https://github.com/elastic/detection-rules/blob/main/rules/linux/persistence_kernel_module_load_insmod.toml', 'elastic-linux-crontab-persistence-modification': 'https://github.com/elastic/detection-rules/blob/main/rules/linux/persistence_crontab_file_modified.toml', 'elastic-o365-dlp-policy-sensitive-match': 'https://github.com/elastic/detection-rules/blob/main/rules/integrations/m365/dlp_policy_sensitive_rule_match.toml', 'elastic-o365-anonymous-sharing-link-created': 'https://github.com/elastic/detection-rules/blob/main/rules/integrations/m365/anonymous_sharing_link_created.toml', 'elastic-fortigate-ipsec-vpn-negotiation-failure': 'https://github.com/elastic/detection-rules/blob/main/rules/network/fortinet_ipsec_vpn_negotiation_failure.toml', 'elastic-akamai-waf-credential-stuffing-login': 'https://github.com/elastic/detection-rules/blob/main/rules/web/akamai_waf_high_rate_credential_stuffing.toml', 'elastic-akamai-waf-graphql-introspection-probe': 'https://github.com/elastic/detection-rules/blob/main/rules/web/akamai_waf_graphql_introspection_probe.toml', 'elastic-win-security-user-account-deleted-4726': 'https://github.com/elastic/detection-rules/blob/main/rules/windows/persistence_user_account_deleted.toml', 'elastic-win-security-group-member-added': 'https://github.com/elastic/detection-rules/blob/main/rules/windows/persistence_group_member_added.toml', 'elastic-fortigate-utm-security-signature-blocked': 'https://github.com/elastic/detection-rules/blob/main/rules/network/fortinet_utm_security_signature_blocked.toml', 'elastic-win-proprietary-edr-kernel-call-tree': 'https://github.com/elastic/detection-rules/blob/main/rules/windows/defense_evasion_kernel_call_tree_anomaly.toml', 'elastic-fw-ssl-vpn-bruteforce': 'https://github.com/elastic/detection-rules/blob/main/rules/network/firewall_ssl_vpn_bruteforce_failure.toml', 'elastic-waf-log4j-jndi-rce': 'https://github.com/elastic/detection-rules/blob/main/rules/web/web_waf_log4j_jndi_rce.toml', 'elastic-edr-lsass-memory-access-mimikatz': 'https://github.com/elastic/detection-rules/blob/main/rules/windows/credential_access_lsass_memory_mimikatz.toml'}
 
 ROOT_OR_DIR_URL_PATTERNS: tuple[str, ...] = (
     "https://detection.fyi/",
@@ -828,2904 +829,33 @@ def validate_trusted_source_url(url: str, source_id: str = "") -> tuple[bool, st
     return True, "URL canônica válida"
 
 
+SIGMA_BLOB_URL_PREFIX = "https://github.com/SigmaHQ/sigma/blob/"
+_UUID_RE = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.IGNORECASE
+)
+
+
 def get_canonical_source_url(external_id: str, current_url: str = "") -> str:
-    """Retorna a URL canônica real e direta da regra original na respectiva fonte."""
-    clean_id = str(external_id or "").strip()
-    if clean_id in CANONICAL_SOURCE_URLS:
-        return CANONICAL_SOURCE_URLS[clean_id]
+    """Retorna a URL da regra original exatamente como veio da fonte.
+
+    Nunca fabrica nem substitui a URL: se a URL recebida não for um link direto para o
+    arquivo da regra, retorna string vazia (a UI então não exibe link em vez de um 404).
+    """
     valid, _ = validate_trusted_source_url(current_url)
-    if valid:
-        return current_url
-    return current_url or "https://github.com/SigmaHQ/sigma"
+    return str(current_url).strip() if valid else ""
 
-# =============================================================================
-# Catálogo completo de regras das 4 fontes confiáveis (SigmaHQ, detection.fyi, Splunk, Elastic)
-# Nomes mantidos em inglês tal qual nas fontes pesquisadas.
-# Inclui todas as regras compatíveis por tecnologia E regras más candidatas (que devem ser
-# filtradas e barradas pelos passos 2.1, 2.3 e Regra 2).
-# =============================================================================
-RAW_SOURCE_CANDIDATES: list[dict[str, Any]] = [
-    # --- 1. SigmaHQ (https://github.com/SigmaHQ/sigma) -----------------------
-    {
-        "external_id": "sigma-win-security-kerberoasting-rc4-4769",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_security_kerberoasting_rc4.yml",
-        "original_title": "Kerberoasting Activity - RC4 Ticket Request (Event 4769)",
-        "description": (
-            "Detecta solicitações de Service Ticket Kerberos (EventID 4769) utilizando "
-            "criptografia RC4-HMAC (0x17) para contas de serviço, técnica clássica de "
-            "Kerberoasting para quebra offline de senhas no Active Directory."
-        ),
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: Kerberoasting Activity - RC4 Ticket Request (Event 4769)\n"
-            "id: 4095452e-84c8-40a2-b62c-9471d91e237a\n"
-            "status: stable\n"
-            "logsource:\n"
-            "  product: windows\n"
-            "  service: security\n"
-            "detection:\n"
-            "  selection:\n"
-            "    EventID: '4769'\n"
-            "    TicketEncryptionType: '0x17'\n"
-            "  condition: selection\n"
-            "level: high\n"
-            "tags:\n"
-            "  - attack.credential_access\n"
-            "  - attack.t1558.003"
-        ),
-        "datasource_hints": ["windows", "active_directory", "ad_windows", "security"],
-        "severity": "high",
-        "mitre_tactic": "credential-access",
-        "mitre_technique": "T1558.003",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "EventID", "op": "=", "value": "4769"},
-            {"field": "TicketEncryptionType", "op": "=", "value": "0x17"},
-        ],
-    },
-    {
-        "external_id": "sigma-win-security-audit-log-cleared-1102",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_security_audit_log_cleared.yml",
-        "original_title": "Windows Security Audit Log Cleared (Event 1102)",
-        "description": (
-            "Detecta a limpeza do log de eventos de Segurança do Windows (EventID 1102), "
-            "ação frequentemente executada por atacantes após comprometer um endpoint ou "
-            "Controlador de Domínio para apagar rastros forenses."
-        ),
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: Windows Security Audit Log Cleared (Event 1102)\n"
-            "id: d99b79d2-0a6f-4f46-ad8b-260b6e17f982\n"
-            "status: stable\n"
-            "logsource:\n"
-            "  product: windows\n"
-            "  service: security\n"
-            "detection:\n"
-            "  selection:\n"
-            "    EventID: '1102'\n"
-            "  condition: selection\n"
-            "level: critical\n"
-            "tags:\n"
-            "  - attack.defense_evasion\n"
-            "  - attack.t1070.001"
-        ),
-        "datasource_hints": ["windows", "ad_windows", "security"],
-        "severity": "critical",
-        "mitre_tactic": "defense-evasion",
-        "mitre_technique": "T1070.001",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "EventID", "op": "=", "value": "1102"},
-        ],
-    },
-    {
-        "external_id": "sigma-sysmon-lsass-memory-dump-t1003-001",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_hktl_procdump_lsass.yml",
-        "original_title": "LSASS Memory Dump via Comsvcs or ProcDump",
-        "description": (
-            "Detecta criação de processo (EventID 1 / 4688) utilizando comsvcs.dll MiniDump "
-            "ou procdump para extrair credenciais em texto claro e hashes NTLM da memória do LSASS."
-        ),
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: LSASS Memory Dump via Comsvcs or ProcDump\n"
-            "id: 8b2c4e1a-7c9d-4e5a-9b1f-3a5d7e9f1b2c\n"
-            "logsource:\n"
-            "  category: process_creation\n"
-            "  product: windows\n"
-            "  service: sysmon\n"
-            "detection:\n"
-            "  selection:\n"
-            "    EventID: '1'\n"
-            "    CommandLine|re: '(?i).*(MiniDump|procdump.*lsass).*'\n"
-            "  condition: selection\n"
-            "level: critical\n"
-            "tags:\n"
-            "  - attack.credential_access\n"
-            "  - attack.t1003.001"
-        ),
-        "datasource_hints": ["sysmon", "ad_windows"],
-        "severity": "critical",
-        "mitre_tactic": "credential-access",
-        "mitre_technique": "T1003.001",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "EventID", "op": "=", "value": "1"},
-            {"field": "CommandLine", "op": "=~", "value": "(?i).*(MiniDump|procdump|lsass).*"},
-        ],
-    },
-    {
-        "external_id": "sigma-win-security-pass-the-hash-logontype9",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_security_pth_logon_type_9.yml",
-        "original_title": "Pass-the-Hash Activity via NewCredentials Logon (Event 4624)",
-        "description": (
-            "Detecta sessões de logon NewCredentials (EventID 4624, LogonType 9) com pacote "
-            "Negotiate/NTLM associadas ao uso de Mimikatz sekurlsa::pth ou ferramentas de Pass-the-Hash."
-        ),
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: Pass-the-Hash Activity via NewCredentials Logon (Event 4624)\n"
-            "logsource:\n"
-            "  product: windows\n"
-            "  service: security\n"
-            "detection:\n"
-            "  selection:\n"
-            "    EventID: '4624'\n"
-            "    LogonType: '9'\n"
-            "  condition: selection\n"
-            "level: high"
-        ),
-        "datasource_hints": ["windows", "ad_windows", "security"],
-        "severity": "high",
-        "mitre_tactic": "lateral-movement",
-        "mitre_technique": "T1550.002",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "EventID", "op": "=", "value": "4624"},
-            {"field": "LogonType", "op": "=", "value": "9"},
-        ],
-    },
-    {
-        "external_id": "sigma-win-security-domain-admin-member-added-4728",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_security_domain_admin_member_added.yml",
-        "original_title": "Member Added to Security-Enabled Global Group (Event 4728)",
-        "description": (
-            "Detecta a inclusão de conta de usuário em grupos globais privilegiados do Active Directory "
-            "(EventID 4728 / 4732), como Domain Admins ou Enterprise Admins."
-        ),
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: Member Added to Security-Enabled Global Group (Event 4728)\n"
-            "logsource:\n"
-            "  product: windows\n"
-            "  service: security\n"
-            "detection:\n"
-            "  selection:\n"
-            "    EventID: '4728'\n"
-            "    TargetUserName|re: '(?i).*(Domain Admins|Enterprise Admins|Administrators).*'\n"
-            "  condition: selection"
-        ),
-        "datasource_hints": ["windows", "ad_windows", "security"],
-        "severity": "critical",
-        "mitre_tactic": "persistence",
-        "mitre_technique": "T1098",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "EventID", "op": "=~", "value": "4728|4732"},
-            {"field": "TargetUserName", "op": "=~", "value": "(?i).*(Domain Admins|Enterprise Admins|Administrators).*"},
-        ],
-    },
-    {
-        "external_id": "sigma-win-security-malicious-service-install-4697",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_security_service_install_4697.yml",
-        "original_title": "New Service Installed in the System Security Log (Event 4697)",
-        "description": (
-            "Detecta a instalação de um novo serviço Windows (EventID 4697), técnica comum "
-            "para persistência de privilégio SYSTEM e execução remota via PsExec/SMBExec."
-        ),
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: New Service Installed in the System Security Log (Event 4697)\n"
-            "logsource:\n"
-            "  product: windows\n"
-            "  service: security\n"
-            "detection:\n"
-            "  selection:\n"
-            "    EventID: '4697'\n"
-            "  condition: selection"
-        ),
-        "datasource_hints": ["windows", "ad_windows", "security"],
-        "severity": "high",
-        "mitre_tactic": "persistence",
-        "mitre_technique": "T1543.003",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "EventID", "op": "=", "value": "4697"},
-        ],
-    },
-    {
-        "external_id": "sigma-win-powershell-scriptblock-download-cradle-4104",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/powershell/powershell_script/posh_ps_download_cradles.yml",
-        "original_title": "PowerShell WebClient Download Cradle Execution (Event 4104)",
-        "description": (
-            "Identifica blocos de script PowerShell (EventID 4104) contendo chamadas Net.WebClient, "
-            "DownloadString ou Invoke-WebRequest para download e execução fileless em memória."
-        ),
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: PowerShell WebClient Download Cradle Execution (Event 4104)\n"
-            "logsource:\n"
-            "  product: windows\n"
-            "  category: ps_script\n"
-            "detection:\n"
-            "  selection:\n"
-            "    EventID: '4104'\n"
-            "    ScriptBlockText|re: '(?i).*(DownloadString|Net[.]WebClient|Invoke-WebRequest).*'\n"
-            "  condition: selection"
-        ),
-        "datasource_hints": ["windows", "ad_windows"],
-        "severity": "high",
-        "mitre_tactic": "execution",
-        "mitre_technique": "T1059.001",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "EventID", "op": "=", "value": "4104"},
-            {"field": "ScriptBlockText", "op": "=~", "value": "(?i).*(DownloadString|WebClient|Invoke-WebRequest).*"},
-        ],
-    },
-    {
-        "external_id": "sigma-win-security-admin-account-bruteforce-4625",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_security_admin_logon_fail_burst.yml",
-        "original_title": "Windows Administrator Account Logon Failure Burst (Event 4625)",
-        "description": (
-            "Detecta falhas repetidas de autenticação (EventID 4625) direcionadas especificamente "
-            "à conta privilegiada Administrator no Windows / Active Directory."
-        ),
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: Windows Administrator Account Logon Failure Burst (Event 4625)\n"
-            "logsource:\n"
-            "  product: windows\n"
-            "  service: security\n"
-            "detection:\n"
-            "  selection:\n"
-            "    EventID: '4625'\n"
-            "    TargetUserName: 'Administrator'\n"
-            "  condition: selection | count() > 3"
-        ),
-        "datasource_hints": ["windows", "ad_windows", "security"],
-        "severity": "high",
-        "mitre_tactic": "credential-access",
-        "mitre_technique": "T1110.001",
-        "threshold_operator": "gt",
-        "threshold_value": 3,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "EventID", "op": "=", "value": "4625"},
-            {"field": "TargetUserName", "op": "=", "value": "Administrator"},
-        ],
-    },
-    {
-        "external_id": "sigma-fortigate-admin-account-created-cli",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/network/fortinet/fortios_admin_account_created.yml",
-        "original_title": "FortiGate New Administrator Account Created",
-        "description": (
-            "Detecta eventos de criação ou modificação de conta administrativa no FortiOS "
-            "para persistência em appliance de borda."
-        ),
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: FortiGate New Administrator Account Created\n"
-            "logsource:\n"
-            "  product: fortigate\n"
-            "  service: event\n"
-            "detection:\n"
-            "  selection:\n"
-            "    subtype: 'system'\n"
-            "    action: 'add'\n"
-            "  condition: selection"
-        ),
-        "datasource_hints": ["fortigate", "fortinet"],
-        "severity": "critical",
-        "mitre_tactic": "persistence",
-        "mitre_technique": "T1136.001",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "subtype", "op": "=", "value": "system"},
-            {"field": "action", "op": "=", "value": "add"},
-        ],
-    },
-    {
-        "external_id": "sigma-fortigate-firewall-policy-modified",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/network/fortinet/fortios_firewall_policy_modified.yml",
-        "original_title": "FortiGate Firewall Security Policy Modified or Disabled",
-        "description": (
-            "Identifica alterações ou exclusões de regras de filtragem no firewall FortiGate "
-            "que podem abrir acesso externo não autorizado."
-        ),
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: FortiGate Firewall Security Policy Modified or Disabled\n"
-            "logsource:\n"
-            "  product: fortigate\n"
-            "detection:\n"
-            "  selection:\n"
-            "    subtype: 'system'\n"
-            "    action|re: 'edit|delete'\n"
-            "  condition: selection"
-        ),
-        "datasource_hints": ["fortigate", "fortinet"],
-        "severity": "high",
-        "mitre_tactic": "defense-evasion",
-        "mitre_technique": "T1562.004",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "subtype", "op": "=", "value": "system"},
-            {"field": "action", "op": "=~", "value": "edit|delete"},
-        ],
-    },
-    {
-        "external_id": "sigma-fortigate-smb-port-445-blocked-lateral",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/network/net_firewall_inbound_sensitive_ports.yml",
-        "original_title": "FortiGate Blocked SMB Port 445 Lateral Movement Attempt",
-        "description": (
-            "Detecta bloqueios de conexões SMB (porta 445) no firewall FortiGate, "
-            "indicando tentativa de movimentação lateral ou propagação SMB entre segmentos."
-        ),
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: FortiGate Blocked SMB Port 445 Lateral Movement Attempt\n"
-            "logsource:\n"
-            "  product: fortigate\n"
-            "detection:\n"
-            "  selection:\n"
-            "    action: 'deny'\n"
-            "    dstport: '445'\n"
-            "  condition: selection"
-        ),
-        "datasource_hints": ["fortigate", "fortinet"],
-        "severity": "high",
-        "mitre_tactic": "lateral-movement",
-        "mitre_technique": "T1021.002",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "action", "op": "=", "value": "deny"},
-            {"field": "dstport", "op": "=", "value": "445"},
-        ],
-    },
-    {
-        "external_id": "sigma-o365-sharepoint-mass-file-download",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/cloud/m365/m365_sharepoint_mass_file_download.yml",
-        "original_title": "Office 365 Mass File Download from SharePoint or OneDrive",
-        "description": (
-            "Detecta volume elevado de operações FileDownloaded ou FileSyncDownloadedFull no "
-            "SharePoint Online / OneDrive, sugerindo exfiltração em massa de arquivos corporativos."
-        ),
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: Office 365 Mass File Download from SharePoint or OneDrive\n"
-            "logsource:\n"
-            "  product: m365\n"
-            "  service: sharepoint\n"
-            "detection:\n"
-            "  selection:\n"
-            "    Workload: 'SharePoint'\n"
-            "    Operation|re: 'FileDownloaded|FileSyncDownloadedFull'\n"
-            "  condition: selection | count() > 25"
-        ),
-        "datasource_hints": ["office365", "m365"],
-        "severity": "high",
-        "mitre_tactic": "exfiltration",
-        "mitre_technique": "T1567",
-        "threshold_operator": "gt",
-        "threshold_value": 25,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "Workload", "op": "=~", "value": "SharePoint|OneDrive"},
-            {"field": "Operation", "op": "=~", "value": "FileDownloaded|FileSyncDownloadedFull"},
-        ],
-    },
-    {
-        "external_id": "sigma-o365-oauth-app-admin-consent-granted",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/cloud/m365/m365_oauth_app_admin_consent_granted.yml",
-        "original_title": "Office 365 Suspicious OAuth Application Admin Consent Granted",
-        "description": (
-            "Detecta concessão de consentimento administrativo a aplicativo OAuth no Entra ID / "
-            "Office 365 (Consent to application), vetor usado em ataques de Illicit Consent Grant."
-        ),
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: Office 365 Suspicious OAuth Application Admin Consent Granted\n"
-            "logsource:\n"
-            "  product: m365\n"
-            "  service: azuread\n"
-            "detection:\n"
-            "  selection:\n"
-            "    Operation: 'Consent to application.'\n"
-            "    ResultStatus: 'Success'\n"
-            "  condition: selection"
-        ),
-        "datasource_hints": ["office365", "m365", "azuread"],
-        "severity": "critical",
-        "mitre_tactic": "persistence",
-        "mitre_technique": "T1098.003",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "Operation", "op": "=~", "value": "Consent to application.*"},
-            {"field": "ResultStatus", "op": "=", "value": "Success"},
-        ],
-    },
-    {
-        "external_id": "sigma-linux-sudoers-file-tampering",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/linux/process_creation/proc_creation_lnx_sudoers_tampering.yml",
-        "original_title": "Linux Sudoers File Modification via Command Line",
-        "description": (
-            "Detecta comandos que alteram diretamente /etc/sudoers ou /etc/sudoers.d para "
-            "conceder escalonamento persistente de privilégio NOPASSWD em hosts Linux."
-        ),
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: Linux Sudoers File Modification via Command Line\n"
-            "logsource:\n"
-            "  product: linux\n"
-            "detection:\n"
-            "  selection:\n"
-            "    command|re: '(?i).*(/etc/sudoers|NOPASSWD).*'\n"
-            "  condition: selection"
-        ),
-        "datasource_hints": ["linux", "syslog"],
-        "severity": "critical",
-        "mitre_tactic": "privilege-escalation",
-        "mitre_technique": "T1548.003",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "command", "op": "=~", "value": "(?i).*(/etc/sudoers|NOPASSWD).*"},
-        ],
-    },
-    {
-        "external_id": "sigma-linux-reverse-shell-bash-netcat",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/linux/process_creation/proc_creation_lnx_reverse_shell.yml",
-        "original_title": "Linux Potential Reverse Shell via Bash or Netcat",
-        "description": (
-            "Detecta invocação de shells interativas redirecionadas para sockets de rede "
-            "(/dev/tcp/, nc -e /bin/sh, bash -i) em servidores Linux."
-        ),
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: Linux Potential Reverse Shell via Bash or Netcat\n"
-            "logsource:\n"
-            "  product: linux\n"
-            "detection:\n"
-            "  selection:\n"
-            "    command|re: '(?i)*(/dev/tcp/|nc -e|bash -i).*'\n"
-            "  condition: selection"
-        ),
-        "datasource_hints": ["linux", "syslog"],
-        "severity": "critical",
-        "mitre_tactic": "execution",
-        "mitre_technique": "T1059.004",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "command", "op": "=~", "value": "(?i).*(/dev/tcp/|nc -e|bash -i).*"},
-        ],
-    },
-    {
-        "external_id": "sigma-akamai-waf-sqli-attack-blocked",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/web/web_sqli_attack_blocked.yml",
-        "original_title": "Akamai WAF SQL Injection Payload Blocked at Edge",
-        "description": (
-            "Detecta requisições HTTP contendo vetores de SQL Injection (UNION SELECT, OR 1=1, "
-            "sleep/benchmark) interceptadas pelo WAF Akamai."
-        ),
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: Akamai WAF SQL Injection Payload Blocked at Edge\n"
-            "logsource:\n"
-            "  category: webserver\n"
-            "  product: akamai\n"
-            "detection:\n"
-            "  selection:\n"
-            "    action: 'deny'\n"
-            "    uri|re: '(?i).*(union.*select|select.*from|information_schema).*'\n"
-            "  condition: selection"
-        ),
-        "datasource_hints": ["waf_akamai", "akamai"],
-        "severity": "high",
-        "mitre_tactic": "initial-access",
-        "mitre_technique": "T1190",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "action", "op": "=", "value": "deny"},
-            {"field": "uri", "op": "=~", "value": "(?i).*(union.*select|information_schema).*"},
-        ],
-    },
-    {
-        "external_id": "sigma-akamai-waf-rce-command-injection",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/web/web_rce_command_injection.yml",
-        "original_title": "Akamai WAF Remote Command Injection Attempt in URI",
-        "description": (
-            "Identifica tentativas de execução remota de comandos (OS Command Injection) "
-            "em parâmetros de URI inspecionados pelo WAF Akamai."
-        ),
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: Akamai WAF Remote Command Injection Attempt in URI\n"
-            "logsource:\n"
-            "  category: webserver\n"
-            "  product: akamai\n"
-            "detection:\n"
-            "  selection:\n"
-            "    action: 'deny'\n"
-            "    uri|re: '(?i).*(/bin/sh|/etc/passwd|cmd[.]exe|whoami).*'\n"
-            "  condition: selection"
-        ),
-        "datasource_hints": ["waf_akamai", "akamai"],
-        "severity": "critical",
-        "mitre_tactic": "execution",
-        "mitre_technique": "T1059",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "action", "op": "=", "value": "deny"},
-            {"field": "uri", "op": "=~", "value": "(?i).*(/bin/sh|/etc/passwd|cmd[.]exe|whoami).*"},
-        ],
-    },
-    {
-        "external_id": "sigma-dns-high-entropy-txt-tunneling",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/network/dns/net_dns_high_entropy_txt_tunneling.yml",
-        "original_title": "DNS High Volume TXT Query Tunneling Activity",
-        "description": (
-            "Detecta consultas DNS do tipo TXT em alto volume associadas a ferramentas de "
-            "DNS Tunneling e comando e controle (iodine, dnscat2)."
-        ),
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: DNS High Volume TXT Query Tunneling Activity\n"
-            "logsource:\n"
-            "  category: dns\n"
-            "detection:\n"
-            "  selection:\n"
-            "    qtype: 'TXT'\n"
-            "  condition: selection | count() > 20"
-        ),
-        "datasource_hints": ["dns"],
-        "severity": "high",
-        "mitre_tactic": "command-and-control",
-        "mitre_technique": "T1071.004",
-        "threshold_operator": "gt",
-        "threshold_value": 20,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "qtype", "op": "=", "value": "TXT"},
-        ],
-    },
-    {
-        "external_id": "sigma-win-security-account-lockout-4740",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_security_account_lockout.yml",
-        "original_title": "User Account Locked Out (Event 4740)",
-        "description": (
-            "Detecta eventos de bloqueio de conta de usuário no Active Directory (EventID 4740) "
-            "decorrentes de múltiplas tentativas consecutivas de logon com senha incorreta, "
-            "indicando possíveis ataques de força bruta, password spraying ou credencial defasada."
-        ),
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: User Account Locked Out (Event 4740)\n"
-            "id: 603f0b27-4187-43f6-953b-e1c8b320d321\n"
-            "status: stable\n"
-            "logsource:\n"
-            "  product: windows\n"
-            "  service: security\n"
-            "detection:\n"
-            "  selection:\n"
-            "    EventID: '4740'\n"
-            "  condition: selection\n"
-            "level: medium\n"
-            "tags:\n"
-            "  - attack.credential_access\n"
-            "  - attack.t1110.001"
-        ),
-        "datasource_hints": ["windows", "active_directory", "ad_windows", "security"],
-        "severity": "medium",
-        "mitre_tactic": "credential-access",
-        "mitre_technique": "T1110.001",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "EventID", "op": "=", "value": "4740"},
-        ],
-    },
-    {
-        "external_id": "sigma-win-security-user-modified-pwd-reset",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_security_user_management.yml",
-        "original_title": "Windows User Account Modified or Password Reset (Event 4738 / 4724)",
-        "description": (
-            "Detecta modificações em contas de usuário ou tentativas de redefinição de senha "
-            "(EventID 4738 ou 4724) no Active Directory, técnica de persistência para manutenção de acesso."
-        ),
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: Windows User Account Modified or Password Reset (Event 4738 / 4724)\n"
-            "id: a49d1078-d069-450a-9d0b-6a5c1e55e8d2\n"
-            "status: stable\n"
-            "logsource:\n"
-            "  product: windows\n"
-            "  service: security\n"
-            "detection:\n"
-            "  selection:\n"
-            "    EventID|re: '4738|4724'\n"
-            "  condition: selection\n"
-            "level: medium\n"
-            "tags:\n"
-            "  - attack.persistence\n"
-            "  - attack.t1098"
-        ),
-        "datasource_hints": ["windows", "active_directory", "ad_windows", "security"],
-        "severity": "medium",
-        "mitre_tactic": "persistence",
-        "mitre_technique": "T1098",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "EventID", "op": "=~", "value": "4738|4724"},
-        ],
-    },
-    {
-        "external_id": "sigma-fortigate-high-volume-denied-traffic",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/network/fortinet/fortios_high_volume_denied_traffic.yml",
-        "original_title": "FortiGate High Volume Dropped or Denied Network Traffic",
-        "description": (
-            "Detecta conexões de rede bloqueadas ou negadas pelas políticas de firewall no FortiOS "
-            "(action deny, drop ou block), alertando para varreduras externas ou tráfego hostil não autorizado."
-        ),
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: FortiGate High Volume Dropped or Denied Network Traffic\n"
-            "id: f8b71d99-31c4-42b7-a3f1-7c9e5e6c1a2b\n"
-            "logsource:\n"
-            "  product: fortigate\n"
-            "  service: traffic\n"
-            "detection:\n"
-            "  selection:\n"
-            "    action|re: '(?i)deny|drop|block|close'\n"
-            "  condition: selection\n"
-            "level: medium\n"
-            "tags:\n"
-            "  - attack.initial_access\n"
-            "  - attack.t1190"
-        ),
-        "datasource_hints": ["fortigate", "fortinet", "firewall"],
-        "severity": "medium",
-        "mitre_tactic": "initial-access",
-        "mitre_technique": "T1190",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "action", "op": "=~", "value": "(?i)deny|drop|block|close"},
-        ],
-    },
-    {
-        "external_id": "sigma-fortigate-outbound-suspicious-ports",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/network/fortinet/fortios_outbound_suspicious_ports.yml",
-        "original_title": "FortiGate Outbound Traffic Blocked on Suspicious Ports",
-        "description": (
-            "Monitora conexões de saída bloqueadas pelo firewall para portas suspeitas frequentemente "
-            "utilizadas por cavalos de Tróia e canais de comando e controle (4444, 5555, 6667, 8888, 9001)."
-        ),
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: FortiGate Outbound Traffic Blocked on Suspicious Ports\n"
-            "id: 7b3e9a11-82d4-4a6c-9c7f-1d8f5b2e9a3c\n"
-            "logsource:\n"
-            "  product: fortigate\n"
-            "detection:\n"
-            "  selection:\n"
-            "    action|re: '(?i)deny|drop|block|close'\n"
-            "    dstport|re: '4444|5555|6667|8888|9001'\n"
-            "  condition: selection\n"
-            "level: high\n"
-            "tags:\n"
-            "  - attack.command_and_control\n"
-            "  - attack.t1071"
-        ),
-        "datasource_hints": ["fortigate", "fortinet", "firewall"],
-        "severity": "high",
-        "mitre_tactic": "command-and-control",
-        "mitre_technique": "T1071",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "action", "op": "=~", "value": "(?i)deny|drop|block|close"},
-            {"field": "dstport", "op": "=~", "value": "4444|5555|6667|8888|9001"},
-        ],
-    },
 
-    # --- 2. detection.fyi (https://detection.fyi/) ---------------------------
-    {
-        "external_id": "detfyi-win-ad-replication-non-machine-account-dcsync",
-        "source_id": "detection_fyi",
-        "source_name": "detection.fyi",
-        "source_url": "https://detection.fyi/sigmahq/sigma/windows/builtin/security/win_security_ad_replication_non_machine_account/",
-        "original_title": "Active Directory Replication from Non Machine Account - DcSync Indicator",
-        "description": (
-            "Detecta requisições de replicação de diretório Active Directory (EventID 4662) "
-            "originadas de contas que não são de computador (non-machine accounts), "
-            "comportamento clássico de ataques DCSync (Mimikatz / secretsdump) para extrair hashes NTLM."
-        ),
-        "original_format": "Sigma / KQL",
-        "original_syntax": (
-            "title: Active Directory Replication from Non Machine Account - DcSync Indicator\n"
-            "id: 17d619c1-e020-4347-957e-1d1207455c93\n"
-            "status: test\n"
-            "logsource:\n"
-            "  product: windows\n"
-            "  service: security\n"
-            "detection:\n"
-            "  selection:\n"
-            "    EventID: 4662\n"
-            "    AccessMask: '0x100'\n"
-            "  condition: selection\n"
-            "tags:\n"
-            "  - attack.credential_access\n"
-            "  - attack.t1003.006"
-        ),
-        "datasource_hints": ["windows", "ad_windows", "active_directory"],
-        "severity": "critical",
-        "mitre_tactic": "credential-access",
-        "mitre_technique": "T1003.006",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "EventID", "op": "=", "value": "4662"},
-            {"field": "AccessMask", "op": "=", "value": "0x100"},
-        ],
-    },
-    {
-        "external_id": "detfyi-win-kerberos-golden-ticket-tgt-4768",
-        "source_id": "detection_fyi",
-        "source_name": "detection.fyi",
-        "source_url": "https://detection.fyi/sigmahq/sigma/windows/builtin/security/win_security_kerberos_golden_ticket/",
-        "original_title": "Kerberos TGT Request with RC4 Encryption (Golden Ticket 4768)",
-        "description": (
-            "Detecta requisições de Ticket Granting Ticket (EventID 4768) utilizando "
-            "criptografia legada RC4 (0x17), indicativo de uso de Golden Ticket ou downgrade Kerberos."
-        ),
-        "original_format": "Sigma / KQL",
-        "original_syntax": (
-            "// Source: https://detection.fyi/\n"
-            "SecurityEvent\n"
-            "| where EventID == 4768\n"
-            "| where TicketEncryptionType == '0x17'"
-        ),
-        "datasource_hints": ["windows", "ad_windows", "active_directory"],
-        "severity": "high",
-        "mitre_tactic": "credential-access",
-        "mitre_technique": "T1558.001",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "EventID", "op": "=", "value": "4768"},
-            {"field": "TicketEncryptionType", "op": "=", "value": "0x17"},
-        ],
-    },
-    {
-        "external_id": "detfyi-win-password-spraying-ntlm-4625",
-        "source_id": "detection_fyi",
-        "source_name": "detection.fyi",
-        "source_url": "https://detection.fyi/sigmahq/sigma/windows/builtin/security/win_security_password_spraying_ntlm_4625/",
-        "original_title": "Active Directory Password Spraying Attack (SubStatus 0xC000006A)",
-        "description": (
-            "Detecta múltiplas falhas de senha incorreta (EventID 4625, SubStatus 0xC000006A) "
-            "características de ataques de Password Spraying contra contas do domínio."
-        ),
-        "original_format": "Sigma / KQL",
-        "original_syntax": (
-            "// Source: https://detection.fyi/\n"
-            "SecurityEvent\n"
-            "| where EventID == 4625 and SubStatus == '0xc000006a'\n"
-            "| summarize count() by IpAddress | where count_ > 10"
-        ),
-        "datasource_hints": ["windows", "ad_windows"],
-        "severity": "high",
-        "mitre_tactic": "credential-access",
-        "mitre_technique": "T1110.003",
-        "threshold_operator": "gt",
-        "threshold_value": 10,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "EventID", "op": "=", "value": "4625"},
-            {"field": "SubStatus", "op": "=~", "value": "(?i)0xc000006a"},
-        ],
-    },
-    {
-        "external_id": "detfyi-win-certutil-urlcache-download",
-        "source_id": "detection_fyi",
-        "source_name": "detection.fyi",
-        "source_url": "https://detection.fyi/sigmahq/sigma/windows/process_creation/proc_creation_win_certutil_download/",
-        "original_title": "Suspicious File Download via Certutil URLCache",
-        "description": (
-            "Detecta abuso do binário nativo certutil.exe (LOLBin) com parâmetros -urlcache "
-            "ou -split para baixar payloads maliciosos da internet."
-        ),
-        "original_format": "Sigma / KQL",
-        "original_syntax": (
-            "// Source: https://detection.fyi/\n"
-            "DeviceProcessEvents\n"
-            "| where ProcessCommandLine has_all ('certutil', '-urlcache')"
-        ),
-        "datasource_hints": ["windows", "ad_windows", "sysmon"],
-        "severity": "high",
-        "mitre_tactic": "command-and-control",
-        "mitre_technique": "T1105",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "CommandLine", "op": "=~", "value": "(?i).*certutil.*(urlcache|verifyctl).*"},
-        ],
-    },
-    {
-        "external_id": "detfyi-win-registry-run-key-persistence",
-        "source_id": "detection_fyi",
-        "source_name": "detection.fyi",
-        "source_url": "https://detection.fyi/sigmahq/sigma/windows/registry/registry_set_asep_reg_keys_persistence_currentversion/",
-        "original_title": "Registry Run Key Modification for Startup Persistence",
-        "description": (
-            "Detecta modificações nas chaves de registro CurrentVersion\\Run ou RunOnce "
-            "(Sysmon EventID 13 / 4657) utilizadas para persistência na inicialização do Windows."
-        ),
-        "original_format": "Sigma / KQL",
-        "original_syntax": (
-            "// Source: https://detection.fyi/\n"
-            "DeviceRegistryEvents\n"
-            "| where RegistryKey endswith '\\\\CurrentVersion\\\\Run'"
-        ),
-        "datasource_hints": ["windows", "ad_windows", "sysmon"],
-        "severity": "medium",
-        "mitre_tactic": "persistence",
-        "mitre_technique": "T1547.001",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "TargetObject", "op": "=~", "value": "(?i).*CurrentVersion.*(Run|RunOnce).*"},
-        ],
-    },
-    {
-        "external_id": "detfyi-win-shadow-copy-deletion-vssadmin",
-        "source_id": "detection_fyi",
-        "source_name": "detection.fyi",
-        "source_url": "https://detection.fyi/sigmahq/sigma/windows/process_creation/proc_creation_win_vssadmin_delete_shadow_copies/",
-        "original_title": "Volume Shadow Copy Deletion via Vssadmin or WMIC",
-        "description": (
-            "Detecta exclusão de cópias de sombra de volume (vssadmin delete shadows / "
-            "wmic shadowcopy delete), etapa crítica pré-criptografia em ataques de ransomware."
-        ),
-        "original_format": "Sigma / KQL",
-        "original_syntax": (
-            "// Source: https://detection.fyi/\n"
-            "DeviceProcessEvents\n"
-            "| where ProcessCommandLine matches regex '(?i)(vssadmin.*delete.*shadows|wmic.*shadowcopy.*delete)'"
-        ),
-        "datasource_hints": ["windows", "ad_windows", "sysmon"],
-        "severity": "critical",
-        "mitre_tactic": "impact",
-        "mitre_technique": "T1490",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "CommandLine", "op": "=~", "value": "(?i).*(delete.*shadows|shadowcopy.*delete).*"},
-        ],
-    },
-    {
-        "external_id": "detfyi-o365-inbox-forwarding-exfiltration-t1114",
-        "source_id": "detection_fyi",
-        "source_name": "detection.fyi",
-        "source_url": "https://detection.fyi/sigmahq/sigma/cloud/m365/threat_management/microsoft365_susp_inbox_forwarding/",
-        "original_title": "Office 365 Suspicious Inbox Forwarding Rule Created",
-        "description": (
-            "Detecta a criação ou modificação de regras de encaminhamento automático de caixa de "
-            "entrada no Exchange Online (New-InboxRule / Set-InboxRule), usada após comprometimento "
-            "de conta (BEC) para exfiltrar e-mails confidenciais."
-        ),
-        "original_format": "Sigma / KQL",
-        "original_syntax": (
-            "// Source: https://detection.fyi/\n"
-            "OfficeActivity\n"
-            "| where Workload == 'Exchange'\n"
-            "| where Operation in ('New-InboxRule', 'Set-InboxRule')\n"
-            "// MITRE ATT&CK: T1114.003 (Email Forwarding Rule)"
-        ),
-        "datasource_hints": ["office365", "m365", "exchange"],
-        "severity": "high",
-        "mitre_tactic": "collection",
-        "mitre_technique": "T1114.003",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "Operation", "op": "=~", "value": "New-InboxRule|Set-InboxRule"},
-        ],
-    },
-    {
-        "external_id": "detfyi-o365-exchange-transport-rule-created",
-        "source_id": "detection_fyi",
-        "source_name": "detection.fyi",
-        "source_url": "https://detection.fyi/sigmahq/sigma/cloud/m365/exchange/exchange_transport_rule_created/",
-        "original_title": "Exchange Online Mail Flow Transport Rule Created",
-        "description": (
-            "Detecta criação de regras de transporte globais no Exchange Online (New-TransportRule) "
-            "para redirecionamento silencioso de mensagens de todo o tenant."
-        ),
-        "original_format": "Sigma / KQL",
-        "original_syntax": (
-            "// Source: https://detection.fyi/\n"
-            "OfficeActivity\n"
-            "| where Workload == 'Exchange' and Operation in ('New-TransportRule', 'Set-TransportRule')"
-        ),
-        "datasource_hints": ["office365", "m365", "exchange"],
-        "severity": "critical",
-        "mitre_tactic": "collection",
-        "mitre_technique": "T1114.003",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "Workload", "op": "=", "value": "Exchange"},
-            {"field": "Operation", "op": "=~", "value": "New-TransportRule|Set-TransportRule"},
-        ],
-    },
-    {
-        "external_id": "detfyi-o365-mfa-fatigue-push-spam",
-        "source_id": "detection_fyi",
-        "source_name": "detection.fyi",
-        "source_url": "https://detection.fyi/sigmahq/sigma/cloud/m365/azuread/azure_ad_mfa_fatigue_spam/",
-        "original_title": "Microsoft Entra ID Repeated MFA Push Failures",
-        "description": (
-            "Identifica múltiplas falhas seguidas de autenticação multifator (UserLoginFailed) "
-            "no Entra ID / Office 365, padrão característico de ataques de MFA Fatigue / Push Bombing."
-        ),
-        "original_format": "Sigma / KQL",
-        "original_syntax": (
-            "// Source: https://detection.fyi/\n"
-            "OfficeActivity\n"
-            "| where Workload == 'AzureActiveDirectory' and Operation == 'UserLoginFailed'\n"
-            "| summarize count() by UserId | where count_ > 5"
-        ),
-        "datasource_hints": ["office365", "m365", "azuread"],
-        "severity": "high",
-        "mitre_tactic": "credential-access",
-        "mitre_technique": "T1621",
-        "threshold_operator": "gt",
-        "threshold_value": 5,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "Operation", "op": "=", "value": "UserLoginFailed"},
-            {"field": "ResultStatus", "op": "=~", "value": "Failed|Failure"},
-        ],
-    },
-    {
-        "external_id": "detfyi-fortigate-sslvpn-bruteforce-t1133",
-        "source_id": "detection_fyi",
-        "source_name": "detection.fyi",
-        "source_url": "https://detection.fyi/sigmahq/sigma/network/fortinet/fortios_sslvpn_bruteforce/",
-        "original_title": "FortiGate SSL-VPN Multiple Authentication Failures",
-        "description": (
-            "Detecta tentativas repetidas de login malsucedidas no portal SSL-VPN do FortiGate, "
-            "indicando ataque de força bruta ou credential stuffing contra acesso remoto."
-        ),
-        "original_format": "Sigma / KQL",
-        "original_syntax": (
-            "title: FortiGate SSL-VPN Multiple Authentication Failures\n"
-            "logsource:\n"
-            "  product: fortigate\n"
-            "  service: sslvpn\n"
-            "detection:\n"
-            "  selection:\n"
-            "    subtype: 'vpn'\n"
-            "    action: 'ssl-login-fail'\n"
-            "  condition: selection | count() by srcip > 5"
-        ),
-        "datasource_hints": ["fortigate", "fortinet"],
-        "severity": "high",
-        "mitre_tactic": "initial-access",
-        "mitre_technique": "T1133",
-        "threshold_operator": "gt",
-        "threshold_value": 5,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "subtype", "op": "=", "value": "vpn"},
-            {"field": "action", "op": "=~", "value": "ssl-login-fail|deny"},
-        ],
-    },
-    {
-        "external_id": "detfyi-fortigate-denied-internal-scan-t1046",
-        "source_id": "detection_fyi",
-        "source_name": "detection.fyi",
-        "source_url": "https://detection.fyi/sigmahq/sigma/network/fortinet/fortios_denied_internal_scan/",
-        "original_title": "FortiGate High Volume Denied Internal Traffic Burst",
-        "description": (
-            "Detecta múltiplos pacotes negados (action=deny) pelo FortiGate originados de sub-redes "
-            "internas, indicando varredura horizontal de serviços ou tentativa de movimentação lateral."
-        ),
-        "original_format": "Sigma / KQL",
-        "original_syntax": (
-            "title: FortiGate High Volume Denied Internal Traffic Burst\n"
-            "logsource:\n"
-            "  product: fortigate\n"
-            "  service: firewall\n"
-            "detection:\n"
-            "  selection:\n"
-            "    action: 'deny'\n"
-            "    srcip|re: '^10\\..*'\n"
-            "  condition: selection | count() > 5"
-        ),
-        "datasource_hints": ["fortigate", "fortinet"],
-        "severity": "high",
-        "mitre_tactic": "discovery",
-        "mitre_technique": "T1046",
-        "threshold_operator": "gt",
-        "threshold_value": 5,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "action", "op": "=", "value": "deny"},
-            {"field": "srcip", "op": "=~", "value": "10[.].*"},
-        ],
-    },
-    {
-        "external_id": "detfyi-fortigate-c2-beaconing-suspicious-port",
-        "source_id": "detection_fyi",
-        "source_name": "detection.fyi",
-        "source_url": "https://detection.fyi/sigmahq/sigma/network/fortinet/fortios_c2_beaconing/",
-        "original_title": "FortiGate Outbound Traffic Blocked to Known C2 Port",
-        "description": (
-            "Detecta conexões de saída bloqueadas pelo FortiGate para portas associadas a frameworks "
-            "de C2 e Metasploit/Cobalt Strike (4444, 5555, 8443, 9001)."
-        ),
-        "original_format": "Sigma / KQL",
-        "original_syntax": (
-            "title: FortiGate Outbound Traffic Blocked to Known C2 Port\n"
-            "logsource:\n"
-            "  product: fortigate\n"
-            "detection:\n"
-            "  selection:\n"
-            "    action: 'deny'\n"
-            "    dstport|re: '4444|5555|9001'\n"
-            "  condition: selection"
-        ),
-        "datasource_hints": ["fortigate", "fortinet"],
-        "severity": "high",
-        "mitre_tactic": "command-and-control",
-        "mitre_technique": "T1571",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "action", "op": "=", "value": "deny"},
-            {"field": "dstport", "op": "=~", "value": "4444|5555|9001"},
-        ],
-    },
-    {
-        "external_id": "detfyi-linux-ssh-authorized-keys-modified",
-        "source_id": "detection_fyi",
-        "source_name": "detection.fyi",
-        "source_url": "https://detection.fyi/sigmahq/sigma/linux/file_event/file_event_lnx_ssh_authorized_keys_modify/",
-        "original_title": "Linux Unauthorized SSH Authorized_Keys Modification",
-        "description": (
-            "Detecta comandos que gravam chaves públicas em ~/.ssh/authorized_keys "
-            "para manter acesso persistente via SSH em servidores Linux."
-        ),
-        "original_format": "Sigma / KQL",
-        "original_syntax": (
-            "// Source: https://detection.fyi/\n"
-            "LinuxAuditD\n"
-            "| where command contains 'authorized_keys'"
-        ),
-        "datasource_hints": ["linux", "sshd", "syslog"],
-        "severity": "high",
-        "mitre_tactic": "persistence",
-        "mitre_technique": "T1098.004",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "command", "op": "=~", "value": "(?i).*authorized_keys.*"},
-        ],
-    },
-    {
-        "external_id": "detfyi-linux-execution-from-tmp-shm",
-        "source_id": "detection_fyi",
-        "source_name": "detection.fyi",
-        "source_url": "https://detection.fyi/sigmahq/sigma/linux/process_creation/proc_creation_lnx_execution_from_tmp/",
-        "original_title": "Linux Binary Execution from World-Writable /tmp or /dev/shm",
-        "description": (
-            "Identifica execução de binários ou scripts diretamente a partir de diretórios "
-            "temporários (/tmp, /var/tmp, /dev/shm), comportamento comum de droppers e cryptominers."
-        ),
-        "original_format": "Sigma / KQL",
-        "original_syntax": (
-            "// Source: https://detection.fyi/\n"
-            "LinuxAuditD\n"
-            "| where command matches regex '^(/tmp/|/dev/shm/|/var/tmp/)'"
-        ),
-        "datasource_hints": ["linux", "syslog"],
-        "severity": "high",
-        "mitre_tactic": "execution",
-        "mitre_technique": "T1204.002",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "command", "op": "=~", "value": "(?i).*(\\/tmp\\/|\\/dev\\/shm\\/|\\/var\\/tmp\\/).*"},
-        ],
-    },
-    {
-        "external_id": "detfyi-akamai-waf-path-traversal-lfi",
-        "source_id": "detection_fyi",
-        "source_name": "detection.fyi",
-        "source_url": "https://detection.fyi/sigmahq/sigma/web/web_path_traversal_lfi_blocked/",
-        "original_title": "Akamai WAF Local File Inclusion and Path Traversal Attempt",
-        "description": (
-            "Detecta sequências de travessia de diretório (../, ..%2f, /etc/shadow, win.ini) "
-            "bloqueadas ou alertadas no WAF Akamai."
-        ),
-        "original_format": "Sigma / KQL",
-        "original_syntax": (
-            "title: Akamai WAF Local File Inclusion and Path Traversal Attempt\n"
-            "logsource:\n"
-            "  product: akamai\n"
-            "detection:\n"
-            "  selection:\n"
-            "    uri|re: '(?i).*([.][.]/|[.][.]%2f|/etc/shadow|win[.]ini).*'\n"
-            "  condition: selection"
-        ),
-        "datasource_hints": ["waf_akamai", "akamai"],
-        "severity": "high",
-        "mitre_tactic": "initial-access",
-        "mitre_technique": "T1190",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "uri", "op": "=~", "value": "(?i).*([.][.]%2f|/etc/shadow|win[.]ini).*"},
-        ],
-    },
-    {
-        "external_id": "detfyi-akamai-waf-ssrf-metadata-probe",
-        "source_id": "detection_fyi",
-        "source_name": "detection.fyi",
-        "source_url": "https://detection.fyi/sigmahq/sigma/web/web_ssrf_cloud_metadata_probe/",
-        "original_title": "Akamai WAF Cloud Metadata Service SSRF Probe",
-        "description": (
-            "Detecta tentativas de Server-Side Request Forgery (SSRF) visando o endpoint de "
-            "metadados de nuvem (169.254.169.254 / latest/meta-data) no WAF Akamai."
-        ),
-        "original_format": "Sigma / KQL",
-        "original_syntax": (
-            "title: Akamai WAF Cloud Metadata Service SSRF Probe\n"
-            "logsource:\n"
-            "  product: akamai\n"
-            "detection:\n"
-            "  selection:\n"
-            "    uri|re: '(?i).*(169[.]254[.]169[.]254|latest/meta-data).*'\n"
-            "  condition: selection"
-        ),
-        "datasource_hints": ["waf_akamai", "akamai"],
-        "severity": "critical",
-        "mitre_tactic": "credential-access",
-        "mitre_technique": "T1552.005",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "uri", "op": "=~", "value": "(?i).*(169[.]254[.]169[.]254|meta-data).*"},
-        ],
-    },
-    {
-        "external_id": "detfyi-win-security-logon-failure-4625",
-        "source_id": "detection_fyi",
-        "source_name": "detection.fyi",
-        "source_url": "https://detection.fyi/sigmahq/sigma/windows/builtin/security/win_security_failed_logons/",
-        "original_title": "Multiple Failed Windows Logon Attempts (Event 4625)",
-        "description": (
-            "Monitora eventos de falha de autenticação (EventID 4625) em controladores de domínio e "
-            "servidores Windows corporativos, cobrindo senhas incorretas, contas inexistentes ou ataques de força bruta."
-        ),
-        "original_format": "Sigma / KQL",
-        "original_syntax": (
-            "SecurityEvent\n"
-            "| where EventID == 4625\n"
-            "| summarize count() by TargetUserName, IpAddress, bin(TimeGenerated, 5m)"
-        ),
-        "datasource_hints": ["windows", "active_directory", "ad_windows", "security"],
-        "severity": "high",
-        "mitre_tactic": "credential-access",
-        "mitre_technique": "T1110",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "EventID", "op": "=", "value": "4625"},
-        ],
-    },
-    {
-        "external_id": "detfyi-win-security-explicit-credential-logon-4648",
-        "source_id": "detection_fyi",
-        "source_name": "detection.fyi",
-        "source_url": "https://detection.fyi/sigmahq/sigma/windows/builtin/security/win_security_explicit_logon/",
-        "original_title": "Logon Attempted Using Explicit Credentials (Event 4648)",
-        "description": (
-            "Detecta tentativas de autenticação utilizando credenciais explícitas fornecidas diretamente "
-            "(EventID 4648), típico de comandos 'runas', sessões de rede remotas ou movimentação lateral."
-        ),
-        "original_format": "Sigma / KQL",
-        "original_syntax": (
-            "SecurityEvent\n"
-            "| where EventID == 4648\n"
-            "| summarize count() by TargetUserName, SubjectUserName, bin(TimeGenerated, 5m)"
-        ),
-        "datasource_hints": ["windows", "active_directory", "ad_windows", "security"],
-        "severity": "high",
-        "mitre_tactic": "lateral-movement",
-        "mitre_technique": "T1078",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "EventID", "op": "=", "value": "4648"},
-        ],
-    },
-    {
-        "external_id": "detfyi-fortigate-admin-ports-traffic-blocked",
-        "source_id": "detection_fyi",
-        "source_name": "detection.fyi",
-        "source_url": "https://detection.fyi/sigmahq/sigma/network/fortinet/fortigate_admin_ports/",
-        "original_title": "FortiGate Inbound Traffic Blocked on Administrative Ports",
-        "description": (
-            "Identifica tentativas de tráfego de entrada em portas administrativas críticas "
-            "(SSH 22, Telnet 23, RDP 3389, portas HTTPS de gerência 8443 e 10443) bloqueadas pelo firewall."
-        ),
-        "original_format": "Sigma / KQL",
-        "original_syntax": (
-            "CommonSecurityLog\n"
-            "| where DeviceVendor =~ 'Fortinet' and DeviceAction in~ ('deny', 'drop', 'block', 'close')\n"
-            "| where DestinationPort in (22, 23, 3389, 8443, 10443)"
-        ),
-        "datasource_hints": ["fortigate", "fortinet", "firewall"],
-        "severity": "high",
-        "mitre_tactic": "initial-access",
-        "mitre_technique": "T1190",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "action", "op": "=~", "value": "(?i)deny|drop|block|close"},
-            {"field": "dstport", "op": "=~", "value": "22|23|3389|8443|10443"},
-        ],
-    },
+def is_verified_source_rule(external_id: str, source_id: str, source_url: str) -> bool:
+    """True somente para regras reais do SigmaHQ (ID UUID oficial + URL direta do arquivo).
 
-    # --- 3. Splunk Security Research (https://research.splunk.com/detections/)
-    {
-        "external_id": "splunk-win-rdp-network-bruteforce-4625-t1021",
-        "source_id": "splunk_research",
-        "source_name": "Splunk Security Research",
-        "source_url": "https://research.splunk.com/endpoint/windows_rdp_network_brute_force/",
-        "original_title": "Windows Remote Desktop Network Logon Brute Force (EventCode 4625)",
-        "description": (
-            "Detecta falhas repetidas de autenticação de rede ou Remote Interactive (LogonType 3 ou 10) "
-            "no Windows (EventID 4625), indicando movimentação lateral ou força bruta SMB/RDP."
-        ),
-        "original_format": "Splunk SPL",
-        "original_syntax": (
-            "`wineventlog_security` EventCode=4625 LogonType IN (3, 10)\n"
-            "| stats count min(_time) as firstTime max(_time) as lastTime by IpAddress, TargetUserName\n"
-            "| where count > 5"
-        ),
-        "datasource_hints": ["windows", "ad_windows", "wineventlog_security"],
-        "severity": "high",
-        "mitre_tactic": "lateral-movement",
-        "mitre_technique": "T1021.001",
-        "threshold_operator": "gt",
-        "threshold_value": 5,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "EventCode", "op": "=", "value": "4625"},
-            {"field": "LogonType", "op": "=~", "value": "3|10"},
-        ],
-    },
-    {
-        "external_id": "splunk-win-asrep-roasting-preauth-disabled-4738",
-        "source_id": "splunk_research",
-        "source_name": "Splunk Security Research",
-        "source_url": "https://research.splunk.com/endpoint/kerberos_pre_authentication_disabled_user/",
-        "original_title": "Kerberos Pre-Authentication Disabled for User Account (EventCode 4738)",
-        "description": (
-            "Detecta modificação de conta no Active Directory (EventID 4738) que desabilita "
-            "a pré-autenticação Kerberos (DONT_REQ_PREAUTH), expondo a conta a AS-REP Roasting."
-        ),
-        "original_format": "Splunk SPL",
-        "original_syntax": (
-            "`wineventlog_security` EventCode=4738\n"
-            "| stats count by TargetUserName, SubjectUserName"
-        ),
-        "datasource_hints": ["windows", "ad_windows", "wineventlog_security"],
-        "severity": "high",
-        "mitre_tactic": "credential-access",
-        "mitre_technique": "T1558.004",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "EventCode", "op": "=", "value": "4738"},
-        ],
-    },
-    {
-        "external_id": "splunk-win-smb-admin-share-access-5140",
-        "source_id": "splunk_research",
-        "source_name": "Splunk Security Research",
-        "source_url": "https://research.splunk.com/endpoint/windows_administrative_smb_share_access/",
-        "original_title": "Windows Administrative SMB Share Access ADMIN$ or C$ (EventCode 5140)",
-        "description": (
-            "Detecta acesso de rede a compartilhamentos administrativos padrão (ADMIN$, C$, IPC$) "
-            "via EventID 5140, frequentemente associado a movimentação lateral."
-        ),
-        "original_format": "Splunk SPL",
-        "original_syntax": (
-            "`wineventlog_security` EventCode=5140 ShareName IN (\"*ADMIN$*\", \"*C$*\")\n"
-            "| stats count by IpAddress, SubjectUserName, ShareName"
-        ),
-        "datasource_hints": ["windows", "ad_windows", "wineventlog_security"],
-        "severity": "high",
-        "mitre_tactic": "lateral-movement",
-        "mitre_technique": "T1021.002",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "EventCode", "op": "=", "value": "5140"},
-            {"field": "ShareName", "op": "=~", "value": "(?i).*(ADMIN|C).*"},
-        ],
-    },
-    {
-        "external_id": "splunk-win-special-privileges-new-logon-4672",
-        "source_id": "splunk_research",
-        "source_name": "Splunk Security Research",
-        "source_url": "https://research.splunk.com/endpoint/windows_special_privileges_assigned_logon/",
-        "original_title": "Windows Special Privileges Assigned to New Logon (EventCode 4672)",
-        "description": (
-            "Monitora atribuição de privilégios equivalentes a administrador (SeDebugPrivilege, "
-            "SeTcbPrivilege, SeTakeOwnershipPrivilege) em novos logons (EventID 4672)."
-        ),
-        "original_format": "Splunk SPL",
-        "original_syntax": (
-            "`wineventlog_security` EventCode=4672 PrivilegeList=\"*SeDebugPrivilege*\"\n"
-            "| stats count by SubjectUserName"
-        ),
-        "datasource_hints": ["windows", "ad_windows", "wineventlog_security"],
-        "severity": "medium",
-        "mitre_tactic": "privilege-escalation",
-        "mitre_technique": "T1078",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "EventCode", "op": "=", "value": "4672"},
-            {"field": "PrivilegeList", "op": "=~", "value": "(?i).*SeDebugPrivilege.*"},
-        ],
-    },
-    {
-        "external_id": "splunk-win-account-password-reset-4724",
-        "source_id": "splunk_research",
-        "source_name": "Splunk Security Research",
-        "source_url": "https://research.splunk.com/endpoint/windows_user_account_password_reset/",
-        "original_title": "Windows User Account Password Reset Attempt (EventCode 4724)",
-        "description": (
-            "Detecta tentativas de redefinição forçada de senha de conta de usuário (EventID 4724) "
-            "no Active Directory para sequestro de conta (Account Manipulation)."
-        ),
-        "original_format": "Splunk SPL",
-        "original_syntax": (
-            "`wineventlog_security` EventCode=4724\n"
-            "| stats count by SubjectUserName, TargetUserName"
-        ),
-        "datasource_hints": ["windows", "ad_windows", "wineventlog_security"],
-        "severity": "medium",
-        "mitre_tactic": "persistence",
-        "mitre_technique": "T1098",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "EventCode", "op": "=", "value": "4724"},
-        ],
-    },
-    {
-        "external_id": "splunk-win-wmi-remote-process-creation",
-        "source_id": "splunk_research",
-        "source_name": "Splunk Security Research",
-        "source_url": "https://research.splunk.com/endpoint/wmi_provider_host_spawning_suspicious_process/",
-        "original_title": "WMI Provider Host Spawning Suspicious Child Process",
-        "description": (
-            "Detecta o processo WmiPrvSE.exe gerando interpretadores de comando (cmd.exe, "
-            "powershell.exe), indicador clássico de execução remota via WMI."
-        ),
-        "original_format": "Splunk SPL",
-        "original_syntax": (
-            "| tstats count from datamodel=Endpoint.Processes where "
-            "Processes.parent_process_name=\"wmiprvse.exe\" Processes.process_name IN (\"cmd.exe\",\"powershell.exe\")"
-        ),
-        "datasource_hints": ["windows", "ad_windows", "sysmon"],
-        "severity": "high",
-        "mitre_tactic": "execution",
-        "mitre_technique": "T1047",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "ParentImage", "op": "=~", "value": "(?i).*wmiprvse[.]exe"},
-            {"field": "Image", "op": "=~", "value": "(?i).*(cmd|powershell)[.]exe"},
-        ],
-    },
-    {
-        "external_id": "splunk-o365-privileged-role-assigned-t1098-003",
-        "source_id": "splunk_research",
-        "source_name": "Splunk Security Research",
-        "source_url": "https://research.splunk.com/cloud/o365_privileged_role_assigned/",
-        "original_title": "O365 Privileged Directory Role Assigned to User",
-        "description": (
-            "Detecta a adição de um usuário a uma função administrativa privilegiada no Microsoft Entra ID "
-            "/ Office 365 (Add member to role), permitindo persistência administrativa no tenant cloud."
-        ),
-        "original_format": "Splunk SPL",
-        "original_syntax": (
-            "`o365_management_activity` Workload=AzureActiveDirectory\n"
-            "Operation=\"Add member to role.\" ResultStatus=\"Success\"\n"
-            "| stats count by UserId, ClientIP, Operation"
-        ),
-        "datasource_hints": ["office365", "o365", "azuread"],
-        "severity": "critical",
-        "mitre_tactic": "privilege-escalation",
-        "mitre_technique": "T1098.003",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "Operation", "op": "=~", "value": "Add member to role.*"},
-            {"field": "ResultStatus", "op": "=~", "value": "Success|Succeeded"},
-        ],
-    },
-    {
-        "external_id": "splunk-o365-federation-trust-modified",
-        "source_id": "splunk_research",
-        "source_name": "Splunk Security Research",
-        "source_url": "https://research.splunk.com/cloud/o365_azure_ad_domain_federation_modified/",
-        "original_title": "Office 365 Azure AD Domain Federation Settings Modified",
-        "description": (
-            "Detecta modificação de configuração de federação de domínio no Entra ID (Set-MsolDomainFederationSettings / "
-            "Set federation settings on domain), técnica Golden SAML para forjar tokens de autenticação."
-        ),
-        "original_format": "Splunk SPL",
-        "original_syntax": (
-            "`o365_management_activity` Workload=AzureActiveDirectory\n"
-            "Operation IN (\"Set federation settings on domain.\", \"Set domain authentication.\")"
-        ),
-        "datasource_hints": ["office365", "o365", "azuread"],
-        "severity": "critical",
-        "mitre_tactic": "persistence",
-        "mitre_technique": "T1484.002",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "Workload", "op": "=", "value": "AzureActiveDirectory"},
-            {"field": "Operation", "op": "=~", "value": "Set federation settings.*|Set domain authentication.*"},
-        ],
-    },
-    {
-        "external_id": "splunk-o365-conditional-access-policy-disabled",
-        "source_id": "splunk_research",
-        "source_name": "Splunk Security Research",
-        "source_url": "https://research.splunk.com/cloud/entra_id_conditional_access_policy_disabled/",
-        "original_title": "Entra ID Conditional Access Policy Modified or Deleted",
-        "description": (
-            "Identifica alteração ou remoção de políticas de Acesso Condicional no Entra ID / "
-            "Office 365 para enfraquecer exigências de MFA e conformidade de dispositivo."
-        ),
-        "original_format": "Splunk SPL",
-        "original_syntax": (
-            "`o365_management_activity` Workload=AzureActiveDirectory\n"
-            "Operation IN (\"Update conditional access policy.\", \"Delete conditional access policy.\")"
-        ),
-        "datasource_hints": ["office365", "o365", "azuread"],
-        "severity": "high",
-        "mitre_tactic": "defense-evasion",
-        "mitre_technique": "T1556",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "Operation", "op": "=~", "value": "(Update|Delete) conditional access policy.*"},
-        ],
-    },
-    {
-        "external_id": "splunk-fortigate-admin-login-bruteforce",
-        "source_id": "splunk_research",
-        "source_name": "Splunk Security Research",
-        "source_url": "https://research.splunk.com/network/fortigate_admin_login_brute_force/",
-        "original_title": "FortiGate Administrative Interface Login Brute Force",
-        "description": (
-            "Detecta falhas sucessivas de login administrativo (SSH/HTTPS) na gerência do "
-            "appliance FortiGate."
-        ),
-        "original_format": "Splunk SPL",
-        "original_syntax": (
-            "sourcetype=fgt_event subtype=system action=login status=failed\n"
-            "| stats count by srcip, user | where count > 5"
-        ),
-        "datasource_hints": ["fortigate", "fortinet"],
-        "severity": "high",
-        "mitre_tactic": "credential-access",
-        "mitre_technique": "T1110",
-        "threshold_operator": "gt",
-        "threshold_value": 5,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "subtype", "op": "=", "value": "system"},
-            {"field": "action", "op": "=~", "value": "login.*"},
-        ],
-    },
-    {
-        "external_id": "splunk-fortigate-ips-critical-exploit-blocked",
-        "source_id": "splunk_research",
-        "source_name": "Splunk Security Research",
-        "source_url": "https://research.splunk.com/network/fortigate_ips_critical_exploit_blocked/",
-        "original_title": "FortiGate IPS Critical Remote Exploit Signature Triggered",
-        "description": (
-            "Detecta acionamento de assinatura de prevenção de intrusão (IPS subtype=ips) "
-            "de severidade crítica no firewall FortiGate."
-        ),
-        "original_format": "Splunk SPL",
-        "original_syntax": (
-            "sourcetype=fgt_utm subtype=ips level=critical\n"
-            "| stats count by srcip, dstip, attack"
-        ),
-        "datasource_hints": ["fortigate", "fortinet"],
-        "severity": "critical",
-        "mitre_tactic": "initial-access",
-        "mitre_technique": "T1190",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "subtype", "op": "=", "value": "ips"},
-            {"field": "action", "op": "=~", "value": "dropped|blocked|deny"},
-        ],
-    },
-    {
-        "external_id": "splunk-linux-pam-su-root-bruteforce",
-        "source_id": "splunk_research",
-        "source_name": "Splunk Security Research",
-        "source_url": "https://research.splunk.com/endpoint/linux_pam_su_privilege_escalation_failure/",
-        "original_title": "Linux PAM Su Privilege Escalation Authentication Failure",
-        "description": (
-            "Detecta falhas repetidas no módulo PAM ao tentar trocar para a conta root via comando "
-            "su em servidores Linux."
-        ),
-        "original_format": "Splunk SPL",
-        "original_syntax": (
-            "index=os sourcetype=linux_secure pam_status=failed dstuser=root\n"
-            "| stats count by srcuser | where count > 3"
-        ),
-        "datasource_hints": ["linux", "syslog"],
-        "severity": "high",
-        "mitre_tactic": "privilege-escalation",
-        "mitre_technique": "T1548.003",
-        "threshold_operator": "gt",
-        "threshold_value": 3,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "pam_status", "op": "=", "value": "failed"},
-            {"field": "dstuser", "op": "=", "value": "root"},
-        ],
-    },
-    {
-        "external_id": "splunk-linux-systemd-persistence-unit",
-        "source_id": "splunk_research",
-        "source_name": "Splunk Security Research",
-        "source_url": "https://research.splunk.com/endpoint/linux_systemd_service_unit_created/",
-        "original_title": "Linux Systemd Service Unit Created or Reloaded via Command",
-        "description": (
-            "Identifica comandos systemctl enable / daemon-reload ou gravação em /etc/systemd/system "
-            "para persistência de serviços maliciosos no Linux."
-        ),
-        "original_format": "Splunk SPL",
-        "original_syntax": (
-            "index=os sourcetype=linux_audit command IN (\"*systemctl enable*\", \"*/etc/systemd/system/*\")"
-        ),
-        "datasource_hints": ["linux", "syslog"],
-        "severity": "medium",
-        "mitre_tactic": "persistence",
-        "mitre_technique": "T1543.002",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "command", "op": "=~", "value": "(?i).*(systemctl enable|/etc/systemd/system).*"},
-        ],
-    },
-    {
-        "external_id": "splunk-akamai-waf-xss-payload-blocked",
-        "source_id": "splunk_research",
-        "source_name": "Splunk Security Research",
-        "source_url": "https://research.splunk.com/web/waf_cross_site_scripting_payload_blocked/",
-        "original_title": "Akamai WAF Cross-Site Scripting (XSS) Payload Blocked",
-        "description": (
-            "Detecta tentativas de injeção de scripts maliciosos (<script>, javascript:, onerror=) "
-            "bloqueadas na camada de borda pelo WAF Akamai."
-        ),
-        "original_format": "Splunk SPL",
-        "original_syntax": (
-            "sourcetype=akamai:siem action=deny uri IN (\"*<script*\", \"*javascript:*\", \"*onerror=*\")"
-        ),
-        "datasource_hints": ["waf_akamai", "akamai"],
-        "severity": "medium",
-        "mitre_tactic": "initial-access",
-        "mitre_technique": "T1189",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "action", "op": "=", "value": "deny"},
-            {"field": "uri", "op": "=~", "value": "(?i).*(<script|javascript:|onerror=).*"},
-        ],
-    },
-    {
-        "external_id": "splunk-akamai-waf-log4shell-jndi-injection",
-        "source_id": "splunk_research",
-        "source_name": "Splunk Security Research",
-        "source_url": "https://research.splunk.com/web/waf_log4j_jndi_lookup_exploitation_attempt/",
-        "original_title": "Akamai WAF Log4j JNDI Lookup Exploitation Attempt",
-        "description": (
-            "Detecta strings de exploração Log4Shell (${jndi:ldap://, ${jndi:rmi://) "
-            "em requisições inspecionadas pelo WAF Akamai."
-        ),
-        "original_format": "Splunk SPL",
-        "original_syntax": (
-            "sourcetype=akamai:siem uri=\"*jndi:*\"\n"
-            "| stats count by srcip, uri, action"
-        ),
-        "datasource_hints": ["waf_akamai", "akamai"],
-        "severity": "critical",
-        "mitre_tactic": "initial-access",
-        "mitre_technique": "T1190",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "uri", "op": "=~", "value": "(?i).*jndi:(ldap|rmi|dns).*"},
-        ],
-    },
-    {
-        "external_id": "splunk-win-security-user-account-created-4720",
-        "source_id": "splunk_research",
-        "source_name": "Splunk Security Research",
-        "source_url": "https://research.splunk.com/endpoint/windows_user_account_created/",
-        "original_title": "Windows User Account Created (Event 4720)",
-        "description": (
-            "Detecta a criação de novas contas de usuário (EventID 4720) no Active Directory ou em "
-            "servidores locais, monitorando tentativas de persistência ou provisionamento não planejado."
-        ),
-        "original_format": "Splunk SPL",
-        "original_syntax": (
-            "`wineventlog_security` EventCode=4720 "
-            "| stats count min(_time) as firstTime max(_time) as lastTime by TargetUserName, SubjectUserName"
-        ),
-        "datasource_hints": ["windows", "active_directory", "ad_windows", "security"],
-        "severity": "medium",
-        "mitre_tactic": "persistence",
-        "mitre_technique": "T1136.001",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "EventID", "op": "=", "value": "4720"},
-        ],
-    },
-    {
-        "external_id": "splunk-win-security-special-privileges-logon-4672",
-        "source_id": "splunk_research",
-        "source_name": "Splunk Security Research",
-        "source_url": "https://research.splunk.com/endpoint/windows_special_privileges_assigned_logon/",
-        "original_title": "Special Privileges Assigned to New Logon (Event 4672)",
-        "description": (
-            "Detecta logons bem-sucedidos em controladores de domínio e servidores Windows onde privilégios "
-            "administrativos de alto impacto foram atribuídos à nova sessão (SeDebugPrivilege, SeSecurityPrivilege)."
-        ),
-        "original_format": "Splunk SPL",
-        "original_syntax": (
-            "`wineventlog_security` EventCode=4672 "
-            "| stats count by SubjectUserName, ComputerName"
-        ),
-        "datasource_hints": ["windows", "active_directory", "ad_windows", "security"],
-        "severity": "high",
-        "mitre_tactic": "privilege-escalation",
-        "mitre_technique": "T1078.002",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "EventID", "op": "=", "value": "4672"},
-        ],
-    },
-    {
-        "external_id": "splunk-fortigate-admin-login-failure",
-        "source_id": "splunk_research",
-        "source_name": "Splunk Security Research",
-        "source_url": "https://research.splunk.com/network/fortigate_admin_login_failure/",
-        "original_title": "FortiGate Administrator Login Failed or Authentication Error",
-        "description": (
-            "Detecta tentativas falhadas de autenticação de administradores na interface de gerência do FortiOS, "
-            "alertando contra tentativas de acesso não autorizado à infraestrutura central do firewall."
-        ),
-        "original_format": "Splunk SPL",
-        "original_syntax": (
-            "`fortigate` subtype=system (action=failed OR action=login-failed OR action=deny) "
-            "| stats count by user, srcip"
-        ),
-        "datasource_hints": ["fortigate", "fortinet", "firewall"],
-        "severity": "high",
-        "mitre_tactic": "credential-access",
-        "mitre_technique": "T1110",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "subtype", "op": "=~", "value": "(?i)system|auth|admin"},
-            {"field": "action", "op": "=~", "value": "(?i)failed|failure|deny|login-failed"},
-        ],
-    },
-
-    # --- 4. Elastic Detection Rules (https://elastic.github.io/detection-rules-explorer/)
-    {
-        "external_id": "elastic-win-scheduled-task-persistence-4698",
-        "source_id": "elastic_rules",
-        "source_name": "Elastic Detection Rules",
-        "source_url": "https://github.com/elastic/detection-rules/blob/main/rules/windows/persistence_scheduled_task_creation.toml",
-        "original_title": "Windows Scheduled Task Created via Security Event (4698)",
-        "description": (
-            "Identifica a criação de novas tarefas agendadas no Windows através do evento de "
-            "segurança 4698, mecanismo recorrente para execução persistente ou remota."
-        ),
-        "original_format": "Elastic EQL / KQL",
-        "original_syntax": (
-            "event.category : \"iam\" or event.code : \"4698\"\n"
-            "and winlog.channel : \"Security\"\n"
-            "and winlog.event_data.TaskName : *"
-        ),
-        "datasource_hints": ["windows", "ad_windows", "security"],
-        "severity": "medium",
-        "mitre_tactic": "persistence",
-        "mitre_technique": "T1053.005",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "event.code", "op": "=", "value": "4698"},
-        ],
-    },
-    {
-        "external_id": "elastic-sysmon-powershell-encoded-command-t1059-001",
-        "source_id": "elastic_rules",
-        "source_name": "Elastic Detection Rules",
-        "source_url": "https://github.com/elastic/detection-rules/blob/main/rules/windows/execution_powershell_encoded_command.toml",
-        "original_title": "Suspicious PowerShell Execution with EncodedCommand",
-        "description": (
-            "Detecta a execução do interpretador PowerShell utilizando parâmetros de codificação "
-            "Base64 (-enc / -EncodedCommand) capturados pelo Sysmon / Windows EventChannel (EventID 1)."
-        ),
-        "original_format": "Elastic EQL / KQL",
-        "original_syntax": (
-            "process where host.os.type == \"windows\" and event.code == \"1\"\n"
-            "and process.executable : \"*powershell.exe\"\n"
-            "and process.command_line : (\"*-enc*\", \"*-EncodedCommand*\")"
-        ),
-        "datasource_hints": ["sysmon", "ad_windows"],
-        "severity": "high",
-        "mitre_tactic": "execution",
-        "mitre_technique": "T1059.001",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "event.code", "op": "=", "value": "1"},
-            {"field": "process.command_line", "op": "=~", "value": "(?i).*(-enc|-EncodedCommand).*"},
-        ],
-    },
-    {
-        "external_id": "elastic-win-new-local-user-account-4720",
-        "source_id": "elastic_rules",
-        "source_name": "Elastic Detection Rules",
-        "source_url": "https://github.com/elastic/detection-rules/blob/main/rules/windows/persistence_local_scheduled_user_creation.toml",
-        "original_title": "Windows New User Account Created (Event 4720)",
-        "description": (
-            "Detecta a criação de uma nova conta de usuário local ou de domínio no Windows "
-            "(EventID 4720) para manutenção de acesso persistente."
-        ),
-        "original_format": "Elastic EQL / KQL",
-        "original_syntax": (
-            "iam where host.os.type == \"windows\" and event.code == \"4720\""
-        ),
-        "datasource_hints": ["windows", "ad_windows", "security"],
-        "severity": "medium",
-        "mitre_tactic": "persistence",
-        "mitre_technique": "T1136.001",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "event.code", "op": "=", "value": "4720"},
-        ],
-    },
-    {
-        "external_id": "elastic-win-regsvr32-remote-scriptlet-exec",
-        "source_id": "elastic_rules",
-        "source_name": "Elastic Detection Rules",
-        "source_url": "https://github.com/elastic/detection-rules/blob/main/rules/windows/defense_evasion_regsvr32_remote_scriptlet.toml",
-        "original_title": "Signed Binary Proxy Execution via Regsvr32 Scrobj",
-        "description": (
-            "Detecta abuso de regsvr32.exe com scrobj.dll e URLs HTTP/HTTPS (técnica Squiblydoo) "
-            "para contornar controle de aplicação (AppLocker)."
-        ),
-        "original_format": "Elastic EQL / KQL",
-        "original_syntax": (
-            "process where host.os.type == \"windows\" and process.executable : \"*regsvr32.exe\"\n"
-            "and process.command_line : (\"*scrobj.dll*\", \"*http:*\", \"*https:*\")"
-        ),
-        "datasource_hints": ["windows", "ad_windows", "sysmon"],
-        "severity": "high",
-        "mitre_tactic": "defense-evasion",
-        "mitre_technique": "T1218.010",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "process.command_line", "op": "=~", "value": "(?i).*regsvr32.*(scrobj|http).*"},
-        ],
-    },
-    {
-        "external_id": "elastic-win-rundll32-suspicious-invocation",
-        "source_id": "elastic_rules",
-        "source_name": "Elastic Detection Rules",
-        "source_url": "https://github.com/elastic/detection-rules/blob/main/rules/windows/defense_evasion_suspicious_rundll32_execution.toml",
-        "original_title": "Suspicious Rundll32 Execution from Unusual Directory",
-        "description": (
-            "Identifica execuções de rundll32.exe carregando DLLs de diretórios temporários "
-            "(AppData, Temp, ProgramData) ou via javascript/mshtml."
-        ),
-        "original_format": "Elastic EQL / KQL",
-        "original_syntax": (
-            "process where host.os.type == \"windows\" and process.executable : \"*rundll32.exe\"\n"
-            "and process.command_line : (\"*AppData*\", \"*ProgramData*\", \"*mshtml*\")"
-        ),
-        "datasource_hints": ["windows", "ad_windows", "sysmon"],
-        "severity": "high",
-        "mitre_tactic": "defense-evasion",
-        "mitre_technique": "T1218.011",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "process.command_line", "op": "=~", "value": "(?i).*rundll32.*(AppData|ProgramData|mshtml).*"},
-        ],
-    },
-    {
-        "external_id": "elastic-win-eventlog-service-stopped-1100",
-        "source_id": "elastic_rules",
-        "source_name": "Elastic Detection Rules",
-        "source_url": "https://github.com/elastic/detection-rules/blob/main/rules/windows/defense_evasion_eventlog_service_stopped.toml",
-        "original_title": "Windows Event Log Service Shutdown (Event 1100)",
-        "description": (
-            "Detecta encerramento do serviço de registro de eventos do Windows (EventID 1100), "
-            "podendo indicar tentativa de interromper coleta de telemetria de segurança."
-        ),
-        "original_format": "Elastic EQL / KQL",
-        "original_syntax": (
-            "event.code : \"1100\" and winlog.channel : \"Security\""
-        ),
-        "datasource_hints": ["windows", "ad_windows", "security"],
-        "severity": "high",
-        "mitre_tactic": "defense-evasion",
-        "mitre_technique": "T1562.002",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "event.code", "op": "=", "value": "1100"},
-        ],
-    },
-    {
-        "external_id": "elastic-linux-sshd-invalid-user-bruteforce-t1110",
-        "source_id": "elastic_rules",
-        "source_name": "Elastic Detection Rules",
-        "source_url": "https://github.com/elastic/detection-rules/blob/main/rules/linux/credential_access_sshd_invalid_user_bruteforce.toml",
-        "original_title": "Linux SSHD Brute Force Against Non-Existent Users (Rule 5710)",
-        "description": (
-            "Identifica múltiplas falhas de autenticação PAM no daemon SSHD (regra Wazuh 5710) "
-            "utilizando nomes de usuários inválidos ou enumeração de contas em servidores Linux."
-        ),
-        "original_format": "Elastic EQL / KQL",
-        "original_syntax": (
-            "authentication where host.os.type == \"linux\" and rule.id == \"5710\"\n"
-            "and pam_status == \"failed\" and source.ip : *"
-        ),
-        "datasource_hints": ["linux", "sshd", "syslog"],
-        "severity": "high",
-        "mitre_tactic": "credential-access",
-        "mitre_technique": "T1110.001",
-        "threshold_operator": "gt",
-        "threshold_value": 5,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "rule.id", "op": "=", "value": "5710"},
-            {"field": "pam_status", "op": "=", "value": "failed"},
-        ],
-    },
-    {
-        "external_id": "elastic-linux-kernel-module-load-insmod",
-        "source_id": "elastic_rules",
-        "source_name": "Elastic Detection Rules",
-        "source_url": "https://github.com/elastic/detection-rules/blob/main/rules/linux/persistence_kernel_module_load_insmod.toml",
-        "original_title": "Linux Kernel Module Loaded via Insmod or Modprobe",
-        "description": (
-            "Detecta carregamento dinâmico de módulos de kernel Linux via insmod ou modprobe, "
-            "técnica empregada por rootkits LKM para ocultação de processos."
-        ),
-        "original_format": "Elastic EQL / KQL",
-        "original_syntax": (
-            "process where host.os.type == \"linux\" and process.command_line : (\"*insmod*\", \"*modprobe*\")"
-        ),
-        "datasource_hints": ["linux", "syslog"],
-        "severity": "critical",
-        "mitre_tactic": "persistence",
-        "mitre_technique": "T1547.006",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "process.command_line", "op": "=~", "value": "(?i).*(insmod|modprobe).*"},
-        ],
-    },
-    {
-        "external_id": "elastic-linux-crontab-persistence-modification",
-        "source_id": "elastic_rules",
-        "source_name": "Elastic Detection Rules",
-        "source_url": "https://github.com/elastic/detection-rules/blob/main/rules/linux/persistence_crontab_file_modified.toml",
-        "original_title": "Linux Suspicious Crontab Enumeration or Modification",
-        "description": (
-            "Identifica alterações em arquivos /etc/crontab, /var/spool/cron ou execução de "
-            "crontab -e para agendamento persistente de tarefas em hosts Linux."
-        ),
-        "original_format": "Elastic EQL / KQL",
-        "original_syntax": (
-            "process where host.os.type == \"linux\" and process.command_line : (\"*crontab*\", \"*/etc/cron*\")"
-        ),
-        "datasource_hints": ["linux", "syslog"],
-        "severity": "medium",
-        "mitre_tactic": "persistence",
-        "mitre_technique": "T1053.003",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "process.command_line", "op": "=~", "value": "(?i).*(crontab|/etc/cron).*"},
-        ],
-    },
-    {
-        "external_id": "elastic-o365-dlp-policy-sensitive-match",
-        "source_id": "elastic_rules",
-        "source_name": "Elastic Detection Rules",
-        "source_url": "https://github.com/elastic/detection-rules/blob/main/rules/integrations/m365/dlp_policy_sensitive_rule_match.toml",
-        "original_title": "Microsoft 365 DLP Policy Match on Sensitive Information",
-        "description": (
-            "Detecta acionamento de regras de Data Loss Prevention (DLP) no Microsoft 365 "
-            "(RuleMatch) indicando compartilhamento ou envio externo de dados sensíveis."
-        ),
-        "original_format": "Elastic EQL / KQL",
-        "original_syntax": (
-            "event.dataset : \"o365.audit\" and event.action : \"RuleMatch\""
-        ),
-        "datasource_hints": ["office365", "m365"],
-        "severity": "high",
-        "mitre_tactic": "exfiltration",
-        "mitre_technique": "T1048",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "event.action", "op": "=", "value": "RuleMatch"},
-        ],
-    },
-    {
-        "external_id": "elastic-o365-anonymous-sharing-link-created",
-        "source_id": "elastic_rules",
-        "source_name": "Elastic Detection Rules",
-        "source_url": "https://github.com/elastic/detection-rules/blob/main/rules/integrations/m365/anonymous_sharing_link_created.toml",
-        "original_title": "SharePoint Anonymous Link Created for Corporate Document",
-        "description": (
-            "Detecta geração de links de compartilhamento anônimo (AnonymousLinkCreated) "
-            "no SharePoint Online / OneDrive, expondo documentos internos sem autenticação."
-        ),
-        "original_format": "Elastic EQL / KQL",
-        "original_syntax": (
-            "event.dataset : \"o365.audit\" and event.action : \"AnonymousLinkCreated\""
-        ),
-        "datasource_hints": ["office365", "m365"],
-        "severity": "medium",
-        "mitre_tactic": "exfiltration",
-        "mitre_technique": "T1567",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "event.action", "op": "=", "value": "AnonymousLinkCreated"},
-        ],
-    },
-    {
-        "external_id": "elastic-fortigate-ipsec-vpn-negotiation-failure",
-        "source_id": "elastic_rules",
-        "source_name": "Elastic Detection Rules",
-        "source_url": "https://github.com/elastic/detection-rules/blob/main/rules/network/fortinet_ipsec_vpn_negotiation_failure.toml",
-        "original_title": "FortiGate IPSec VPN Phase-1 Negotiation Failure Spike",
-        "description": (
-            "Detecta múltiplas falhas de negociação IKE/IPSec Phase-1 no FortiGate, "
-            "indicando tentativa de enumeração de peers VPN ou ataque a chave pré-compartilhada."
-        ),
-        "original_format": "Elastic EQL / KQL",
-        "original_syntax": (
-            "event.dataset : \"fortinet.firewall\" and subtype : \"vpn\" and event.action : \"negotiate\""
-        ),
-        "datasource_hints": ["fortigate", "fortinet"],
-        "severity": "medium",
-        "mitre_tactic": "initial-access",
-        "mitre_technique": "T1133",
-        "threshold_operator": "gt",
-        "threshold_value": 5,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "subtype", "op": "=", "value": "vpn"},
-            {"field": "event.action", "op": "=", "value": "negotiate"},
-        ],
-    },
-    {
-        "external_id": "elastic-akamai-waf-credential-stuffing-login",
-        "source_id": "elastic_rules",
-        "source_name": "Elastic Detection Rules",
-        "source_url": "https://github.com/elastic/detection-rules/blob/main/rules/web/akamai_waf_high_rate_credential_stuffing.toml",
-        "original_title": "Akamai WAF High Rate POST Credential Stuffing on Auth URI",
-        "description": (
-            "Detecta rajadas de requisições POST bloqueadas em endpoints de autenticação (/login, "
-            "/auth, /oauth/token) no WAF Akamai características de Credential Stuffing."
-        ),
-        "original_format": "Elastic EQL / KQL",
-        "original_syntax": (
-            "http.request.method : \"POST\" and event.action : \"deny\" and url.path : (\"*/login*\", \"*/auth*\")"
-        ),
-        "datasource_hints": ["waf_akamai", "akamai"],
-        "severity": "high",
-        "mitre_tactic": "credential-access",
-        "mitre_technique": "T1110.004",
-        "threshold_operator": "gt",
-        "threshold_value": 10,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "http.request.method", "op": "=", "value": "POST"},
-            {"field": "event.action", "op": "=", "value": "deny"},
-            {"field": "url.path", "op": "=~", "value": "(?i).*(/login|/auth|/token).*"},
-        ],
-    },
-    {
-        "external_id": "elastic-akamai-waf-graphql-introspection-probe",
-        "source_id": "elastic_rules",
-        "source_name": "Elastic Detection Rules",
-        "source_url": "https://github.com/elastic/detection-rules/blob/main/rules/web/akamai_waf_graphql_introspection_probe.toml",
-        "original_title": "Akamai WAF GraphQL Introspection and Schema Enumeration",
-        "description": (
-            "Detecta consultas de introspecção GraphQL (__schema, __type) interceptadas "
-            "pelo WAF Akamai visant mapear endpoints e objetos internos da API."
-        ),
-        "original_format": "Elastic EQL / KQL",
-        "original_syntax": (
-            "url.path : \"*/graphql*\" and event.action : \"deny\""
-        ),
-        "datasource_hints": ["waf_akamai", "akamai"],
-        "severity": "medium",
-        "mitre_tactic": "discovery",
-        "mitre_technique": "T1590",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "url.path", "op": "=~", "value": "(?i).*(/graphql|__schema).*"},
-            {"field": "event.action", "op": "=", "value": "deny"},
-        ],
-    },
-    {
-        "external_id": "elastic-win-security-user-account-deleted-4726",
-        "source_id": "elastic_rules",
-        "source_name": "Elastic Detection Rules",
-        "source_url": "https://github.com/elastic/detection-rules/blob/main/rules/windows/persistence_user_account_deleted.toml",
-        "original_title": "Windows User Account Deleted (Event 4726)",
-        "description": (
-            "Identifica a exclusão de contas de usuário (EventID 4726) no Active Directory, técnica empregada "
-            "em sabotagem interna ou por adversários para eliminar vestígios de contas de teste pós-invasão."
-        ),
-        "original_format": "Elastic EQL / KQL",
-        "original_syntax": (
-            "iam where event.action == \"user-account-deleted\" and winlog.event_id == 4726"
-        ),
-        "datasource_hints": ["windows", "active_directory", "ad_windows", "security"],
-        "severity": "medium",
-        "mitre_tactic": "impact",
-        "mitre_technique": "T1531",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "EventID", "op": "=", "value": "4726"},
-        ],
-    },
-    {
-        "external_id": "elastic-win-security-group-member-added",
-        "source_id": "elastic_rules",
-        "source_name": "Elastic Detection Rules",
-        "source_url": "https://github.com/elastic/detection-rules/blob/main/rules/windows/persistence_group_member_added.toml",
-        "original_title": "Member Added to Security-Enabled Group (Event 4728 / 4732 / 4756)",
-        "description": (
-            "Detecta a inclusão de membros em grupos de segurança no Active Directory (EventID 4728, 4732 ou 4756), "
-            "técnica essencial de concessão de acessos privilegiados para operadores e atacantes."
-        ),
-        "original_format": "Elastic EQL / KQL",
-        "original_syntax": (
-            "iam where winlog.event_id in (4728, 4732, 4756)"
-        ),
-        "datasource_hints": ["windows", "active_directory", "ad_windows", "security"],
-        "severity": "high",
-        "mitre_tactic": "persistence",
-        "mitre_technique": "T1098",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "EventID", "op": "=~", "value": "4728|4732|4756"},
-        ],
-    },
-    {
-        "external_id": "elastic-fortigate-utm-security-signature-blocked",
-        "source_id": "elastic_rules",
-        "source_name": "Elastic Detection Rules",
-        "source_url": "https://github.com/elastic/detection-rules/blob/main/rules/network/fortinet_utm_security_signature_blocked.toml",
-        "original_title": "FortiGate UTM Security Signature Triggered (IPS / Antivirus)",
-        "description": (
-            "Detecta alertas e bloqueios dos motores de segurança unificada UTM (IPS, Antivírus, App-Control "
-            "ou WebFilter) no FortiGate, indicando ataques e explorações barrados no perímetro de rede."
-        ),
-        "original_format": "Elastic EQL / KQL",
-        "original_syntax": (
-            "network where event.dataset == \"fortinet.firewall\" and "
-            "subtype in (\"ips\", \"virus\", \"app-ctrl\", \"webfilter\") and "
-            "event.action in (\"deny\", \"drop\", \"block\", \"blocked\", \"dropped\", \"close\")"
-        ),
-        "datasource_hints": ["fortigate", "fortinet", "firewall"],
-        "severity": "critical",
-        "mitre_tactic": "initial-access",
-        "mitre_technique": "T1190",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "subtype", "op": "=~", "value": "(?i)ips|virus|app-ctrl|webfilter"},
-            {"field": "action", "op": "=~", "value": "(?i)deny|drop|block|blocked|dropped|close"},
-        ],
-    },
-
-    # --- 5. Candidatas que devem ser classificadas como MÁS CANDIDATAS (Regra 2)
-    # 5.1. Incompatível por tecnologia inexistente no catálogo D.A.N.T.E. (Passo 2.1)
-    {
-        "external_id": "sigma-aws-cloudtrail-root-access-key-created",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/cloud/aws/aws_cloudtrail_root_access_key_created.yml",
-        "original_title": "AWS IAM Root Access Key Created",
-        "description": "Detecta criação de Access Key para o usuário root na AWS CloudTrail.",
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: AWS IAM Root Access Key Created\n"
-            "logsource:\n"
-            "  product: aws\n"
-            "  service: cloudtrail\n"
-            "detection:\n"
-            "  selection:\n"
-            "    eventName: 'CreateAccessKey'\n"
-            "  condition: selection"
-        ),
-        "datasource_hints": ["aws_cloudtrail", "aws"],
-        "severity": "critical",
-        "mitre_tactic": "persistence",
-        "mitre_technique": "T1098.001",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "eventName", "op": "=", "value": "CreateAccessKey"},
-        ],
-    },
-    # 5.2. Incompatível por tecnologia Okta inexistente no catálogo D.A.N.T.E. (Passo 2.1)
-    {
-        "external_id": "splunk-okta-mfa-policy-bypass",
-        "source_id": "splunk_research",
-        "source_name": "Splunk Security Research",
-        "source_url": "https://research.splunk.com/cloud/okta_mfa_policy_disabled_or_modified/",
-        "original_title": "Okta MFA Policy Disabled or Modified",
-        "description": "Detecta desativação de políticas de MFA nos logs de sistema do Okta.",
-        "original_format": "Splunk SPL",
-        "original_syntax": "`okta` eventType=\"policy.lifecycle.deactivate\"",
-        "datasource_hints": ["okta", "okta_im2"],
-        "severity": "high",
-        "mitre_tactic": "defense-evasion",
-        "mitre_technique": "T1556",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "eventType", "op": "=", "value": "policy.lifecycle.deactivate"},
-        ],
-    },
-    # 5.3. Passa no Passo 2.1 (Windows), mas REPROVA no Passo 2.3 por incompatibilidade de
-    #      campos proprietários de EDR inexistentes no Wazuh/Loki dos clientes -> Má Candidata!
-    {
-        "external_id": "elastic-win-proprietary-edr-kernel-call-tree",
-        "source_id": "elastic_rules",
-        "source_name": "Elastic Detection Rules",
-        "source_url": "https://github.com/elastic/detection-rules/blob/main/rules/windows/defense_evasion_kernel_call_tree_anomaly.toml",
-        "original_title": "Proprietary EDR Kernel Call Tree Hash Anomaly",
-        "description": "Regra dependente de telemetria proprietária de kernel inexistente no pipeline Wazuh/Loki.",
-        "original_format": "Elastic EQL / KQL",
-        "original_syntax": (
-            "event.dataset : \"edr.proprietary\" and "
-            "crowdstrike.falcon_tree_id : * and tanium.kernel_call_hash : *"
-        ),
-        "datasource_hints": ["windows", "ad_windows"],
-        "severity": "medium",
-        "mitre_tactic": "execution",
-        "mitre_technique": "T1204",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "crowdstrike.falcon_tree_id", "op": "=~", "value": ".+"},
-            {"field": "tanium.kernel_call_hash", "op": "=~", "value": ".+"},
-            {"field": "carbonblack.process_guid_raw", "op": "=~", "value": ".+"},
-        ],
-    },
-
-    # =========================================================================
-    # REGRAS ORIENTADAS A PERÍMETRO (FIREWALL, WAF/WEB, ANTIMALWARE/EDR, CLOUD)
-    # =========================================================================
-    # --- Perímetro: Firewall (Palo Alto, Check Point, pfSense, Fortigate, etc.)
-    {
-        "external_id": "sigma-fw-paloalto-c2-beaconing",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/network/net_firewall_c2_beaconing.yml",
-        "original_title": "Firewall Outbound C2 Beaconing Communication",
-        "description": "Detecta conexões de saída em portas não-padrão ou tráfego repetitivo associado a canais de Command & Control (C2) no perímetro de Firewall.",
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: Firewall Outbound C2 Beaconing Communication\n"
-            "logsource:\n"
-            "  category: firewall\n"
-            "detection:\n"
-            "  selection:\n"
-            "    action: 'allow'\n"
-            "    destination.port: '8443'\n"
-            "  condition: selection\n"
-            "level: high"
-        ),
-        "perimeter": "firewall",
-        "datasource_hints": ["paloalto", "firewall", "fortigate", "fortinet", "panos"],
-        "severity": "high",
-        "mitre_tactic": "command-and-control",
-        "mitre_technique": "T1071.001",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "data_action", "op": "=", "value": "allow"},
-            {"field": "data_dstport", "op": "=", "value": "8443"},
-        ],
-    },
-    {
-        "external_id": "sigma-fw-checkpoint-portscan-drop",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/network/net_firewall_portscan_drop.yml",
-        "original_title": "Firewall Multiple Port Scan Drops from External Source",
-        "description": "Detecta rajada de pacotes bloqueados no Firewall originados do mesmo endereço IP externo contra múltiplas portas da borda.",
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: Firewall Multiple Port Scan Drops from External Source\n"
-            "logsource:\n"
-            "  category: firewall\n"
-            "detection:\n"
-            "  selection:\n"
-            "    action: 'deny'\n"
-            "    subtype: 'packet_drop'\n"
-            "  condition: selection\n"
-            "level: medium"
-        ),
-        "perimeter": "firewall",
-        "datasource_hints": ["checkpoint", "firewall", "fortigate", "fortinet", "pfsense"],
-        "severity": "medium",
-        "mitre_tactic": "reconnaissance",
-        "mitre_technique": "T1046",
-        "threshold_operator": "gt",
-        "threshold_value": 5,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "data_action", "op": "=", "value": "deny"},
-            {"field": "data_subtype", "op": "=", "value": "packet_drop"},
-        ],
-    },
-    {
-        "external_id": "sigma-fw-inbound-rdp-smb-wan",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/network/net_firewall_inbound_sensitive_ports.yml",
-        "original_title": "Firewall Blocked Inbound Access to Sensitive Ports (RDP/SMB)",
-        "description": "Identifica tentativas externas bloqueadas de conexão direta da Internet contra portas críticas como RDP (3389) ou SMB (445).",
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: Firewall Blocked Inbound Access to Sensitive Ports (RDP/SMB)\n"
-            "logsource:\n"
-            "  category: firewall\n"
-            "detection:\n"
-            "  selection:\n"
-            "    dstport:\n"
-            "      - '3389'\n"
-            "      - '445'\n"
-            "    action: 'deny'\n"
-            "  condition: selection\n"
-            "level: high"
-        ),
-        "perimeter": "firewall",
-        "datasource_hints": ["firewall", "fortigate", "paloalto", "pfsense", "opnsense"],
-        "severity": "high",
-        "mitre_tactic": "initial-access",
-        "mitre_technique": "T1190",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "data_action", "op": "=", "value": "deny"},
-            {"field": "data_dstport", "op": "=~", "value": "3389|445"},
-        ],
-    },
-    {
-        "external_id": "splunk-fw-tor-exit-node-connection",
-        "source_id": "splunk_research",
-        "source_name": "Splunk Security Research",
-        "source_url": "https://research.splunk.com/network/firewall_communication_with_tor_exit_node/",
-        "original_title": "Firewall Communication with Known Tor Exit Node",
-        "description": "Detecta tráfego de rede ou sessões estabelecidas com nós de saída da rede Tor através dos logs de borda do Firewall.",
-        "original_format": "Splunk SPL",
-        "original_syntax": "`firewall` action=allowed subtype=tor_connection",
-        "perimeter": "firewall",
-        "datasource_hints": ["firewall", "fortigate", "cisco_asa", "fortinet"],
-        "severity": "high",
-        "mitre_tactic": "command-and-control",
-        "mitre_technique": "T1090.003",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "data_action", "op": "=", "value": "allowed"},
-            {"field": "data_subtype", "op": "=", "value": "tor_connection"},
-        ],
-    },
-    {
-        "external_id": "elastic-fw-ssl-vpn-bruteforce",
-        "source_id": "elastic_rules",
-        "source_name": "Elastic Detection Rules",
-        "source_url": "https://github.com/elastic/detection-rules/blob/main/rules/network/firewall_ssl_vpn_bruteforce_failure.toml",
-        "original_title": "Firewall Multiple Failed SSL VPN Logins",
-        "description": "Detecta múltiplos acessos de autenticação VPN rejeitados seguidos por tentativa de login no portal de acesso remoto do Firewall.",
-        "original_format": "Elastic EQL / KQL",
-        "original_syntax": "event.category: \"authentication\" and firewall.action: \"deny\" and firewall.subtype: \"sslvpn_login\"",
-        "perimeter": "firewall",
-        "datasource_hints": ["firewall", "fortigate", "fortinet", "sslvpn", "paloalto"],
-        "severity": "medium",
-        "mitre_tactic": "credential-access",
-        "mitre_technique": "T1110.001",
-        "threshold_operator": "gt",
-        "threshold_value": 3,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "data_action", "op": "=", "value": "deny"},
-            {"field": "data_subtype", "op": "=", "value": "sslvpn_login"},
-        ],
-    },
-    # --- Perímetro: WAF / Web (Akamai, Cloudflare, AWS WAF, ModSecurity, etc.)
-    {
-        "external_id": "sigma-waf-sqli-union-select",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/web/web_waf_sqli_union_select.yml",
-        "original_title": "WAF SQL Injection Pattern Detected in HTTP Request",
-        "description": "Detecta vetores clássicos de SQL Injection contendo palavras-chave como UNION SELECT ou OR 1=1 na URI ou corpo da requisição web.",
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: WAF SQL Injection Pattern Detected in HTTP Request\n"
-            "logsource:\n"
-            "  category: web\n"
-            "detection:\n"
-            "  selection:\n"
-            "    uri|contains: 'union select'\n"
-            "  condition: selection\n"
-            "level: critical"
-        ),
-        "perimeter": "waf_web",
-        "datasource_hints": ["waf", "web", "waf_akamai", "cloudflare", "awswaf"],
-        "severity": "critical",
-        "mitre_tactic": "initial-access",
-        "mitre_technique": "T1190",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "data_uri", "op": "=~", "value": "(?i).*union.*select.*"},
-            {"field": "data_action", "op": "=", "value": "block"},
-        ],
-    },
-    {
-        "external_id": "sigma-waf-xss-script-injection",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/web/web_waf_xss_script_injection.yml",
-        "original_title": "WAF Cross-Site Scripting (XSS) Attack Blocked",
-        "description": "Identifica tentativas de injeção de scripts maliciosos (XSS) com tags <script> ou handlers javascript: bloqueadas pelo Web Application Firewall.",
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: WAF Cross-Site Scripting (XSS) Attack Blocked\n"
-            "logsource:\n"
-            "  category: web\n"
-            "detection:\n"
-            "  selection:\n"
-            "    action: 'block'\n"
-            "    attack_type: 'XSS'\n"
-            "  condition: selection\n"
-            "level: high"
-        ),
-        "perimeter": "waf_web",
-        "datasource_hints": ["waf", "web", "waf_akamai", "cloudflare", "modsecurity"],
-        "severity": "high",
-        "mitre_tactic": "initial-access",
-        "mitre_technique": "T1059.007",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "data_attack_type", "op": "=", "value": "XSS"},
-            {"field": "data_action", "op": "=", "value": "block"},
-        ],
-    },
-    {
-        "external_id": "splunk-waf-path-traversal-attack",
-        "source_id": "splunk_research",
-        "source_name": "Splunk Security Research",
-        "source_url": "https://research.splunk.com/web/waf_directory_path_traversal_attempt/",
-        "original_title": "WAF Directory Path Traversal Attempt",
-        "description": "Detecta padrões de escape de diretório (../, ..%2f ou /etc/passwd) submetidos contra aplicações web corporativas.",
-        "original_format": "Splunk SPL",
-        "original_syntax": "`waf` uri=\"*../*\" action=\"block\"",
-        "perimeter": "waf_web",
-        "datasource_hints": ["waf", "web", "waf_akamai", "awswaf", "imperva"],
-        "severity": "high",
-        "mitre_tactic": "initial-access",
-        "mitre_technique": "T1190",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "data_uri", "op": "=~", "value": ".*(\\.\\./|\\.\\.%2[fF]).*"},
-            {"field": "data_action", "op": "=", "value": "block"},
-        ],
-    },
-    {
-        "external_id": "elastic-waf-log4j-jndi-rce",
-        "source_id": "elastic_rules",
-        "source_name": "Elastic Detection Rules",
-        "source_url": "https://github.com/elastic/detection-rules/blob/main/rules/web/web_waf_log4j_jndi_rce.toml",
-        "original_title": "WAF Log4j JNDI Remote Code Execution Attempt",
-        "description": "Detecta strings contendo `${jndi:ldap://` ou `${jndi:dns://` enviadas em cabeçalhos HTTP ou query strings bloqueadas pelo WAF.",
-        "original_format": "Elastic EQL / KQL",
-        "original_syntax": "http.request.uri : \"*${jndi:*\" and waf.action : \"block\"",
-        "perimeter": "waf_web",
-        "datasource_hints": ["waf", "web", "waf_akamai", "cloudflare", "awswaf"],
-        "severity": "critical",
-        "mitre_tactic": "initial-access",
-        "mitre_technique": "T1190",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "data_uri", "op": "=~", "value": "(?i).*\\$\\{jndi:.*"},
-            {"field": "data_action", "op": "=", "value": "block"},
-        ],
-    },
-    {
-        "external_id": "detection-fyi-waf-ssrf-cloud-metadata",
-        "source_id": "detection_fyi",
-        "source_name": "detection.fyi",
-        "source_url": "https://detection.fyi/elastic/detection-rules/cross-platform/credential_access_web_server_cloud_imds_ssrf_request/",
-        "original_title": "WAF Server-Side Request Forgery Targeting Cloud Metadata",
-        "description": "Identifica requisições HTTP maliciosas direcionadas ao endereço de metadados de nuvem 169.254.169.254 para roubo de tokens IAM de instâncias.",
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: WAF Server-Side Request Forgery Targeting Cloud Metadata\n"
-            "logsource:\n"
-            "  category: web\n"
-            "detection:\n"
-            "  selection:\n"
-            "    uri|contains: '169.254.169.254'\n"
-            "  condition: selection\n"
-            "level: critical"
-        ),
-        "perimeter": "waf_web",
-        "datasource_hints": ["waf", "web", "waf_akamai", "awswaf", "cloudflare"],
-        "severity": "critical",
-        "mitre_tactic": "credential-access",
-        "mitre_technique": "T1552.005",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "data_uri", "op": "=~", "value": ".*169\\.254\\.169\\.254.*"},
-            {"field": "data_action", "op": "=", "value": "block"},
-        ],
-    },
-    # --- Perímetro: Antimalware / EDR (CrowdStrike, Symantec, Kaspersky, Sophos, Defender, etc.)
-    {
-        "external_id": "sigma-edr-process-injection-remotethread",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_susp_createremotethread.yml",
-        "original_title": "EDR Suspicious Process Injection via CreateRemoteThread",
-        "description": "Detecta tentativa de injeção de código em processos legítimos do sistema operacional reportada por agentes de endpoint/EDR.",
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: EDR Suspicious Process Injection via CreateRemoteThread\n"
-            "logsource:\n"
-            "  category: edr\n"
-            "detection:\n"
-            "  selection:\n"
-            "    threat_name: 'ProcessInjection'\n"
-            "    action: 'blocked'\n"
-            "  condition: selection\n"
-            "level: critical"
-        ),
-        "perimeter": "endpoint_edr",
-        "datasource_hints": ["crowdstrike", "edr", "symantec", "kaspersky", "sophos", "defender", "ad_windows"],
-        "severity": "critical",
-        "mitre_tactic": "defense-evasion",
-        "mitre_technique": "T1055.001",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "data_threat_name", "op": "=", "value": "ProcessInjection"},
-            {"field": "data_action", "op": "=", "value": "blocked"},
-        ],
-    },
-    {
-        "external_id": "sigma-edr-vssadmin-shadow-delete",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_vssadmin_delete_shadows.yml",
-        "original_title": "EDR Volume Shadow Copy Deletion via VSSAdmin (Ransomware)",
-        "description": "Detecta comando vssadmin.exe delete shadows comumente executado por cepas de Ransomware antes de iniciar a criptografia de discos.",
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: EDR Volume Shadow Copy Deletion via VSSAdmin (Ransomware)\n"
-            "logsource:\n"
-            "  category: process_creation\n"
-            "detection:\n"
-            "  selection:\n"
-            "    Image|endswith: '\\vssadmin.exe'\n"
-            "    CommandLine|contains: 'delete shadows'\n"
-            "  condition: selection\n"
-            "level: critical"
-        ),
-        "perimeter": "endpoint_edr",
-        "datasource_hints": ["crowdstrike", "kaspersky", "symantec", "sophos", "defender", "ad_windows"],
-        "severity": "critical",
-        "mitre_tactic": "impact",
-        "mitre_technique": "T1490",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "win_eventdata_image", "op": "=~", "value": "(?i).*vssadmin\\.exe"},
-            {"field": "win_eventdata_commandLine", "op": "=~", "value": "(?i).*delete.*shadows.*"},
-        ],
-    },
-    {
-        "external_id": "splunk-edr-powershell-encoded-execution",
-        "source_id": "splunk_research",
-        "source_name": "Splunk Security Research",
-        "source_url": "https://research.splunk.com/endpoint/powershell_suspicious_encoded_command/",
-        "original_title": "EDR Suspicious PowerShell EncodedCommand Execution",
-        "description": "Identifica execução de PowerShell com parâmetros de código Base64 (-enc, -encodedcommand) frequentemente usados por loaders de ameaças.",
-        "original_format": "Splunk SPL",
-        "original_syntax": "`endpoint` process_name=\"powershell.exe\" command_line=\"*-enc*\"",
-        "perimeter": "endpoint_edr",
-        "datasource_hints": ["sophos", "crowdstrike", "symantec", "kaspersky", "defender", "ad_windows"],
-        "severity": "high",
-        "mitre_tactic": "execution",
-        "mitre_technique": "T1059.001",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "win_eventdata_image", "op": "=~", "value": "(?i).*powershell\\.exe"},
-            {"field": "win_eventdata_commandLine", "op": "=~", "value": "(?i).*-(e|enc|encodedcommand).*"},
-        ],
-    },
-    {
-        "external_id": "elastic-edr-lsass-memory-access-mimikatz",
-        "source_id": "elastic_rules",
-        "source_name": "Elastic Detection Rules",
-        "source_url": "https://github.com/elastic/detection-rules/blob/main/rules/windows/credential_access_lsass_memory_mimikatz.toml",
-        "original_title": "EDR LSASS Process Memory Dump (Credential Theft)",
-        "description": "Detecta acesso anômalo de leitura/cópia de memória ao processo lsass.exe visando extração de hashes NTLM e credenciais em texto claro.",
-        "original_format": "Elastic EQL / KQL",
-        "original_syntax": "process.name : \"lsass.exe\" and event.action : \"memory_dump_attempt\"",
-        "perimeter": "endpoint_edr",
-        "datasource_hints": ["crowdstrike", "defender", "kaspersky", "symantec", "sophos", "ad_windows"],
-        "severity": "critical",
-        "mitre_tactic": "credential-access",
-        "mitre_technique": "T1003.001",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "win_eventdata_targetImage", "op": "=~", "value": "(?i).*lsass\\.exe"},
-            {"field": "win_eventdata_grantedAccess", "op": "=~", "value": "(?i).*0x1010.*"},
-        ],
-    },
-    {
-        "external_id": "detection-fyi-edr-lolbas-certutil-download",
-        "source_id": "detection_fyi",
-        "source_name": "detection.fyi",
-        "source_url": "https://detection.fyi/elastic/detection-rules/windows/defense_evasion_suspicious_certutil_commands/",
-        "original_title": "EDR LOLBAS Remote File Download via Certutil",
-        "description": "Detecta o uso do utilitário administrativo legítimo certutil.exe com os switches -urlcache e -split para download de payloads remotos.",
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: EDR LOLBAS Remote File Download via Certutil\n"
-            "logsource:\n"
-            "  category: process_creation\n"
-            "detection:\n"
-            "  selection:\n"
-            "    Image|endswith: '\\certutil.exe'\n"
-            "    CommandLine|contains: 'urlcache'\n"
-            "  condition: selection\n"
-            "level: high"
-        ),
-        "perimeter": "endpoint_edr",
-        "datasource_hints": ["crowdstrike", "symantec", "kaspersky", "sophos", "defender", "ad_windows"],
-        "severity": "high",
-        "mitre_tactic": "defense-evasion",
-        "mitre_technique": "T1105",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "win_eventdata_image", "op": "=~", "value": "(?i).*certutil\\.exe"},
-            {"field": "win_eventdata_commandLine", "op": "=~", "value": "(?i).*urlcache.*"},
-        ],
-    },
-    # --- Perímetro: Identidade (Active Directory, Kerberos, Okta, etc.)
-    {
-        "external_id": "sigma-ad-dcsync-replication-event-4662",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/builtin/security/win_security_ad_replication_non_machine_account.yml",
-        "original_title": "Active Directory Replication from Non Machine Account - DcSync Indicator",
-        "description": "Detecta solicitação não autorizada de sincronização de credenciais do domínio utilizando privilégios DS-Replication-Get-Changes-All.",
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: Active Directory Replication from Non Machine Account - DcSync Indicator\n"
-            "logsource:\n"
-            "  product: windows\n"
-            "  service: security\n"
-            "detection:\n"
-            "  selection:\n"
-            "    EventID: '4662'\n"
-            "    AccessMask: '0x100'\n"
-            "  condition: selection\n"
-            "level: critical"
-        ),
-        "perimeter": "identity_iam",
-        "datasource_hints": ["ad_windows", "active_directory", "windows", "security"],
-        "severity": "critical",
-        "mitre_tactic": "credential-access",
-        "mitre_technique": "T1003.006",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "EventID", "op": "=", "value": "4662"},
-            {"field": "win_eventdata_accessMask", "op": "=", "value": "0x100"},
-        ],
-    },
-    {
-        "external_id": "splunk-ad-sensitive-group-member-added",
-        "source_id": "splunk_research",
-        "source_name": "Splunk Security Research",
-        "source_url": "https://research.splunk.com/endpoint/11656928-181a-4663-87a7-0e6e737c385e/",
-        "original_title": "Active Directory Sensitive Domain Group Member Added (Event 4728)",
-        "description": "Identifica a inclusão de um usuário comum dentro do grupo Domain Admins ou Enterprise Admins (EventID 4728 / 4732).",
-        "original_format": "Splunk SPL",
-        "original_syntax": "`security` EventCode=4728 TargetUserName=\"*Admin*\"",
-        "perimeter": "identity_iam",
-        "datasource_hints": ["ad_windows", "active_directory", "windows", "security"],
-        "severity": "high",
-        "mitre_tactic": "persistence",
-        "mitre_technique": "T1098",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "EventID", "op": "=", "value": "4728"},
-            {"field": "win_eventdata_targetUserName", "op": "=~", "value": "(?i).*Admin.*"},
-        ],
-    },
-    # --- Perímetro: Cloud / SaaS (Microsoft 365, AWS CloudTrail, etc.)
-    {
-        "external_id": "sigma-m365-inbox-forwarding-rule",
-        "source_id": "sigmahq",
-        "source_name": "SigmaHQ",
-        "source_url": "https://github.com/SigmaHQ/sigma/blob/master/rules/cloud/m365/m365_inbox_forwarding_rule_external.yml",
-        "original_title": "Microsoft 365 Mailbox Forwarding Rule Created to External Domain",
-        "description": "Detecta a criação de regra oculta de encaminhamento automático de emails para um domínio externo, comum em ataques de Business Email Compromise (BEC).",
-        "original_format": "Sigma (YAML)",
-        "original_syntax": (
-            "title: Microsoft 365 Mailbox Forwarding Rule Created to External Domain\n"
-            "logsource:\n"
-            "  service: office365\n"
-            "detection:\n"
-            "  selection:\n"
-            "    Operation: 'New-InboxRule'\n"
-            "    Parameters|contains: 'ForwardTo'\n"
-            "  condition: selection\n"
-            "level: high"
-        ),
-        "perimeter": "cloud_saas",
-        "datasource_hints": ["office365", "m365", "exchange", "cloud"],
-        "severity": "high",
-        "mitre_tactic": "collection",
-        "mitre_technique": "T1114.003",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "Operation", "op": "=", "value": "New-InboxRule"},
-            {"field": "ResultStatus", "op": "=", "value": "True"},
-        ],
-    },
-    {
-        "external_id": "splunk-aws-cloudtrail-root-access-key",
-        "source_id": "splunk_research",
-        "source_name": "Splunk Security Research",
-        "source_url": "https://research.splunk.com/cloud/aws_cloudtrail_root_access_key_created/",
-        "original_title": "AWS CloudTrail Access Key Created for Root Account",
-        "description": "Gera alerta quando uma chave de acesso programático (Access Key) é gerada para a conta raiz (Root) da organização na AWS.",
-        "original_format": "Splunk SPL",
-        "original_syntax": "`cloudtrail` eventName=\"CreateAccessKey\" userIdentity.type=\"Root\"",
-        "perimeter": "cloud_saas",
-        "datasource_hints": ["aws", "cloudtrail", "cloud_saas", "cloud"],
-        "severity": "critical",
-        "mitre_tactic": "persistence",
-        "mitre_technique": "T1098.001",
-        "threshold_operator": "gt",
-        "threshold_value": 0,
-        "for_duration": "0s",
-        "predicates": [
-            {"field": "data_office365_Operation", "op": "=", "value": "CreateAccessKey"},
-            {"field": "data_office365_UserId", "op": "=~", "value": "(?i).*Root.*"},
-        ],
-    },
-]
+    Descarta registros legados fabricados (IDs como ``sigma-win-...``/``detfyi-...``/
+    ``splunk-...``/``elastic-...`` e URLs inexistentes).
+    """
+    return (
+        source_id == "sigmahq"
+        and bool(_UUID_RE.match(str(external_id or "").strip()))
+        and str(source_url or "").startswith(SIGMA_BLOB_URL_PREFIX)
+    )
 
 
 # =============================================================================
@@ -3842,14 +972,14 @@ def match_rule_to_technology(
 
 def search_rules_in_trusted_sources(
     technologies: list[Technology],
-    max_local_sigma: int = 30,
+    max_local_sigma: int | None = None,
 ) -> list[dict[str, Any]]:
     """Pesquisa regras de detecção nos 4 sites confiáveis filtrando APENAS para
     tecnologias que já existem e estão ativas no D.A.N.T.E.
 
-    Integra automaticamente regras do repositório local do SigmaHQ
-    (clonado em /data/sigma-repo com URLs 100% canônicas derivadas do caminho real)
-    combinadas com os candidatos das fontes adicionais (detection.fyi, Splunk e Elastic).
+    Só devolve regras REAIS: as do repositório local do SigmaHQ (clonado em /data/sigma-repo),
+    com nome, descrição, metadados e URL exatamente como no arquivo original. Não há catálogo
+    embutido/sintético de regras.
     """
     enabled_techs = [t for t in technologies if t.enabled]
     if not enabled_techs:
@@ -3874,13 +1004,6 @@ def search_rules_in_trusted_sources(
                 all_candidates.append(cand)
     except Exception as exc:
         logger.debug("Leitura do repositório local do SigmaHQ: %s", exc)
-
-    # 2. Mescla com os candidatos canônicos das demais fontes oficiais
-    for candidate in RAW_SOURCE_CANDIDATES:
-        ext_id = str(candidate.get("external_id") or "").strip()
-        if ext_id and ext_id in seen_external_ids:
-            continue
-        all_candidates.append(candidate)
 
     return [
         candidate
@@ -4099,6 +1222,72 @@ def convert_rule_to_logql(
         expected_job=technology.job,
     )
     return logql_query, mapped_fields, lint_res.is_valid, lint_res.message
+
+
+MITRE_NOT_INFORMED = "não informado"
+MAX_NEW_CANDIDATES_PER_CYCLE = 40
+MAX_CONVERSION_ATTEMPTS_PER_CYCLE = 150
+
+
+def build_original_threat_context(raw_rule: dict[str, Any]) -> str:
+    """Contexto de ameaça montado SOMENTE com o conteúdo da regra original.
+
+    Reproduz descrição, tags MITRE, falsos positivos, severidade e referências tal qual
+    publicados na fonte. Nenhum texto é inventado ou reescrito.
+    """
+    parts: list[str] = []
+    desc = str(raw_rule.get("description") or "").strip()
+    if desc:
+        parts.append(f"Descrição original: {desc}")
+    tags = raw_rule.get("tags") or []
+    if isinstance(tags, str):
+        tags = [tags]
+    if tags:
+        parts.append("Tags MITRE ATT&CK (originais): " + ", ".join(str(t) for t in tags))
+    level = str(raw_rule.get("level") or "").strip()
+    if level:
+        parts.append(f"Severidade (level) original: {level}")
+    fps = raw_rule.get("falsepositives") or []
+    if isinstance(fps, str):
+        fps = [fps]
+    if fps:
+        parts.append("Falsos positivos conhecidos (originais): " + "; ".join(str(f) for f in fps))
+    refs = raw_rule.get("references") or []
+    if isinstance(refs, str):
+        refs = [refs]
+    if refs:
+        parts.append("Referências (originais):\n" + "\n".join(f"- {r}" for r in refs))
+    return "\n\n".join(parts)
+
+
+def _restore_original_metadata(item: "CuratedRuleItem") -> bool:
+    """Reaplica título/descrição/contexto de ameaça a partir do YAML original armazenado.
+
+    Retorna True se algo foi alterado.
+    """
+    import yaml
+
+    try:
+        data = yaml.safe_load(item.original_syntax or "")
+    except Exception:
+        return False
+    if not isinstance(data, dict) or not str(data.get("title") or "").strip():
+        return False
+    changed = False
+    title = str(data["title"]).strip()
+    if item.title != title or item.original_title != title:
+        item.title = title
+        item.original_title = title
+        changed = True
+    desc = str(data.get("description") or "").strip()
+    if desc and item.description != desc:
+        item.description = desc
+        changed = True
+    ctx = build_original_threat_context(data)
+    if ctx and item.ai_rationale != ctx:
+        item.ai_rationale = ctx
+        changed = True
+    return changed
 
 
 def generate_threat_rationale(
@@ -5314,6 +2503,7 @@ class CurationStore:
             return
 
         migrated_titles = False
+        purged_unverified = 0
         try:
             raw = json.loads(self._path.read_text(encoding="utf-8"))
             if isinstance(raw, dict):
@@ -5333,8 +2523,19 @@ class CurationStore:
                     if not has_proven_hits:
                         migrated_titles = True
                         continue
+                    # Regras fabricadas (sem arquivo real na fonte / URL inexistente) são purgadas
+                    if not is_verified_source_rule(
+                        str(item.get("external_id") or ""),
+                        str(item.get("source_id") or ""),
+                        str(item.get("source_url") or ""),
+                    ):
+                        purged_unverified += 1
+                        migrated_titles = True
+                        continue
                     try:
                         parsed = CuratedRuleItem(**item)
+                        if _restore_original_metadata(parsed):
+                            migrated_titles = True
                         if parsed.original_title and parsed.title != parsed.original_title:
                             parsed.title = parsed.original_title
                             migrated_titles = True
@@ -5399,8 +2600,18 @@ class CurationStore:
                 for d_item in raw_discarded:
                     if not isinstance(d_item, dict):
                         continue
+                    if not is_verified_source_rule(
+                        str(d_item.get("external_id") or ""),
+                        str(d_item.get("source_id") or ""),
+                        str(d_item.get("source_url") or ""),
+                    ):
+                        purged_unverified += 1
+                        migrated_titles = True
+                        continue
                     try:
                         d_parsed = CuratedRuleItem(**d_item)
+                        if _restore_original_metadata(d_parsed):
+                            migrated_titles = True
                         canon_url = get_canonical_source_url(d_parsed.external_id, d_parsed.source_url)
                         if canon_url and canon_url != d_parsed.source_url:
                             d_parsed.source_url = canon_url
@@ -5416,10 +2627,22 @@ class CurationStore:
                     or "/tree/master/" in (r.source_url or "")
                     for r in self._discarded_rules.values()
                 )
-                if has_corrupted_discarded or not self._discarded_rules:
+                if has_corrupted_discarded:
                     self._discarded_rules.clear()
-                    self._seed_discarded_candidates_locked()
                     migrated_titles = True
+                if purged_unverified:
+                    # Reconstrói as assinaturas de deduplicação sem os registros fabricados,
+                    # para que regras reais com o mesmo título/consulta não sejam bloqueadas.
+                    self._seen_signatures = set()
+                    for kept in list(self._rules.values()) + list(self._discarded_rules.values()):
+                        self._register_rule_signatures_locked(
+                            kept.external_id, kept.title, kept.original_title, kept.logql_query
+                        )
+                    self._discarded_bad_count = len(self._discarded_rules)
+                    logger.warning(
+                        "Curadoria: %d registro(s) fabricado(s)/sem fonte real purgado(s) do store.",
+                        purged_unverified,
+                    )
                 self._skipped_duplicates_count = int(raw.get("skipped_duplicates_count") or 0)
 
                 if self._last_run_at:
@@ -5563,178 +2786,25 @@ class CurationStore:
             self._discarded_bad_count = 0
             self._skipped_duplicates_count = 0
             _reset_to_idle_progress()
-            self._seed_discarded_candidates_locked()
             self._persist_locked()
             return count
 
     def _seed_discarded_candidates_locked(self) -> None:
-        """Popula regras descartadas a partir do catálogo bruto com conversão técnica real para LogQL.
+        """Mantido por compatibilidade: NÃO semeia mais regras descartadas.
 
-        Garante:
-        1. Query LogQL fiel aos predicados reais da regra (sem placeholders genéricos (?i)T).
-        2. URLs canônicas oficiais específicas (nunca raiz nem diretório).
-        3. Atribuição precisa da tecnologia (ad_windows, fortigate, etc.) e perímetro (Identidade, etc.).
+        Regras descartadas só existem quando uma regra REAL da fonte foi avaliada e reprovada
+        pelo ciclo de curadoria; nunca são fabricadas a partir de catálogo embutido.
         """
-        existing_signatures = {
-            _normalize_signature(r.title) for r in self._rules.values()
-        } | {
-            _normalize_signature(r.original_title) for r in self._rules.values()
-        }
+        return
 
-        # Tecnologias canônicas de referência para dedução e geração de LogQL
-        canonical_tech_refs = [
-            Technology(
-                name="Active Directory / Windows",
-                slug="ad_windows",
-                perimeter="identity_iam",
-                perimeter_name="Identidade",
-                job="wazuh",
-                rule_groups_regex=".*ad.*",
-                enabled=True,
-            ),
-            Technology(
-                name="FortiGate Firewall",
-                slug="fortigate",
-                perimeter="firewall",
-                perimeter_name="Firewall",
-                job="wazuh",
-                rule_groups_regex=".*forti.*",
-                enabled=True,
-            ),
-            Technology(
-                name="Microsoft 365 / Office 365",
-                slug="office365",
-                perimeter="cloud_saas",
-                perimeter_name="Cloud / SaaS",
-                job="wazuh",
-                rule_groups_regex=".*o365.*",
-                enabled=True,
-            ),
-            Technology(
-                name="Linux Syslog / OS",
-                slug="linux_os",
-                perimeter="endpoint_edr",
-                perimeter_name="Antimalware / EDR",
-                job="wazuh",
-                rule_groups_regex=".*linux.*",
-                enabled=True,
-            ),
-            Technology(
-                name="Akamai WAF",
-                slug="waf_akamai",
-                perimeter="waf_web",
-                perimeter_name="WAF / Web",
-                job="wazuh",
-                rule_groups_regex=".*waf.*",
-                enabled=True,
-            ),
-        ]
-
-        for cand in RAW_SOURCE_CANDIDATES:
-            orig_t = str(cand.get("original_title") or cand.get("title") or "").strip()
-            norm_sig = _normalize_signature(orig_t)
-            if norm_sig in existing_signatures:
-                continue
-            ext_id = str(cand.get("external_id") or f"disc-{uuid.uuid4().hex[:6]}").strip()
-            item_id = f"disc-{uuid.uuid4().hex[:10]}"
-
-            # URL canônica oficial estrita
-            source_url = get_canonical_source_url(ext_id, str(cand.get("source_url") or ""))
-
-            # Identificação de tecnologia correspondente
-            matched_tech = match_rule_to_technology(cand, canonical_tech_refs)
-            if matched_tech is None:
-                hints = [str(h).lower() for h in (cand.get("datasource_hints") or [])]
-                if any("ad" in h or "windows" in h for h in hints):
-                    matched_tech = canonical_tech_refs[0]
-                elif any("forti" in h or "firewall" in h for h in hints):
-                    matched_tech = canonical_tech_refs[1]
-                elif any("365" in h or "cloud" in h for h in hints):
-                    matched_tech = canonical_tech_refs[2]
-                elif any("linux" in h for h in hints):
-                    matched_tech = canonical_tech_refs[3]
-                elif any("waf" in h or "akamai" in h for h in hints):
-                    matched_tech = canonical_tech_refs[4]
-                else:
-                    matched_tech = canonical_tech_refs[0]
-
-            t_name = matched_tech.name
-            t_slug = matched_tech.slug
-            p_slug = matched_tech.perimeter
-            p_name = matched_tech.perimeter_name
-            ss_regex = matched_tech.rule_groups_regex
-            job = matched_tech.job
-
-            mitre_t = str(cand.get("mitre_tactic") or "initial-access")
-            mitre_tech = str(cand.get("mitre_technique") or "T1190")
-            desc = str(cand.get("description") or "").strip()
-
-            # Conversão LogQL técnica e real via mapeamento de predicados e limiares estatísticos
-            logql_query, mapped_fields, lint_ok, _ = convert_rule_to_logql(
-                cand,
-                matched_tech,
-                [ss_regex],
-            )
-            if not logql_query or logql_query == '{job="wazuh"}':
-                logql_query = f'sum(count_over_time({{job="{job}", rule_groups=~"{ss_regex}"}} | json [5m])) > 0'
-
-            compat_count = sum(1 for m in mapped_fields if m.compatible)
-            field_pct = (compat_count / len(mapped_fields) * 100.0) if mapped_fields else 45.0
-
-            # Razão clara do descarte para o analista
-            reason = "Regra descartada: sem eventos detectados no Loki nas últimas janelas de tempo (0 logs no cluster)"
-            if "auditd" in orig_t.lower() or ("sysmon" in orig_t.lower() and "ad" not in orig_t.lower()):
-                reason = "Descartada: telemetria de auditoria específica não ativada no parque"
-            elif "dns" in orig_t.lower():
-                reason = "Descartada: sem consultas compatíveis observadas no pipeline Loki"
-            elif "powershell" in orig_t.lower():
-                reason = "Descartada: script block logging desabilitado ou sem volume comprovado"
-
-            rationale = (
-                f"Contexto de Ameaça: A regra '{orig_t}' monitora atividades suspeitas associadas a "
-                f"{mitre_t} ({mitre_tech}). {desc or 'Cenário anômalo que indica possíveis ações preliminares de invasor.'} "
-                f"Contudo, a regra foi descartada da homologação automática devido a lacunas de telemetria "
-                f"ou ausência de eventos no Loki para este ambiente."
-            )
-
-            d_item = CuratedRuleItem(
-                id=item_id,
-                external_id=ext_id,
-                source_id=cand.get("source_id", "sigmahq"),
-                source_name=cand.get("source_name", "SigmaHQ"),
-                source_url=source_url,
-                title=orig_t,
-                original_title=orig_t,
-                description=desc,
-                original_format=str(cand.get("original_format") or "Sigma (YAML)"),
-                original_syntax=str(cand.get("original_syntax") or ""),
-                logql_query=logql_query,
-                mapped_fields=mapped_fields,
-                technology=t_slug,
-                technology_name=t_name,
-                perimeter=p_slug,
-                perimeter_name=p_name,
-                rule_groups_regex=ss_regex,
-                job=job,
-                severity=cand.get("severity", "medium"),
-                mitre_tactic=mitre_t,
-                mitre_technique=mitre_tech,
-                threshold_operator=cand.get("threshold_operator", "gt"),
-                threshold_value=float(cand.get("threshold_value", 0.0) or 0.0),
-                for_duration=cand.get("for_duration", "0s"),
-                classification="bad",
-                classification_reason=reason,
-                field_compatibility_pct=round(field_pct, 1),
-                total_matched_results=0,
-                has_query_results=False,
-                curated_at=datetime.now(timezone.utc).isoformat(),
-                curation_engine="heuristic",
-                ai_rationale=rationale,
-                implemented=False,
-                discarded=True,
-                discard_reason=reason,
-            )
-            self._discarded_rules[d_item.id] = d_item
+    def mark_unconvertible(self, external_id: str) -> None:
+        """Registra que a regra real não pôde ser convertida, para não reprocessá-la a cada ciclo."""
+        if not external_id:
+            return
+        with self._lock:
+            self._load_locked()
+            self._seen_signatures.add(f"ext:{external_id.strip().lower()}")
+            self._persist_locked()
 
     def add_discarded_rule(self, rule: CuratedRuleItem) -> None:
         """Registra uma regra descartada pelo pipeline de curadoria."""
@@ -6437,9 +3507,17 @@ async def _run_curation_cycle_unlocked(
                 str,
             ]
         ] = []
+        attempted_conversions = 0
         for cand_idx, candidate in enumerate(searched_candidates, start=1):
             if _STOP_REQUESTED:
                 raise asyncio.CancelledError("Parada de curadoria solicitada pelo operador.")
+            # O catálogo real do SigmaHQ tem milhares de regras: cada ciclo diário processa um
+            # lote limitado (as demais ficam para os próximos ciclos, pois nunca foram vistas).
+            if (
+                len(prepared_new_candidates) >= MAX_NEW_CANDIDATES_PER_CYCLE
+                or attempted_conversions >= MAX_CONVERSION_ATTEMPTS_PER_CYCLE
+            ):
+                break
             ext_id = str(candidate.get("external_id") or "").strip()
             orig_title = str(candidate.get("original_title") or "").strip()
 
@@ -6487,8 +3565,8 @@ async def _run_curation_cycle_unlocked(
                         title=orig_title,
                         original_title=orig_title,
                         description=str(candidate.get("description") or ""),
-                        original_format=str(candidate.get("original_format") or "Sigma (YAML)"),
-                        original_syntax=str(candidate.get("original_syntax") or ""),
+                        original_format=str(candidate.get("original_format") or candidate.get("rule_format") or "Sigma (YAML)"),
+                        original_syntax=str(candidate.get("original_syntax") or candidate.get("raw_yaml") or ""),
                         logql_query=disc_logql,
                         mapped_fields=disc_mf,
                         technology=disc_tech_slug,
@@ -6498,8 +3576,8 @@ async def _run_curation_cycle_unlocked(
                         rule_groups_regex=disc_regex,
                         job="wazuh",
                         severity=candidate.get("severity", "medium"),
-                        mitre_tactic=str(candidate.get("mitre_tactic") or "initial-access"),
-                        mitre_technique=str(candidate.get("mitre_technique") or "T1190"),
+                        mitre_tactic=str(candidate.get("mitre_tactic") or MITRE_NOT_INFORMED),
+                        mitre_technique=str(candidate.get("mitre_technique") or MITRE_NOT_INFORMED),
                         threshold_operator="gt",
                         threshold_value=0.0,
                         for_duration="0s",
@@ -6508,7 +3586,7 @@ async def _run_curation_cycle_unlocked(
                         field_compatibility_pct=0.0,
                         curated_at=ran_at,
                         curation_engine=curation_engine,
-                        ai_rationale=f"Contexto de Ameaça: A regra '{orig_title}' monitora táticas de intrusão ({candidate.get('mitre_technique', 'T1190')}), mas a tecnologia correspondente não está habilitada.",
+                        ai_rationale=build_original_threat_context(candidate) or None,
                         implemented=False,
                         discarded=True,
                         discard_reason="Fonte de dados incompatível com as tecnologias configuradas",
@@ -6528,6 +3606,7 @@ async def _run_curation_cycle_unlocked(
                 skipped_duplicates_count += 1
                 continue
 
+            attempted_conversions += 1
             # Mantém o nome da regra em inglês tal qual está nas fontes pesquisadas
             canonical_title = orig_title
 
@@ -6536,8 +3615,9 @@ async def _run_curation_cycle_unlocked(
             curation_engine: Literal["ai", "heuristic"] = "heuristic"
             ai_model: str | None = None
             ai_rationale: str | None = None
-            mitre_tactic = str(candidate.get("mitre_tactic") or "execution")
-            mitre_technique = str(candidate.get("mitre_technique") or "T1059")
+            # Metadados MITRE são SEMPRE os da regra original (nunca inferidos/inventados)
+            mitre_tactic = str(candidate.get("mitre_tactic") or MITRE_NOT_INFORMED)
+            mitre_technique = str(candidate.get("mitre_technique") or MITRE_NOT_INFORMED)
 
             if ai_enabled and not ai_circuit_broken:
                 supported_f_list = list(
@@ -6580,11 +3660,7 @@ async def _run_curation_cycle_unlocked(
                         lint_msg = ai_lint_msg
                         curation_engine = "ai"
                         ai_model = ai_model_used
-                        ai_rationale = ai_rat
-                        if ai_tac:
-                            mitre_tactic = ai_tac
-                        if ai_tech_id:
-                            mitre_technique = ai_tech_id
+                        # A IA só traduz a consulta LogQL: contexto de ameaça e MITRE vêm da regra original
                         ai_curated_count += 1
                     else:
                         logql_query, mapped_fields, lint_ok, lint_msg = convert_rule_to_logql(
@@ -6612,42 +3688,13 @@ async def _run_curation_cycle_unlocked(
                 )
                 heuristic_curated_count += 1
 
-            if not ai_rationale:
-                c_title_l = str(candidate.get("original_title") or candidate.get("title") or "").lower()
-                c_desc_l = str(candidate.get("description") or "").lower()
-                c_mitre = str(candidate.get("mitre_technique") or "").upper()
-                c_is_bf = (
-                    "t1110" in c_mitre
-                    or "t1046" in c_mitre
-                    or any(
-                        kw in c_title_l or kw in c_desc_l
-                        for kw in (
-                            "brute force",
-                            "bruteforce",
-                            "força bruta",
-                            "forca bruta",
-                            "password spray",
-                            "spraying",
-                            "login failure burst",
-                            "multiple failures",
-                            "multiple authentication",
-                            "repeated mfa",
-                            "port scan",
-                            "burst",
-                        )
-                    )
-                )
-                ai_rationale = generate_threat_rationale(
-                    candidate,
-                    tech,
-                    logql_query,
-                    is_brute_force=c_is_bf,
-                    threshold_value=5 if c_is_bf else None,
-                )
-                ai_model = ai_model or "D.A.N.T.E. Threat Context"
+            # Contexto de ameaça = conteúdo da regra original (descrição, tags, falsos positivos, refs)
+            ai_rationale = build_original_threat_context(candidate) or None
+            ai_model = ai_model or "D.A.N.T.E. Threat Context"
 
             if not lint_ok:
                 discarded_bad_count += 1
+                curation_store.mark_unconvertible(ext_id)
                 _update_curation_progress(
                     log_line=f"✗ Descartada (Passo 2.2 - falha no lint_logql): '{canonical_title}'."
                 )
@@ -6768,8 +3815,8 @@ async def _run_curation_cycle_unlocked(
                         title=canonical_title,
                         original_title=orig_title,
                         description=str(candidate.get("description") or ""),
-                        original_format=str(candidate.get("original_format") or "Sigma (YAML)"),
-                        original_syntax=str(candidate.get("original_syntax") or ""),
+                        original_format=str(candidate.get("original_format") or candidate.get("rule_format") or "Sigma (YAML)"),
+                        original_syntax=str(candidate.get("original_syntax") or candidate.get("raw_yaml") or ""),
                         logql_query=logql_query,
                         technology=tech.slug,
                         technology_name=tech.name,
@@ -6816,8 +3863,8 @@ async def _run_curation_cycle_unlocked(
                 title=canonical_title,
                 original_title=orig_title,
                 description=str(candidate.get("description") or ""),
-                original_format=str(candidate.get("original_format") or "Sigma (YAML)"),
-                original_syntax=str(candidate.get("original_syntax") or ""),
+                original_format=str(candidate.get("original_format") or candidate.get("rule_format") or "Sigma (YAML)"),
+                original_syntax=str(candidate.get("original_syntax") or candidate.get("raw_yaml") or ""),
                 logql_query=logql_query,
                 technology=tech.slug,
                 technology_name=tech.name,
@@ -6999,6 +4046,11 @@ def build_curation_overview(
         last_run_summary=meta["last_run_summary"],
     )
 
+    try:
+        sigma_total = len(scan_local_sigma_rules())
+    except Exception:
+        sigma_total = 0
+
     by_source: dict[str, int] = {}
     for r in rules:
         by_source[r.source_id] = by_source.get(r.source_id, 0) + 1
@@ -7011,7 +4063,7 @@ def build_curation_overview(
             format_label=src["format_label"],
             description=src["description"],
             curated_count=by_source.get(src["id"], 0),
-            canonical_rules_count=len([c for c in RAW_SOURCE_CANDIDATES if c.get("source_id") == src["id"]]),
+            canonical_rules_count=sigma_total if src["id"] == "sigmahq" else 0,
             status="verified",
         )
         for src in TRUSTED_SOURCES
