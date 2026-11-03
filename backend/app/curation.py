@@ -970,9 +970,14 @@ def match_rule_to_technology(
 def search_rules_in_trusted_sources(
     technologies: list[Technology],
     max_local_sigma: int | None = None,
+    client_gap_techs: set[str] | None = None,
 ) -> list[dict[str, Any]]:
     """Pesquisa regras de detecção nos 4 sites confiáveis filtrando APENAS para
     tecnologias que já existem e estão ativas no D.A.N.T.E.
+
+    Telemetry-First & Gap-Driven: Quando fornecido `client_gap_techs` (tecnologias com
+    telemetria confirmada nos clientes porém com lacunas de regras), prioriza intensivamente
+    regras dessas tecnologias no topo da fila de curadoria.
 
     Só devolve regras REAIS: as do repositório local do SigmaHQ (clonado em /data/sigma-repo),
     com nome, descrição, metadados e URL exatamente como no arquivo original, selecionando
@@ -1066,15 +1071,39 @@ def search_rules_in_trusted_sources(
         else:
             bucket_other.append(cand)
 
+    # Telemetry-First & Gap-Driven: se houver tecnologias prioritárias por lacunas de clientes,
+    # expande a presença dessas tecnologias no lote balanceado
+    gap_set = {s.lower() for s in client_gap_techs} if client_gap_techs else set()
+    gap_first_rules: list[dict[str, Any]] = []
+    if gap_set:
+        for cand in all_candidates:
+            t = match_rule_to_technology(cand, enabled_techs)
+            if t and t.slug.lower() in gap_set:
+                gap_first_rules.append(cand)
+
     balanced: list[dict[str, Any]] = []
-    balanced.extend(bucket_win_sec[:8])
-    balanced.extend(bucket_win_proc4688[:10])
-    balanced.extend(bucket_win_tier2[:10])
-    balanced.extend(bucket_win_tier3[:10])
-    balanced.extend(bucket_fortigate[:6])
-    balanced.extend(bucket_office365[:6])
-    balanced.extend(bucket_linux[:6])
-    balanced.extend(bucket_waf[:6])
+    # Prioriza regras de lacunas no início do catálogo
+    seen_ids = set()
+    for g_cand in gap_first_rules[:16]:
+        gid = str(g_cand.get("external_id") or "")
+        if gid and gid not in seen_ids:
+            seen_ids.add(gid)
+            balanced.append(g_cand)
+
+    for item in (
+        bucket_win_sec[:8]
+        + bucket_win_proc4688[:10]
+        + bucket_win_tier2[:10]
+        + bucket_win_tier3[:10]
+        + bucket_fortigate[:6]
+        + bucket_office365[:6]
+        + bucket_linux[:6]
+        + bucket_waf[:6]
+    ):
+        iid = str(item.get("external_id") or "")
+        if iid and iid not in seen_ids:
+            seen_ids.add(iid)
+            balanced.append(item)
 
     if len(balanced) < 52:
         seen_b = {str(c.get("external_id") or "") for c in balanced}
@@ -2580,8 +2609,31 @@ async def evaluate_rule_across_clients(
                 multi_client=False,
             )
 
+            # Telemetry-First & Gap-Driven: Análise de Lacuna de Detecção no Cliente
+            is_client_gap = False
+            client_tech_rules_count = sum(
+                1 for r in c_rules if (r.get("labels") or {}).get("technology") == technology.slug
+            )
+            has_scanned_logs = tech_logs_count > 0
+            if has_scanned_logs and client_tech_rules_count < 5:
+                is_client_gap = True
+
             # Fatores detalhados da qualificação neste cliente
             client_factors: list[CurationQualificationFactor] = []
+            if is_client_gap:
+                client_factors.append(
+                    CurationQualificationFactor(
+                        criterion="Lacuna de Detecção Prioritária (Gap-Driven)",
+                        status="met",
+                        impact="excellent",
+                        summary=(
+                            f"O cliente '{c_name}' possui telemetria ativa comprovada de {technology.name} "
+                            f"({tech_logs_count} logs no período), mas conta com apenas {client_tech_rules_count} "
+                            "regra(s) implementada(s). Esta regra fecha uma lacuna operacional de detecção."
+                        ),
+                    )
+                )
+
             if targeted_found_fields:
                 client_factors.append(
                     CurationQualificationFactor(
@@ -3839,12 +3891,19 @@ async def _run_curation_cycle_unlocked(
             if q_ann:
                 existing_grafana_qhashes.add(_query_fingerprint(q_ann))
 
-        # Contagem de clientes por tecnologia e perímetro para priorizar as mais prevalentes no parque
+        # Contagem de clientes por tecnologia, telemetria confirmada e lacunas de detecção (Gap-Driven)
         tech_client_counts: dict[str, int] = {}
+        tech_scanned_counts: dict[str, int] = {}
         perim_client_counts: dict[str, int] = {}
+        client_gap_techs: set[str] = set()
+
         for f in client_folders:
             c_uid = str(f.get("uid") or "").strip()
             c_rules = [r for r in all_rules if str(r.get("folderUID") or "") == c_uid]
+            c_rule_techs = {
+                str((r.get("labels") or {}).get("technology") or "").lower()
+                for r in c_rules
+            }
             declared_slugs = declared_map.get(c_uid, [])
             try:
                 scan_rec = scan_store.record_for(c_uid) if scan_store else None
@@ -3866,31 +3925,45 @@ async def _run_curation_cycle_unlocked(
                 if has_t:
                     tech_client_counts[t.slug] = tech_client_counts.get(t.slug, 0) + 1
                     seen_perims_in_client.add(t.perimeter)
+                if t.slug in scanned_techs:
+                    tech_scanned_counts[t.slug] = tech_scanned_counts.get(t.slug, 0) + 1
+                    # Telemetry-First & Gap-Driven: se o cliente tem logs confirmados da tecnologia
+                    # mas possui menos de 5 regras daquela tecnologia, isso é uma lacuna de detecção prioritária!
+                    tech_rule_count = sum(1 for r in c_rules if (r.get("labels") or {}).get("technology") == t.slug)
+                    if tech_rule_count < 5:
+                        client_gap_techs.add(t.slug)
+
             for p in seen_perims_in_client:
                 perim_client_counts[p] = perim_client_counts.get(p, 0) + 1
 
-        # Ordena tecnologias para curadoria: maior presença em clientes primeiro,
+        # Ordena tecnologias para curadoria: telemetria confirmada + presença em clientes primeiro,
         # dando preferência analítica aos perímetros corporativos líderes (Identidade, Cloud / SaaS, Firewall)
-        def _tech_priority(t: Technology) -> tuple[int, int, str]:
+        def _tech_priority(t: Technology) -> tuple[int, int, int, str]:
+            c_scan = tech_scanned_counts.get(t.slug, 0)
             c_cnt = tech_client_counts.get(t.slug, 0)
             p_core = 2 if t.perimeter in ("identity_iam", "cloud_saas") else (1 if t.perimeter in ("firewall", "antimalware_edr") else 0)
-            return (c_cnt, p_core, t.name)
+            return (c_scan, c_cnt, p_core, t.name)
 
         technologies.sort(key=_tech_priority, reverse=True)
 
-        # Filtra as buscas nos 4 sites confiáveis APENAS para tecnologias que já existem no D.A.N.T.E.
-        searched_candidates = search_rules_in_trusted_sources(technologies)
+        # Filtra as buscas nos 4 sites confiáveis APENAS para tecnologias que já existem no D.A.N.T.E.,
+        # priorizando fortemente lacunas reais de detecção (Gap-Driven)
+        searched_candidates = search_rules_in_trusted_sources(technologies, client_gap_techs=client_gap_techs)
 
-        # Priorização estrita da IA e do pipeline: curar primeiro as regras dos perímetros e tecnologias
-        # presentes na maior quantidade de clientes (Identidade - Windows, Cloud / SaaS - Office, etc.)
-        def _candidate_priority(cand: dict[str, Any]) -> tuple[int, int, str]:
+        # Priorização estrita da IA e do pipeline:
+        # 1) Tecnologias com evidência real de telemetria nos clientes (Telemetry-First)
+        # 2) Tecnologias com lacunas de regras identificadas no parque (Gap-Driven)
+        # 3) Prevalência geral de clientes e perímetros líderes
+        def _candidate_priority(cand: dict[str, Any]) -> tuple[int, int, int, int, str]:
             cand_tech = match_rule_to_technology(cand, technologies)
             if not cand_tech:
-                return (-1, -1, "")
+                return (-1, -1, -1, -1, "")
+            is_gap = 1 if cand_tech.slug in client_gap_techs else 0
+            t_scan = tech_scanned_counts.get(cand_tech.slug, 0)
             t_cnt = tech_client_counts.get(cand_tech.slug, 0)
             p_core = 2 if cand_tech.perimeter in ("identity_iam", "cloud_saas") else (1 if cand_tech.perimeter in ("firewall", "antimalware_edr") else 0)
             p_cnt = perim_client_counts.get(cand_tech.perimeter, 0)
-            return (t_cnt, p_core + p_cnt, str(cand.get("original_title") or ""))
+            return (is_gap, t_scan, t_cnt, p_core + p_cnt, str(cand.get("original_title") or ""))
 
         searched_candidates.sort(key=_candidate_priority, reverse=True)
         fetched_count = len(searched_candidates)
