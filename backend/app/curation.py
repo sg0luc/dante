@@ -1842,6 +1842,103 @@ def _expand_observed_field_aliases(raw_fields: set[str]) -> set[str]:
     return expanded
 
 
+async def _verify_targeted_fields_in_loki(
+    grafana: GrafanaClient,
+    datasource_uid: str,
+    technology: Technology,
+    missing_fields: list[str],
+    time_from: str = "now-3d",
+    timeout: float = 2.5,
+) -> tuple[set[str], dict[str, list[str]]]:
+    """Executa pesquisa direcionada no Loki verificando especificamente a existência dos campos.
+
+    Em vez de contar apenas com a amostragem genérica da tecnologia ou com o disparo de ataque,
+    constrói uma query LogQL filtrada para a presença de qualquer um dos campos faltantes:
+    `{job="wazuh", ss_groups=~"..."} | json | field1 != "" or field2 != "" ...`
+
+    Retorna: (found_fields, field_samples).
+    """
+    if not missing_fields:
+        return set(), {}
+
+    cond_parts: list[str] = []
+    checked_tokens: set[str] = set()
+
+    for f in missing_fields:
+        cand_list = [f]
+        if f.startswith("data_win_"):
+            cand_list.append(f.replace("data_win_", "win_", 1))
+        elif f.startswith("win_"):
+            cand_list.append(f"data_{f}")
+        elif f.startswith("data_"):
+            cand_list.append(f[5:])
+        else:
+            cand_list.append(f"data_{f}")
+
+        for cand in cand_list:
+            if cand not in checked_tokens:
+                checked_tokens.add(cand)
+                cond_parts.append(f'{cand} != ""')
+
+    if not cond_parts:
+        return set(), {}
+
+    # Limita o número de filtros de desjunção na query para evitar sobrecarga no parser do Loki
+    or_condition = " or ".join(cond_parts[:16])
+    stream_expr = f'{{job="{technology.job}", ss_groups=~"{technology.ss_groups_regex}"}} | json | {or_condition}'
+
+    ok, lines, timed_out, _err = await _query_loki_lines(
+        grafana=grafana,
+        datasource_uid=datasource_uid,
+        expr=stream_expr,
+        limit=10,
+        time_from=time_from,
+        timeout=timeout,
+    )
+
+    if not ok or not lines:
+        return set(), {}
+
+    found_fields: set[str] = set()
+    found_samples: dict[str, list[str]] = {}
+
+    missing_lower_map = {f.lower(): f for f in missing_fields}
+
+    for line_str in lines:
+        try:
+            parsed = json.loads(line_str)
+            if not isinstance(parsed, dict):
+                continue
+            flat = _flatten_json_items(parsed)
+            flat_exp = _expand_observed_field_aliases(set(flat.keys()))
+            for fk, fv in flat.items():
+                val_str = str(fv).strip()
+                if not val_str:
+                    continue
+                # Se a chave ou seu sinônimo bater com um dos campos procurados
+                matched_orig: str | None = None
+                if fk in missing_fields:
+                    matched_orig = fk
+                elif fk.lower() in missing_lower_map:
+                    matched_orig = missing_lower_map[fk.lower()]
+                else:
+                    for mf in missing_fields:
+                        if mf in flat_exp or mf.lower() in {x.lower() for x in flat_exp}:
+                            matched_orig = mf
+                            break
+
+                if matched_orig:
+                    found_fields.add(matched_orig)
+                    found_fields.add(fk)
+                    bucket = found_samples.setdefault(matched_orig, [])
+                    if val_str not in bucket and len(bucket) < 4:
+                        bucket.append(val_str)
+        except Exception:
+            continue
+
+    return found_fields, found_samples
+
+
 def _evaluate_client_telemetry_readiness(
     mapped_fields: list[CurationFieldMapping],
     observed_fields: set[str],
@@ -2091,6 +2188,7 @@ async def evaluate_rule_across_clients(
     declared_map: dict[str, list[str]],
     scan_store: TenantScanStore,
     tech_logs_cache: dict[tuple[str, str], tuple[bool, list[str], str | None, list[str], bool]] | None = None,
+    client_field_presence_cache: dict[tuple[str, str], set[str]] | None = None,
     dead_datasources: set[str] | None = None,
     rule_source: str = "",
     rule_index: int = 1,
@@ -2397,6 +2495,58 @@ async def evaluate_rule_across_clients(
             missing_in_client = [
                 f for f in compatible_fields_list if f not in observed_fields and f.lower() not in obs_lower_set
             ]
+            # Se houver campos compatíveis ainda não encontrados na amostra genérica de logs,
+            # executa uma pesquisa direcionada no Loki verificando a existência real desses campos
+            targeted_found_fields: set[str] = set()
+            targeted_cache_key = (ds_uid, technology.slug)
+            known_client_fields = (
+                client_field_presence_cache.setdefault(targeted_cache_key, set())
+                if client_field_presence_cache is not None
+                else set()
+            )
+
+            # Verifica primeiro se algum campo faltante já foi confirmado anteriormente neste cliente/tecnologia
+            unobserved_to_query: list[str] = []
+            for mf in missing_in_client:
+                if mf in known_client_fields or mf.lower() in {k.lower() for k in known_client_fields}:
+                    targeted_found_fields.add(mf)
+                else:
+                    unobserved_to_query.append(mf)
+
+            # Para os que ainda não foram confirmados no cache, dispara a query direcionada ao Loki
+            if unobserved_to_query and (dead_datasources is None or ds_uid not in dead_datasources):
+                try:
+                    dir_found, dir_samples = await _verify_targeted_fields_in_loki(
+                        grafana=grafana,
+                        datasource_uid=ds_uid,
+                        technology=technology,
+                        missing_fields=unobserved_to_query,
+                        time_from="now-3d",
+                        timeout=2.5,
+                    )
+                    if dir_found:
+                        targeted_found_fields.update(dir_found)
+                        known_client_fields.update(dir_found)
+                        for d_k, d_v in dir_samples.items():
+                            s_bucket = global_field_samples.setdefault(d_k, [])
+                            for v_item in d_v:
+                                if v_item not in s_bucket and len(s_bucket) < 4:
+                                    s_bucket.append(v_item)
+                except Exception:
+                    pass
+
+            if targeted_found_fields:
+                raw_observed_fields.update(targeted_found_fields)
+                observed_fields = _expand_observed_field_aliases(raw_observed_fields)
+                global_observed_fields.update(observed_fields)
+                obs_lower_set = {f.lower() for f in observed_fields}
+                observed_in_client = [
+                    f for f in compatible_fields_list if f in observed_fields or f.lower() in obs_lower_set
+                ]
+                missing_in_client = [
+                    f for f in compatible_fields_list if f not in observed_fields and f.lower() not in obs_lower_set
+                ]
+
             if total_fields > 0 and len(observed_fields) > 0:
                 observed_compat_pct = round((len(observed_in_client) * 100.0) / total_fields, 1)
             elif total_fields == 0:
@@ -2432,6 +2582,19 @@ async def evaluate_rule_across_clients(
 
             # Fatores detalhados da qualificação neste cliente
             client_factors: list[CurationQualificationFactor] = []
+            if targeted_found_fields:
+                client_factors.append(
+                    CurationQualificationFactor(
+                        criterion="Pesquisa Direcionada de Campos (Loki)",
+                        status="met",
+                        impact="excellent",
+                        summary=(
+                            f"Pesquisa direcionada no Loki confirmou presença do(s) campo(s): "
+                            f"{', '.join(sorted(targeted_found_fields))} em '{ds_name}'."
+                        ),
+                    )
+                )
+
             if observed_compat_pct > 75.0:
                 client_factors.append(
                     CurationQualificationFactor(
@@ -3593,6 +3756,7 @@ async def _run_curation_cycle_unlocked(
         _reset_curation_progress(trigger)
 
     tech_logs_cache: dict[tuple[str, str], tuple[bool, list[str], str | None, list[str], bool]] = {}
+    client_field_presence_cache: dict[tuple[str, str], set[str]] = {}
     dead_datasources: set[str] = set()
 
     try:
@@ -4076,6 +4240,7 @@ async def _run_curation_cycle_unlocked(
                 declared_map=declared_map,
                 scan_store=scan_store,
                 tech_logs_cache=tech_logs_cache,
+                client_field_presence_cache=client_field_presence_cache,
                 dead_datasources=dead_datasources,
                 rule_source=src_name,
                 rule_index=work_rule_idx,
@@ -4209,6 +4374,7 @@ async def _run_curation_cycle_unlocked(
                 declared_map=declared_map,
                 scan_store=scan_store,
                 tech_logs_cache=tech_logs_cache,
+                client_field_presence_cache=client_field_presence_cache,
                 dead_datasources=dead_datasources,
                 rule_source=existing_item.source_name,
                 rule_index=work_rule_idx,
