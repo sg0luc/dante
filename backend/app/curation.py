@@ -1455,6 +1455,58 @@ def _extract_stream_expression(logql_query: str) -> str:
     return raw
 
 
+def _extract_canonical_event_identifiers(
+    raw_rule: dict[str, Any],
+    logql_query: str,
+) -> tuple[set[str], set[str], set[str]]:
+    """Extrai EventIDs, Subtipos/Ações e Categorias exigidos por uma regra de detecção.
+
+    Retorna: (required_event_ids, required_actions, required_categories).
+    Ex.:
+      - EventIDs: {"4688", "4625", "4720"}
+      - Actions/Subtypes: {"vpn", "ssl", "deny", "login"}
+      - Categories/Services: {"process_creation", "security", "firewall"}
+    """
+    req_ids: set[str] = set()
+    req_actions: set[str] = set()
+    req_cats: set[str] = set()
+
+    # 1. Do raw_rule (Sigma detection / metadata)
+    raw_det = raw_rule.get("detection")
+    if isinstance(raw_det, dict):
+        try:
+            det_json = json.dumps(raw_det).lower()
+            # Procura por EventID
+            for m in re.finditer(r'["\']?(?:eventid|event_id|eventcode)["\']?\s*:\s*(\d+|\[[^\]]+\])', det_json):
+                val = m.group(1)
+                for dig in re.findall(r"\b\d{3,5}\b", val):
+                    req_ids.add(dig)
+            # Procura por action / subtype
+            for m in re.finditer(r'["\']?(?:action|subtype|operation)["\']?\s*:\s*["\']?([a-zA-Z0-9_\-]+)["\']?', det_json):
+                req_actions.add(m.group(1).lower())
+        except Exception:
+            pass
+
+    # 2. Da LogQL convertida (ex: data_win_system_eventID="4688", data_action="deny", data_subtype="vpn")
+    for m in re.finditer(r'(?:win_system_eventID|data_win_system_eventID|event_id|eventid)\s*(?:=~|=)\s*["\']?([^"\'|\s)]+)["\']?', logql_query, re.IGNORECASE):
+        for dig in re.findall(r"\b\d{3,5}\b", m.group(1)):
+            req_ids.add(dig)
+
+    for m in re.finditer(r'(?:data_action|action|data_subtype|subtype|data_office365_Operation)\s*(?:=~|=)\s*["\']?([^"\'|\s)]+)["\']?', logql_query, re.IGNORECASE):
+        act = m.group(1).strip().lower().strip("^$")
+        if act and len(act) >= 2 and not act.startswith(".*"):
+            req_actions.add(act)
+
+    cat = str(raw_rule.get("category") or "").strip().lower()
+    if cat:
+        req_cats.add(cat)
+    srv = str(raw_rule.get("service") or "").strip().lower()
+    if srv:
+        req_cats.add(srv)
+
+    return req_ids, req_actions, req_cats
+
+
 def _flatten_json_items(obj: dict[str, Any], prefix: str = "") -> dict[str, Any]:
     """Achata chaves e valores de um objeto JSON com '_' (comportamento do `| json` no Loki)."""
     items: dict[str, Any] = {}
@@ -2225,6 +2277,7 @@ async def evaluate_rule_across_clients(
     severity: str = "high",
     mitre_tactic: str = "",
     mitre_technique: str = "",
+    raw_rule: dict[str, Any] | None = None,
 ) -> tuple[Literal["excellent", "good", "bad"], str, float, list[CurationClientEvaluation]]:
     """Passo 2.3: Executa a query convertida no Loki de todos os clientes em etapas progressivas
     (15m -> 1h -> 6h -> 24h -> 3d) e categoriza a regra segundo os 3 limiares recalibrados:
@@ -2489,8 +2542,18 @@ async def evaluate_rule_across_clients(
             if not (rule_query_ok or instant_ok or tech_query_ok or rule_timed_out):
                 continue
 
-            # Extrai todos os campos JSON reais vistos nos logs durante as queries executadas
+            # Inspeção Prévia de Telemetria Ativa (Active Telemetry Profiling)
+            # Extrai os identificadores canônicos exigidos pela regra (Event IDs, Subtipos de Ação)
+            req_event_ids, req_actions, req_cats = _extract_canonical_event_identifiers(
+                raw_rule=raw_rule or {},
+                logql_query=logql_query,
+            )
+
+            # Extrai todos os campos e valores JSON reais vistos nos logs durante as queries executadas
             raw_observed_fields: set[str] = set()
+            observed_event_ids: set[str] = set()
+            observed_actions: set[str] = set()
+
             for line_str in matched_lines + tech_lines:
                 try:
                     parsed_line = json.loads(line_str)
@@ -2501,6 +2564,13 @@ async def evaluate_rule_across_clients(
                         for fk, fv in flat_items.items():
                             val_str = str(fv).strip()
                             if val_str:
+                                # Captura Event IDs presentes na telemetria real do cliente
+                                if "eventid" in fk.lower() or "eventcode" in fk.lower():
+                                    observed_event_ids.add(val_str.lower())
+                                # Captura Ações e Subtipos presentes na telemetria real
+                                elif fk.lower() in ("data_action", "action", "data_subtype", "subtype", "data_office365_operation"):
+                                    observed_actions.add(val_str.lower())
+
                                 for cand_cf in compatible_fields_list:
                                     if cand_cf == fk or cand_cf.lower() == fk.lower() or cand_cf in exp_keys:
                                         bucket = global_field_samples.setdefault(cand_cf, [])
@@ -2609,17 +2679,103 @@ async def evaluate_rule_across_clients(
                 multi_client=False,
             )
 
+            # -------------------------------------------------------------------------
+            # Inspeção Prévia de Telemetria Ativa (Active Telemetry Profiling)
+            # Avalia se os Event IDs / Subtipos de log exigidos pela regra foram
+            # comprovadamente observados nos logs recentes do cliente ou confirmados no Loki.
+            # -------------------------------------------------------------------------
+            event_id_matched = True
+            missing_event_ids: list[str] = []
+            if req_event_ids:
+                matched_eids = [eid for eid in req_event_ids if eid in observed_event_ids]
+                if not matched_eids:
+                    # Tenta validar se algum dos Event IDs exigidos existe no Loki deste cliente
+                    eid_or = " or ".join([f'data_win_system_eventID = "{eid}" or win_system_eventID = "{eid}"' for eid in list(req_event_ids)[:6]])
+                    eid_stream = f'{{job="{technology.job}", ss_groups=~"{technology.ss_groups_regex}"}} | json | {eid_or}'
+                    try:
+                        eid_ok, eid_lines, _, _ = await _query_loki_lines(
+                            grafana=grafana,
+                            datasource_uid=ds_uid,
+                            expr=eid_stream,
+                            limit=2,
+                            time_from="now-3d",
+                            timeout=2.0,
+                        )
+                        if eid_ok and eid_lines:
+                            event_id_matched = True
+                        else:
+                            event_id_matched = False
+                            missing_event_ids = sorted(req_event_ids)
+                    except Exception:
+                        event_id_matched = False
+                        missing_event_ids = sorted(req_event_ids)
+
+            # Subtipo / Ação exigida (ex.: VPN SSL, firewall policy)
+            action_matched = True
+            missing_actions: list[str] = []
+            if req_actions:
+                matched_acts = [act for act in req_actions if any(act in obs_act for obs_act in observed_actions)]
+                if not matched_acts:
+                    # Se há actions específicas requeridas e nenhuma foi observada nos logs recentes da tecnologia
+                    if observed_actions:  # se observamos logs da tecnologia mas com actions completamente distintas
+                        action_matched = False
+                        missing_actions = sorted(req_actions)
+
+            # Se a regra exige Event IDs específicos ou subtipos e nenhum foi comprovado no cliente:
+            telemetry_profiling_passed = event_id_matched and action_matched
+            if not telemetry_profiling_passed and not has_results:
+                # Regra descartada no cliente por ausência do evento canônico gerador na telemetria
+                c_score = min(c_score, 74.0)
+                observed_compat_pct = min(observed_compat_pct, 45.0)
+
             # Telemetry-First & Gap-Driven: Análise de Lacuna de Detecção no Cliente
             is_client_gap = False
             client_tech_rules_count = sum(
                 1 for r in c_rules if (r.get("labels") or {}).get("technology") == technology.slug
             )
             has_scanned_logs = tech_logs_count > 0
-            if has_scanned_logs and client_tech_rules_count < 5:
+            if has_scanned_logs and client_tech_rules_count < 5 and telemetry_profiling_passed:
                 is_client_gap = True
 
             # Fatores detalhados da qualificação neste cliente
             client_factors: list[CurationQualificationFactor] = []
+            if not telemetry_profiling_passed and not has_results:
+                missing_items = []
+                if missing_event_ids:
+                    missing_items.append(f"Event ID(s): {', '.join(missing_event_ids)}")
+                if missing_actions:
+                    missing_items.append(f"Subtipo(s)/Ação(ões): {', '.join(missing_actions)}")
+                missing_str = "; ".join(missing_items) if missing_items else "eventos canônicos ausentes"
+                client_factors.append(
+                    CurationQualificationFactor(
+                        criterion="Inspeção Prévia de Telemetria Ativa (Active Telemetry Profiling)",
+                        status="not_met",
+                        impact="bad",
+                        summary=(
+                            f"Regra desqualificada em '{c_name}': os eventos canônicos necessários ({missing_str}) "
+                            f"não foram comprovadamente observados nos logs da tecnologia '{technology.name}' no Loki."
+                        ),
+                    )
+                )
+            elif (req_event_ids or req_actions) and telemetry_profiling_passed:
+                confirmed_items = []
+                if req_event_ids:
+                    confirmed_items.append(f"Event ID(s): {', '.join(sorted(req_event_ids))}")
+                if req_actions:
+                    confirmed_items.append(f"Subtipo(s): {', '.join(sorted(req_actions))}")
+                conf_str = "; ".join(confirmed_items)
+                client_factors.append(
+                    CurationQualificationFactor(
+                        criterion="Inspeção Prévia de Telemetria Ativa (Active Telemetry Profiling)",
+                        status="met",
+                        impact="excellent",
+                        summary=(
+                            f"Telemetria comprovada em '{c_name}': eventos canônicos requeridos ({conf_str}) "
+                            f"estão ativos e gerando logs no Loki do cliente."
+                        ),
+                    )
+                )
+
             if is_client_gap:
                 client_factors.append(
                     CurationQualificationFactor(
@@ -2867,14 +3023,19 @@ async def evaluate_rule_across_clients(
         (ev.observed_field_compatibility_pct for ev in client_evaluations),
         default=global_obs_pct,
     )
-    effective_obs_pct = max(global_obs_pct, best_client_obs_pct)
-    global_has_telemetry, _, _ = _evaluate_client_telemetry_readiness(
-        mapped_fields=mapped_fields,
-        observed_fields=global_observed_fields,
-        tech_logs_count=total_tech_all,
-        has_query_results=(total_hits_all > 0),
-    )
-    has_telemetry_any = bool(global_has_telemetry or len(excellent_clients) > 0)
+    # Se todas as avaliações de clientes foram descartadas por telemetria ausente / profiling, limita global_obs_pct
+    if not excellent_clients and not good_clients:
+        effective_obs_pct = min(global_obs_pct, best_client_obs_pct, 45.0)
+        has_telemetry_any = False
+    else:
+        effective_obs_pct = max(global_obs_pct, best_client_obs_pct)
+        global_has_telemetry, _, _ = _evaluate_client_telemetry_readiness(
+            mapped_fields=mapped_fields,
+            observed_fields=global_observed_fields,
+            tech_logs_count=total_tech_all,
+            has_query_results=(total_hits_all > 0),
+        )
+        has_telemetry_any = bool(global_has_telemetry or len(excellent_clients) > 0)
     all_matched_windows = [ev.matched_window for ev in client_evaluations if ev.matched_window]
     has_multi = len([ev for ev in client_evaluations if ev.tech_logs_count > 0]) >= 2
     global_dynamic_score, _g_lp, _g_tc, _g_sm = compute_dynamic_compatibility(
@@ -2892,6 +3053,8 @@ async def evaluate_rule_across_clients(
         lint_valid=True,
         multi_client=has_multi,
     )
+    if not excellent_clients and not good_clients and global_dynamic_score >= 80.0:
+        global_dynamic_score = min(global_dynamic_score, 74.0)
 
     if excellent_clients:
         names = ", ".join(
@@ -3546,6 +3709,30 @@ def _populate_curated_rule_qualification_details(item: CuratedRuleItem) -> None:
         lint_valid=item.lint_valid,
         multi_client=has_multi_clients,
     )
+
+    # Se o item estiver descartado ou não tiver clientes qualificados, recalibra pontuação e cobertura observada
+    has_qualified_clients = any(ev.classification in ("excellent", "good") for ev in item.client_evaluations)
+    if (item.discarded or not has_qualified_clients) and not has_results:
+        effective_obs_pct = min(effective_obs_pct, 45.0)
+        any_client_has_telemetry = False
+        global_has_tel = False
+        dynamic_score, log_score, threat_score, scenario_score = compute_dynamic_compatibility(
+            schema_compat_pct=schema_compat_pct,
+            tech_logs_count=total_tech,
+            matched_lines_count=total_matched,
+            matched_windows=[ev.matched_window for ev in item.client_evaluations if ev.matched_window],
+            severity=str(item.severity),
+            mitre_tactic=item.mitre_tactic,
+            mitre_technique=item.mitre_technique,
+            perimeter=item.perimeter,
+            observed_field_compat_pct=effective_obs_pct,
+            has_query_results=has_results,
+            has_required_telemetry=False,
+            lint_valid=item.lint_valid,
+            multi_client=has_multi_clients,
+        )
+        if dynamic_score >= 80.0:
+            dynamic_score = min(dynamic_score, 74.0)
 
     if not item.discarded:
         if dynamic_score >= 95.0:
@@ -4321,6 +4508,7 @@ async def _run_curation_cycle_unlocked(
                 severity=str(candidate.get("severity") or "high"),
                 mitre_tactic=mitre_tactic,
                 mitre_technique=mitre_technique,
+                raw_rule=candidate,
             )
 
             # Regra 2: Apenas regras com compatibilidade >= 80% são consideradas candidatas para o SIEM
