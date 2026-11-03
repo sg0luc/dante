@@ -66,26 +66,29 @@ class GrafanaClient:
     # ------------------------------------------------------------------
     def _token(self) -> str:
         """Obtém o token; relê o arquivo somente quando ele muda (mtime)."""
-        if self._settings.grafana_token is not None:
+        if self._settings.is_external_grafana and self._settings.grafana_token is not None:
             return self._settings.grafana_token.get_secret_value()
 
         path = self._settings.grafana_token_file
+        if path and os.path.isfile(path):
+            try:
+                mtime = os.stat(path).st_mtime
+                if self._token_cache and self._token_cache[0] == mtime:
+                    return self._token_cache[1]
+                with open(path, encoding="utf-8") as handle:
+                    token = handle.read().strip()
+                if token:
+                    self._token_cache = (mtime, token)
+                    return token
+            except OSError as exc:
+                logger.error("Não foi possível ler o token do Grafana em %s: %s", path, exc.strerror)
+
+        if self._settings.grafana_token is not None:
+            return self._settings.grafana_token.get_secret_value()
+
         if not path:
             raise GrafanaError("Token do Grafana não configurado", 503)
-        try:
-            mtime = os.stat(path).st_mtime
-            if self._token_cache and self._token_cache[0] == mtime:
-                return self._token_cache[1]
-            with open(path, encoding="utf-8") as handle:
-                token = handle.read().strip()
-        except OSError as exc:
-            logger.error("Não foi possível ler o token do Grafana em %s: %s", path, exc.strerror)
-            raise GrafanaError("Token do Grafana indisponível", 503) from exc
-
-        if not token:
-            raise GrafanaError("Token do Grafana vazio", 503)
-        self._token_cache = (mtime, token)
-        return token
+        raise GrafanaError("Token do Grafana indisponível", 503)
 
     def has_token(self) -> bool:
         try:

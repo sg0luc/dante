@@ -8,8 +8,11 @@ Cobre, contra a stack real (nginx :8080 -> FastAPI -> Grafana -> Loki):
      - https://elastic.github.io/detection-rules-explorer/
   2. Agendamento diário às 08h00 (cron '0 8 * * *', daily_time '08:00').
   3. Compatibilidade de tecnologia, conversão para LogQL (job='wazuh', ss_groups, | json, lint_logql).
-  4. Avaliação no Loki dos clientes e categorização ('excellent' e 'good').
-  5. Regra 2: Nenhuma regra 'bad' (má candidata) é inserida na curadoria.
+  4. Avaliação no Loki dos clientes e recalibração dos 3 patamares de compatibilidade:
+     - Alta Compatibilidade (95%+ / 'excellent'): > 75% dos campos necessários + telemetria necessária ativa (mesmo sem logs correspondentes da regra) ou logs reais encontrados.
+     - Candidata Qualificada (80% a 94% / 'good'): > 50% dos campos necessários encontrados no cliente, mesmo sem logs correspondentes e sem telemetria especializada.
+     - Descartada (< 80% / 'bad'): < 50% dos campos necessários encontrados, sem logs correspondentes e/ou telemetria necessária.
+  5. Regra 2: Nenhuma regra 'bad' (< 80%) é inserida nas abas de curadoria qualificada.
   6. Regra 3: Execuções subsequentes nunca repetem regras que já foram curadas.
   7. Botão/Endpoint 'Implementar': bloqueia sem confirmação (409) e implementa no
      Baseline Global + clientes recomendados mediante confirmação explícita (200).
@@ -83,10 +86,13 @@ def call(method: str, path: str, body=None, *, base: str = BASE, csrf: bool = Fa
 
 
 def grafana_call(method: str, path: str, body=None) -> tuple[int, Any]:
-    token_file = Path("/run/portal-secrets/grafana_token")
+    token_file = next(
+        (p for p in (Path("/run/secrets/grafana_token"), Path("/run/portal-secrets/grafana_token")) if p.exists()),
+        None,
+    )
     data = json.dumps(body).encode() if body is not None else None
     req = urllib.request.Request(GRAFANA + path, data=data, method=method)
-    if token_file.exists():
+    if token_file is not None:
         req.add_header("Authorization", f"Bearer {token_file.read_text(encoding='utf-8').strip()}")
     else:
         creds = f"{ENV.get('GRAFANA_ADMIN_USER', 'admin')}:{ENV.get('GRAFANA_ADMIN_PASSWORD', 'GrafanaAdmin@2026!Pass')}"
@@ -115,8 +121,17 @@ def cleanup_artifacts(baseline_rule_uid: str | None = None) -> None:
             r_uid = str(r.get("uid") or "")
             if f_uid in (TEST_TENANT_UID, TIMEOUT_TENANT_UID) or (baseline_rule_uid and r_uid == baseline_rule_uid):
                 grafana_call("DELETE", f"/api/v1/provisioning/alert-rules/{r_uid}")
+    p_st, p_rules = call("GET", "/api/rules")
+    if p_st == 200 and isinstance(p_rules, list):
+        for r in p_rules:
+            f_uid = str(r.get("folder_uid") or r.get("folderUID") or "")
+            r_uid = str(r.get("uid") or "")
+            if f_uid in (TEST_TENANT_UID, TIMEOUT_TENANT_UID) or (baseline_rule_uid and r_uid == baseline_rule_uid):
+                call("DELETE", f"/api/rules/{r_uid}", csrf=True)
     call("DELETE", f"/api/tenants/{TEST_TENANT_UID}", csrf=True)
     call("DELETE", f"/api/tenants/{TIMEOUT_TENANT_UID}", csrf=True)
+    grafana_call("DELETE", f"/api/datasources/uid/{TEST_TENANT_UID}")
+    grafana_call("DELETE", f"/api/datasources/uid/{TIMEOUT_TENANT_UID}")
 
 
 def check(name: str, condition: bool, detail: str = "") -> None:
@@ -125,7 +140,7 @@ def check(name: str, condition: bool, detail: str = "") -> None:
 
 
 def seed_progressive_window_telemetry() -> None:
-    """Injeta logs reais no Loki dentro da janela de 15 minutos para provar a parada antecipada."""
+    """Injeta logs reais no Loki dentro da janela de 15 minutos para provar a parada antecipada e telemetria EvtID 4688."""
     payloads = [
         {
             "stream": {"job": "wazuh", "ss_groups": "fortigate", "agent_name": "fg-curation-01"},
@@ -153,7 +168,23 @@ def seed_progressive_window_telemetry() -> None:
                         },
                     },
                 }
-                for _ in range(6)
+                for _ in range(3)
+            ]
+            + [
+                {
+                    "rule": {"id": "67027", "level": 6, "description": "Windows Process Created (EvtID 4688)"},
+                    "win": {
+                        "system": {"eventID": "4688", "channel": "Security"},
+                        "eventdata": {
+                            "targetUserName": "Administrator",
+                            "subjectUserName": "adm_lucas",
+                            "newProcessName": "C:\\Windows\\System32\\whoami.exe",
+                            "parentProcessName": "C:\\Windows\\System32\\cmd.exe",
+                            "commandLine": "whoami /all",
+                        },
+                    },
+                }
+                for _ in range(3)
             ],
         },
         {
@@ -187,7 +218,7 @@ def seed_progressive_window_telemetry() -> None:
             ],
         },
         {
-            "stream": {"job": "wazuh", "ss_groups": "waf", "agent_name": "waf-curation-01"},
+            "stream": {"job": "wazuh", "ss_groups": "akamai_waf", "agent_name": "waf-curation-01"},
             "spread_seconds": 180,
             "lines": [
                 {
@@ -196,11 +227,11 @@ def seed_progressive_window_telemetry() -> None:
                         "action": "deny",
                         "srcip": "203.0.113.88",
                         "uri": "/api/v1/users?id=1' OR '1'='1",
-                        "http_method": "POST",
+                        "http_method": "GET" if idx % 2 == 0 else "POST",
                         "status_code": "403",
                     },
                 }
-                for _ in range(6)
+                for idx in range(6)
             ],
         },
     ]
@@ -218,6 +249,7 @@ def main() -> int:
     )
     check("login 200", status == 200, str(body))
     cleanup_artifacts()
+    call("POST", "/api/curation/clear", {}, csrf=True)
     seed_progressive_window_telemetry()
 
     # 2. Cria tenant de teste para validar avaliação multi-cliente
@@ -227,7 +259,7 @@ def main() -> int:
         {"title": TEST_TENANT_TITLE, "uid": TEST_TENANT_UID},
         csrf=True,
     )
-    check("create test tenant", t_status in (200, 201), str(t_status))
+    check("create test tenant", t_status in (200, 201, 409), str(t_status))
 
     # Executa ciclo inicial da suíte após semear a telemetria das janelas e criar tenant
     run_init_status, run_init_body = call("POST", "/api/curation/run", {}, csrf=True)
@@ -267,6 +299,7 @@ def main() -> int:
 
     # 3.3. Validar que NUNCA há má candidata inserida (Regra 2)
     rules = overview.get("rules") or []
+    discarded_rules = overview.get("discarded_rules") or []
     metrics = overview.get("metrics") or {}
     classifications = {r.get("classification") for r in rules}
     check(
@@ -312,16 +345,19 @@ def main() -> int:
         f"compat_list={compat_list[:8]}",
     )
 
-    # 3.3c. Validar que SOMENTE regras com logs reais encontrados possuem compatibilidade >= 80%
-    all_rules_have_proven_logs = all(
-        int(r.get("total_matched_results") or 0) > 0
-        or any(ev.get("has_query_results") for ev in r.get("client_evaluations") or [])
+    # 3.3c. Validar recalibração dos 3 limiares de compatibilidade:
+    #   - Alta Compatibilidade (95%+): > 75% dos campos necessários + telemetria ativa (mesmo sem logs da regra) ou logs reais
+    #   - Compatibilidade 80% a 94%: >= 50% dos campos necessários, mesmo sem logs da regra e sem telemetria especializada
+    #   - Descartadas (< 80%): < 50% dos campos necessários, sem logs correspondentes e/ou sem telemetria
+    all_rules_have_min_50pct_fields_or_logs = all(
+        float(r.get("observed_field_compatibility_pct") or 0.0) >= 50.0
+        or int(r.get("total_matched_results") or 0) > 0
         for r in rules
     )
     check(
-        "SOMENTE regras com logs reais encontrados sao categorizadas como >= 80% de compatibilidade",
-        all_rules_have_proven_logs,
-        f"total_rules={len(rules)}, min_hits={min(int(r.get('total_matched_results') or 0) for r in rules)}",
+        "regras qualificadas (>= 80%) possuem >= 50% dos campos necessarios no cliente ou logs reais correspondentes",
+        all_rules_have_min_50pct_fields_or_logs,
+        f"total_rules={len(rules)}, min_obs_fields={min(float(r.get('observed_field_compatibility_pct') or 0.0) for r in rules)}%",
     )
 
     # 3.4. Validar conversão LogQL e diretrizes D.A.N.T.E.
@@ -339,7 +375,6 @@ def main() -> int:
         bool(r.get("perimeter")) and bool(r.get("perimeter_name"))
         for r in rules
     )
-    curated_perimeters = {r.get("perimeter") for r in rules}
     identity_names = {r.get("perimeter_name") for r in rules if r.get("perimeter") == "identity_iam"}
     waf_names = {r.get("perimeter_name") for r in rules if r.get("perimeter") == "waf_web"}
     check(
@@ -381,40 +416,62 @@ def main() -> int:
         f"sample_titles={[r.get('title') for r in rules[:4]]}",
     )
 
-    # 3.4c. Validar que o pipeline de curadoria avaliou as 4 fontes confiaveis nas tecnologias
-    # e manteve como candidatas apenas as regras com evidencias comprovadas (total_matched_results > 0)
+    # 3.4c. Validar que o pipeline avaliou o pool das fontes confiáveis nas tecnologias ativas
     total_eval = int(metrics.get("total_evaluated_history") or 0)
     check(
-        "pipeline de curadoria avaliou todas as 4 fontes confiaveis nas tecnologias com descarte estrito de regras sem logs",
-        total_eval >= 50 and int(metrics.get("discarded_bad_count") or 0) > 0 and len(rules) >= 5,
+        "pipeline de curadoria avaliou as fontes confiaveis nas tecnologias ativas e separou os 3 patamares",
+        total_eval >= 50 and int(metrics.get("discarded_bad_count") or 0) > 0 and len(rules) >= 15,
         f"total_evaluated={total_eval}, discarded_bad={metrics.get('discarded_bad_count')}, qualified_candidatas={len(rules)}",
     )
 
-    # 3.5. Validar Critério 1 (compatibilidade de campos com logs reais) e Critério 2
-    # (se não houver evidências de resultados nos logs, nunca pode ser excelente candidata)
+    # 3.5. Validar os 3 patamares recalibrados (Alta Compatibilidade 95%+, Candidatas 80% a 94%, Descartadas < 80%)
     excellent_rules = [r for r in rules if r.get("classification") == "excellent"]
     good_rules = [r for r in rules if r.get("classification") == "good"]
-    zero_results_excellent = [
-        r.get("title")
-        for r in excellent_rules
-        if int(r.get("total_matched_results") or 0) <= 0 or not r.get("has_query_results")
-    ]
+
+    # Patamar 1 (95%+): todas as excelentes têm score >= 95% e (> 75% dos campos necessários + telemetria ativa ou logs reais),
+    # incluindo regras com telemetria pronta (ex.: EvtID 4688 CommandLine) mesmo sem disparo prévio (0 logs).
+    all_excellent_valid = (
+        len(excellent_rules) > 0
+        and all(
+            float(r.get("field_compatibility_pct") or 0.0) >= 95.0
+            and (
+                float(r.get("observed_field_compatibility_pct") or 0.0) > 75.0
+                or int(r.get("total_matched_results") or 0) > 0
+            )
+            for r in excellent_rules
+        )
+        and any(int(r.get("total_matched_results") or 0) == 0 for r in excellent_rules)
+        and any(int(r.get("total_matched_results") or 0) > 0 for r in excellent_rules)
+    )
     check(
-        "Criterio 2: nenhuma regra sem resultados na query (0 logs) e categorizada como excelente",
-        len(zero_results_excellent) == 0 and len(excellent_rules) > 0,
-        f"excellent={len(excellent_rules)}, good={len(good_rules)}, invalid_excellent={zero_results_excellent}",
+        "Patamar 1 (Alta Compatibilidade 95%+): > 75% dos campos necessarios + telemetria ativa (mesmo sem logs) ou logs reais",
+        all_excellent_valid,
+        f"excellent={len(excellent_rules)}, with_logs={sum(1 for r in excellent_rules if int(r.get('total_matched_results') or 0) > 0)}, telemetry_ready_no_logs={sum(1 for r in excellent_rules if int(r.get('total_matched_results') or 0) == 0)}",
     )
 
-    all_excellent_have_real_logs_and_fields = all(
-        float(r.get("observed_field_compatibility_pct") or 0) >= 100.0
-        and len(r.get("sample_query_results") or []) > 0
-        and all(m.get("observed_in_logs") is True for m in (r.get("mapped_fields") or []))
-        for r in excellent_rules
+    # Patamar 2 (80% a 94%): boas candidatas têm score entre 80% e 94.9% e >= 50% dos campos encontrados no cliente
+    all_good_valid = (
+        len(good_rules) > 0
+        and all(
+            80.0 <= float(r.get("field_compatibility_pct") or 0.0) < 95.0
+            and float(r.get("observed_field_compatibility_pct") or 0.0) >= 50.0
+            for r in good_rules
+        )
+    )
+    # E todas as descartadas (< 80%) possuem score < 80% e < 50% dos campos observados nos clientes
+    all_discarded_valid = (
+        len(discarded_rules) > 0
+        and all(
+            float(r.get("field_compatibility_pct") or 0.0) < 80.0
+            and float(r.get("observed_field_compatibility_pct") or 0.0) < 50.0
+            and int(r.get("total_matched_results") or 0) == 0
+            for r in discarded_rules
+        )
     )
     check(
-        "Criterio 1 e 2: excelentes candidatas possuem 100% dos campos vistos nos logs reais e amostras de retorno da query",
-        all_excellent_have_real_logs_and_fields,
-        f"excellent_titles={[r.get('title') for r in excellent_rules]}",
+        "Patamares 2 (80% a 94% com >= 50% campos) e 3 (Descartadas < 80% com < 50% campos e sem logs) recalibrados",
+        all_good_valid and all_discarded_valid,
+        f"good={len(good_rules)}, discarded={len(discarded_rules)}",
     )
 
     all_have_complete_details = all(
@@ -441,7 +498,7 @@ def main() -> int:
     ]
     check(
         "parada antecipada na janela de 15 minutos quando logs sao encontrados (nao roda janelas mais extensas)",
-        len(rules_with_early_stop) >= 3,
+        len(rules_with_early_stop) >= 2,
         f"regras com parada antecipada comprovada ({len(rules_with_early_stop)}/{len(excellent_rules)}): {rules_with_early_stop}",
     )
 

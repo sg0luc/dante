@@ -279,18 +279,32 @@ SUPPORTED_WAZUH_LOKI_FIELDS: dict[str, set[str]] = {
         "data_win_system_computer",
         "win_system_channel",
         "data_win_system_channel",
+        "win_system_providerName",
+        "data_win_system_providerName",
+        "win_system_severityValue",
+        "data_win_system_severityValue",
         "win_eventdata_targetUserName",
         "data_win_eventdata_targetUserName",
         "win_eventdata_subjectUserName",
         "data_win_eventdata_subjectUserName",
+        "win_eventdata_targetDomainName",
+        "data_win_eventdata_targetDomainName",
+        "win_eventdata_subjectDomainName",
+        "data_win_eventdata_subjectDomainName",
         "win_eventdata_ipAddress",
         "data_win_eventdata_ipAddress",
+        "win_eventdata_workstationName",
+        "data_win_eventdata_workstationName",
         "win_eventdata_status",
         "data_win_eventdata_status",
         "win_eventdata_subStatus",
         "data_win_eventdata_subStatus",
+        "win_eventdata_failureReason",
+        "data_win_eventdata_failureReason",
         "win_eventdata_logonType",
         "data_win_eventdata_logonType",
+        "win_eventdata_logonId",
+        "data_win_eventdata_logonId",
         "win_eventdata_ticketEncryptionType",
         "data_win_eventdata_ticketEncryptionType",
         "win_eventdata_serviceName",
@@ -303,20 +317,54 @@ SUPPORTED_WAZUH_LOKI_FIELDS: dict[str, set[str]] = {
         "data_win_eventdata_taskName",
         "win_eventdata_image",
         "data_win_eventdata_image",
+        "win_eventdata_newProcessName",
+        "data_win_eventdata_newProcessName",
+        "win_eventdata_processName",
+        "data_win_eventdata_processName",
         "win_eventdata_commandLine",
         "data_win_eventdata_commandLine",
         "win_eventdata_parentImage",
         "data_win_eventdata_parentImage",
+        "win_eventdata_parentProcessName",
+        "data_win_eventdata_parentProcessName",
+        "win_eventdata_parentCommandLine",
+        "data_win_eventdata_parentCommandLine",
+        "win_eventdata_originalFileName",
+        "data_win_eventdata_originalFileName",
+        "win_eventdata_currentDirectory",
+        "data_win_eventdata_currentDirectory",
+        "win_eventdata_integrityLevel",
+        "data_win_eventdata_integrityLevel",
+        "win_eventdata_hashes",
+        "data_win_eventdata_hashes",
+        "win_eventdata_company",
+        "data_win_eventdata_company",
+        "win_eventdata_description",
+        "data_win_eventdata_description",
+        "win_eventdata_product",
+        "data_win_eventdata_product",
         "win_eventdata_targetImage",
         "data_win_eventdata_targetImage",
         "win_eventdata_grantedAccess",
         "data_win_eventdata_grantedAccess",
+        "win_eventdata_callTrace",
+        "data_win_eventdata_callTrace",
         "win_eventdata_user",
         "data_win_eventdata_user",
         "win_eventdata_scriptBlockText",
         "data_win_eventdata_scriptBlockText",
         "win_eventdata_targetObject",
         "data_win_eventdata_targetObject",
+        "win_eventdata_objectName",
+        "data_win_eventdata_objectName",
+        "win_eventdata_details",
+        "data_win_eventdata_details",
+        "win_eventdata_targetFilename",
+        "data_win_eventdata_targetFilename",
+        "win_eventdata_imageLoaded",
+        "data_win_eventdata_imageLoaded",
+        "win_eventdata_signed",
+        "data_win_eventdata_signed",
         "win_eventdata_shareName",
         "data_win_eventdata_shareName",
         "win_eventdata_privilegeList",
@@ -325,6 +373,17 @@ SUPPORTED_WAZUH_LOKI_FIELDS: dict[str, set[str]] = {
         "data_win_eventdata_authenticationPackageName",
         "win_eventdata_memberName",
         "data_win_eventdata_memberName",
+        "win_eventdata_destinationIp",
+        "data_win_eventdata_destinationIp",
+        "win_eventdata_destinationPort",
+        "data_win_eventdata_destinationPort",
+        "win_eventdata_destinationHostname",
+        "data_win_eventdata_destinationHostname",
+        "win_eventdata_queryStatus",
+        "data_win_eventdata_queryStatus",
+        "win_eventdata_queryResults",
+        "data_win_eventdata_queryResults",
+        "data_QueryName",
         "full_log",
     },
     "sysmon": {
@@ -345,125 +404,12 @@ SUPPORTED_WAZUH_LOKI_FIELDS: dict[str, set[str]] = {
         "data_win_eventdata_user",
         "win_eventdata_targetObject",
         "data_win_eventdata_targetObject",
-        "full_log",
-    },
-    "office365": {
-        "Operation": "data_office365_Operation",
-        "event.action": "data_office365_Operation",
-        "UserId": "data_office365_UserId",
-        "user.id": "data_office365_UserId",
-        "ClientIP": "data_office365_ClientIP",
-        "source.ip": "data_office365_ClientIP",
-        "ResultStatus": "data_office365_ResultStatus",
-        "event.outcome": "data_office365_ResultStatus",
-        "Workload": "data_office365_Workload",
-        "event.dataset": "data_office365_Workload",
-        "ObjectId": "data_office365_ObjectId",
-        "ApplicationId": "data_office365_ApplicationId",
-        "PolicyName": "data_office365_PolicyName",
-        "rule.id": "rule_id",
-    },
-    "fortigate": {
-        "action": "data_action",
-        "event.action": "data_action",
-        "srcip": "data_srcip",
-        "source.ip": "data_srcip",
-        "dstip": "data_dstip",
-        "destination.ip": "data_dstip",
-        "dstport": "data_dstport",
-        "destination.port": "data_dstport",
-        "subtype": "data_subtype",
-        "msg": "data_msg",
-        "level": "data_level",
-        "attack": "data_attack",
-        "policyid": "data_policyid",
-        "user": "data_user",
-        "rule.id": "rule_id",
-    },
-    "linux": {
-        "srcip": "data_srcip",
-        "source.ip": "data_srcip",
-        "srcuser": "data_srcuser",
-        "dstuser": "data_dstuser",
-        "user.target.name": "data_dstuser",
-        "command": "data_command",
-        "process.command_line": "data_command",
-        "process.executable": "data_command",
-        "pam_status": "data_pam_status",
-        "file.path": "data_file_path",
-        "rule.id": "rule_id",
-    },
-    "dns": {
-        "query_name": "data_query_name",
-        "dns.question.name": "data_query_name",
-        "qtype": "data_qtype",
-        "dns.question.type": "data_qtype",
-        "srcip": "data_srcip",
-        "source.ip": "data_srcip",
-        "response_length": "data_response_length",
-        "rcode": "data_rcode",
-        "rule.id": "rule_id",
-    },
-    "waf_akamai": {
-        "action": "data_action",
-        "event.action": "data_action",
-        "srcip": "data_srcip",
-        "source.ip": "data_srcip",
-        "http_method": "data_http_method",
-        "http.request.method": "data_http_method",
-        "uri": "data_uri",
-        "url.path": "data_uri",
-        "attack_type": "data_attack_type",
-        "rule_tag": "data_rule_tag",
-        "status_code": "data_status_code",
-        "http.response.status_code": "data_status_code",
-        "rule_id": "rule_id",
-        "rule.id": "rule_id",
-    },
-}
-
-# Campos nativos suportados pelo pipeline Wazuh -> Vector -> Loki por tecnologia
-SUPPORTED_WAZUH_LOKI_FIELDS: dict[str, set[str]] = {
-    "ad_windows": {
-        "rule_id",
-        "win_system_eventID",
-        "win_system_computer",
-        "win_system_channel",
-        "win_eventdata_targetUserName",
-        "win_eventdata_subjectUserName",
-        "win_eventdata_ipAddress",
-        "win_eventdata_status",
-        "win_eventdata_subStatus",
-        "win_eventdata_logonType",
-        "win_eventdata_ticketEncryptionType",
-        "win_eventdata_serviceName",
-        "win_eventdata_serviceFileName",
-        "win_eventdata_accessMask",
-        "win_eventdata_taskName",
-        "win_eventdata_image",
-        "win_eventdata_commandLine",
-        "win_eventdata_parentImage",
-        "win_eventdata_targetImage",
-        "win_eventdata_grantedAccess",
-        "win_eventdata_user",
-        "win_eventdata_scriptBlockText",
-        "win_eventdata_targetObject",
-        "win_eventdata_shareName",
-        "win_eventdata_privilegeList",
-        "win_eventdata_authenticationPackageName",
-        "win_eventdata_memberName",
-        "full_log",
-    },
-    "sysmon": {
-        "rule_id",
-        "win_system_eventID",
-        "win_eventdata_image",
-        "win_eventdata_commandLine",
-        "win_eventdata_parentImage",
-        "win_eventdata_targetImage",
-        "win_eventdata_grantedAccess",
-        "win_eventdata_user",
-        "win_eventdata_targetObject",
+        "win_eventdata_targetFilename",
+        "data_win_eventdata_targetFilename",
+        "win_eventdata_imageLoaded",
+        "data_win_eventdata_imageLoaded",
+        "win_eventdata_hashes",
+        "data_win_eventdata_hashes",
         "full_log",
     },
     "office365": {
@@ -484,12 +430,14 @@ SUPPORTED_WAZUH_LOKI_FIELDS: dict[str, set[str]] = {
         "data_dstip",
         "data_action",
         "data_dstport",
+        "data_srcport",
         "data_subtype",
         "data_msg",
         "data_level",
         "data_attack",
         "data_policyid",
         "data_user",
+        "data_cfgpath",
         "full_log",
     },
     "linux": {
@@ -500,11 +448,14 @@ SUPPORTED_WAZUH_LOKI_FIELDS: dict[str, set[str]] = {
         "data_command",
         "data_pam_status",
         "data_file_path",
+        "data_uid",
+        "data_gid",
         "full_log",
     },
     "dns": {
         "rule_id",
         "data_query_name",
+        "data_QueryName",
         "data_qtype",
         "data_srcip",
         "data_response_length",
@@ -520,8 +471,31 @@ SUPPORTED_WAZUH_LOKI_FIELDS: dict[str, set[str]] = {
         "data_attack_type",
         "data_rule_tag",
         "data_status_code",
+        "data_user_agent",
+        "data_host",
         "full_log",
     },
+}
+
+# Telemetrias especializadas exigidas por regras avançadas (Ex.: Command Line em EvtID 4688,
+# Monitoramento de Registro, PowerShell ScriptBlock Logging, Monitoramento de Arquivos/DLLs).
+SPECIALIZED_TELEMETRY_FIELDS: dict[str, str] = {
+    "data_win_eventdata_commandLine": "Command Line habilitado (Auditoria de Criação de Processos / EvtID 4688)",
+    "win_eventdata_commandLine": "Command Line habilitado (Auditoria de Criação de Processos / EvtID 4688)",
+    "data_win_eventdata_targetObject": "Monitoramento de Registro habilitado (Registry Auditing)",
+    "win_eventdata_targetObject": "Monitoramento de Registro habilitado (Registry Auditing)",
+    "data_win_eventdata_objectName": "Auditoria de Objetos/Registro habilitada (EvtID 4657 / 4663)",
+    "win_eventdata_objectName": "Auditoria de Objetos/Registro habilitada (EvtID 4657 / 4663)",
+    "data_win_eventdata_scriptBlockText": "PowerShell ScriptBlock Logging habilitado (EvtID 4104)",
+    "win_eventdata_scriptBlockText": "PowerShell ScriptBlock Logging habilitado (EvtID 4104)",
+    "data_win_eventdata_targetFilename": "Monitoramento de Criação de Arquivos habilitado (File Event)",
+    "win_eventdata_targetFilename": "Monitoramento de Criação de Arquivos habilitado (File Event)",
+    "data_win_eventdata_imageLoaded": "Auditoria de Carregamento de DLL/Driver habilitada (ImageLoad)",
+    "win_eventdata_imageLoaded": "Auditoria de Carregamento de DLL/Driver habilitada (ImageLoad)",
+    "data_win_eventdata_serviceFileName": "Auditoria de Instalação de Serviços habilitada (EvtID 4697 / 7045)",
+    "win_eventdata_serviceFileName": "Auditoria de Instalação de Serviços habilitada (EvtID 4697 / 7045)",
+    "data_command": "Auditoria de Execução de Comandos habilitada (Linux Auditd / Sudo)",
+    "data_file_path": "Monitoramento de Integridade de Arquivos habilitado (FIM)",
 }
 
 # =============================================================================
@@ -914,6 +888,27 @@ def match_rule_to_technology(
         return None
 
     by_slug = {t.slug.lower(): t for t in enabled_techs}
+    explicit_product = str(raw_rule.get("product") or "").strip().lower()
+    unsupported_products = {
+        "macos",
+        "aws",
+        "gcp",
+        "google_workspace",
+        "okta",
+        "zeek",
+        "cisco",
+        "juniper",
+        "github",
+        "bitbucket",
+        "kubernetes",
+        "opencanary",
+        "spring",
+        "huawei",
+        "paloalto",
+    }
+    if explicit_product in unsupported_products and explicit_product not in by_slug:
+        return None
+
     hints = [str(h).strip().lower() for h in (raw_rule.get("datasource_hints") or []) if h]
 
     # 1. Match direto prioritário por slug nos hints
@@ -923,10 +918,12 @@ def match_rule_to_technology(
         # Sinônimos comuns de logsource (Sigma / Splunk / Elastic)
         if hint in ("windows", "active_directory", "ad", "wineventlog_security", "security") and "ad_windows" in by_slug:
             return by_slug["ad_windows"]
-        if hint in ("m365", "o365", "exchange", "azuread", "entra_id") and "office365" in by_slug:
+        if hint in ("m365", "o365", "exchange", "azuread", "azure", "entra_id") and "office365" in by_slug:
             return by_slug["office365"]
-        if hint in ("fortinet", "fortios", "sslvpn") and "fortigate" in by_slug:
+        if hint in ("fortinet", "fortios", "fortigate", "sslvpn", "firewall") and "fortigate" in by_slug:
             return by_slug["fortigate"]
+        if hint in ("webserver", "proxy", "waf") and "waf_akamai" in by_slug:
+            return by_slug["waf_akamai"]
 
     # 2. Match por PERÍMETRO DE DETECÇÃO (amarrado ao escopo tecnológico)
     rule_perimeter = str(raw_rule.get("perimeter") or "").strip().lower()
@@ -978,8 +975,9 @@ def search_rules_in_trusted_sources(
     tecnologias que já existem e estão ativas no D.A.N.T.E.
 
     Só devolve regras REAIS: as do repositório local do SigmaHQ (clonado em /data/sigma-repo),
-    com nome, descrição, metadados e URL exatamente como no arquivo original. Não há catálogo
-    embutido/sintético de regras.
+    com nome, descrição, metadados e URL exatamente como no arquivo original, selecionando
+    um lote balanceado entre tecnologias e categorias (Process Creation EvtID 4688, Security,
+    Registry, PowerShell, Sysmon Driver/ImageLoad/DNS, FortiGate, Office365, Linux e WAF/Web).
     """
     enabled_techs = [t for t in technologies if t.enabled]
     if not enabled_techs:
@@ -1001,15 +999,94 @@ def search_rules_in_trusted_sources(
                     cand.get("service"),
                 ]
                 cand["datasource_hints"] = [str(h).lower() for h in hints if h]
-                all_candidates.append(cand)
+                if match_rule_to_technology(cand, enabled_techs) is not None:
+                    all_candidates.append(cand)
     except Exception as exc:
         logger.debug("Leitura do repositório local do SigmaHQ: %s", exc)
 
-    return [
-        candidate
-        for candidate in all_candidates
-        if match_rule_to_technology(candidate, enabled_techs) is not None
-    ]
+    if not all_candidates or max_local_sigma is not None:
+        return all_candidates
+
+    # Seleciona um conjunto balanceado e determinístico de regras reais por tecnologia e categoria
+    bucket_win_sec: list[dict[str, Any]] = []
+    bucket_win_proc4688: list[dict[str, Any]] = []
+    bucket_win_tier2: list[dict[str, Any]] = []
+    bucket_win_tier3: list[dict[str, Any]] = []
+    bucket_fortigate: list[dict[str, Any]] = []
+    bucket_office365: list[dict[str, Any]] = []
+    bucket_linux: list[dict[str, Any]] = []
+    bucket_waf: list[dict[str, Any]] = []
+    bucket_other: list[dict[str, Any]] = []
+
+    priority_ext_ids = {
+        "f88e112a-21aa-44bd-9b01-6ee2a2bbbed1",  # Failed Logon From Public IP (EvtID 4625)
+        "9eb99343-d336-4020-a3cd-67f3819e68ee",  # Account Tampering - Suspicious Failed Logon Reasons
+        "72124974-a68b-4366-b990-d30e0b2a190d",  # Metasploit SMB Authentication
+        "5513deaf-f49a-46c2-a6c8-3f111b5cb453",  # SQL Injection Strings In URI
+        "65354b83-a2ea-4ea6-8414-3ab38be0d409",  # Cross Site Scripting Strings
+        "7ff9db12-1b94-4a79-ba68-a2402c5d6729",  # Windows Webshell Strings
+        "ada3bc4f-f0fd-42b9-ba91-e105e8af7342",  # Server Side Template Injection Strings
+    }
+
+    for cand in all_candidates:
+        tech = match_rule_to_technology(cand, enabled_techs)
+        if tech is None:
+            continue
+        slug = tech.slug.lower()
+        cat = str(cand.get("category") or "").strip().lower()
+        srv = str(cand.get("service") or "").strip().lower()
+        det_str = str(cand.get("detection") or "")
+        ext_id = str(cand.get("external_id") or "")
+
+        if slug in ("ad_windows", "sysmon"):
+            if srv == "security" or cat == "security" or ext_id in priority_ext_ids:
+                if "4625" in det_str or ext_id in priority_ext_ids:
+                    bucket_win_sec.insert(0, cand)
+                else:
+                    bucket_win_sec.append(cand)
+            elif cat == "process_creation" and "CommandLine" in det_str:
+                bucket_win_proc4688.append(cand)
+            elif cat in ("registry_set", "registry_event", "ps_script", "file_event"):
+                bucket_win_tier2.append(cand)
+            elif cat in ("driver_load", "image_load", "dns_query", "process_access", "create_remote_thread"):
+                bucket_win_tier3.append(cand)
+            else:
+                bucket_other.append(cand)
+        elif slug == "fortigate":
+            bucket_fortigate.append(cand)
+        elif slug == "office365":
+            bucket_office365.append(cand)
+        elif slug in ("linux", "linux_os"):
+            bucket_linux.append(cand)
+        elif slug == "waf_akamai":
+            if ext_id in priority_ext_ids:
+                bucket_waf.insert(0, cand)
+            else:
+                bucket_waf.append(cand)
+        else:
+            bucket_other.append(cand)
+
+    balanced: list[dict[str, Any]] = []
+    balanced.extend(bucket_win_sec[:8])
+    balanced.extend(bucket_win_proc4688[:10])
+    balanced.extend(bucket_win_tier2[:10])
+    balanced.extend(bucket_win_tier3[:10])
+    balanced.extend(bucket_fortigate[:6])
+    balanced.extend(bucket_office365[:6])
+    balanced.extend(bucket_linux[:6])
+    balanced.extend(bucket_waf[:6])
+
+    if len(balanced) < 52:
+        seen_b = {str(c.get("external_id") or "") for c in balanced}
+        for extra in bucket_other + bucket_win_proc4688[10:] + bucket_win_tier2[10:]:
+            eid = str(extra.get("external_id") or "")
+            if eid not in seen_b:
+                seen_b.add(eid)
+                balanced.append(extra)
+                if len(balanced) >= 56:
+                    break
+
+    return balanced
 
 
 def has_unprocessed_compatible_rules(
@@ -1225,7 +1302,7 @@ def convert_rule_to_logql(
 
 
 MITRE_NOT_INFORMED = "não informado"
-MAX_NEW_CANDIDATES_PER_CYCLE = 40
+MAX_NEW_CANDIDATES_PER_CYCLE = 80
 MAX_CONVERSION_ATTEMPTS_PER_CYCLE = 150
 
 
@@ -1538,10 +1615,13 @@ async def _query_loki_lines(
     except GrafanaError as exc:
         msg_lower = str(exc.message or "").lower()
         is_to = (
-            exc.status_code in (504, 408)
+            exc.status_code in (502, 504, 408)
             or "timeout" in msg_lower
             or "tempo esgotado" in msg_lower
             or "context deadline exceeded" in msg_lower
+            or "bad gateway" in msg_lower
+            or "connection refused" in msg_lower
+            or "dial tcp" in msg_lower
         )
         return False, [], is_to, str(exc.message)
     except httpx.TimeoutException:
@@ -1553,7 +1633,20 @@ async def _query_loki_lines(
 
     lines: list[str] = []
     results = (res or {}).get("results", {})
-    frames = (results.get("A") or {}).get("frames", [])
+    res_a = results.get("A") or {}
+    if res_a.get("error"):
+        err_str = str(res_a.get("error") or "")
+        err_low = err_str.lower()
+        is_to = (
+            int(res_a.get("status") or 0) in (502, 504, 408)
+            or "timeout" in err_low
+            or "deadline" in err_low
+            or "bad gateway" in err_low
+            or "connection refused" in err_low
+            or "dial tcp" in err_low
+        )
+        return False, [], is_to, err_str[:160]
+    frames = res_a.get("frames", [])
     for frame in frames:
         fields = (frame.get("schema") or {}).get("fields", [])
         data_values = (frame.get("data") or {}).get("values", [])
@@ -1705,6 +1798,92 @@ async def _query_loki_lines_progressive(
     return any_ok, [], None, windows_evaluated, timed_out_any, timeout_detail
 
 
+def _expand_observed_field_aliases(raw_fields: set[str]) -> set[str]:
+    """Expande sinônimos estruturais de campos JSON do Wazuh/EventLog/Sysmon no Loki."""
+    expanded = set(raw_fields)
+    alias_groups = [
+        {
+            "data_win_eventdata_image",
+            "win_eventdata_image",
+            "data_win_eventdata_newProcessName",
+            "win_eventdata_newProcessName",
+            "data_win_eventdata_processName",
+            "win_eventdata_processName",
+        },
+        {
+            "data_win_eventdata_parentImage",
+            "win_eventdata_parentImage",
+            "data_win_eventdata_parentProcessName",
+            "win_eventdata_parentProcessName",
+        },
+        {
+            "data_win_eventdata_targetUserName",
+            "win_eventdata_targetUserName",
+            "data_win_eventdata_user",
+            "win_eventdata_user",
+        },
+        {
+            "data_win_eventdata_targetObject",
+            "win_eventdata_targetObject",
+            "data_win_eventdata_objectName",
+            "win_eventdata_objectName",
+        },
+        {"data_action", "action"},
+    ]
+    for k in list(raw_fields):
+        if k.startswith("data_win_"):
+            expanded.add(k.replace("data_win_", "win_", 1))
+        elif k.startswith("win_"):
+            expanded.add(f"data_{k}")
+    lower_snapshot = {f.lower() for f in expanded}
+    for grp in alias_groups:
+        if any(g in expanded or g.lower() in lower_snapshot for g in grp):
+            expanded.update(grp)
+    return expanded
+
+
+def _evaluate_client_telemetry_readiness(
+    mapped_fields: list[CurationFieldMapping],
+    observed_fields: set[str],
+    tech_logs_count: int,
+    has_query_results: bool,
+) -> tuple[bool, list[str], list[str]]:
+    """Avalia se o cliente possui a telemetria necessária habilitada para a regra.
+
+    Retorna: (has_required_telemetry, present_telemetry_labels, missing_telemetry_labels).
+    """
+    obs_lower = {f.lower() for f in observed_fields}
+    compatible_fields = [m.logql_field for m in mapped_fields if m.compatible]
+    specialized_req = [f for f in compatible_fields if f in SPECIALIZED_TELEMETRY_FIELDS]
+
+    present_labels: list[str] = []
+    missing_labels: list[str] = []
+    for sf in specialized_req:
+        label = SPECIALIZED_TELEMETRY_FIELDS[sf]
+        if sf in observed_fields or sf.lower() in obs_lower:
+            if label not in present_labels:
+                present_labels.append(label)
+        else:
+            if label not in missing_labels:
+                missing_labels.append(label)
+
+    observed_in_client = [
+        f for f in compatible_fields if f in observed_fields or f.lower() in obs_lower
+    ]
+    total_f = len(mapped_fields)
+    obs_pct = (
+        round((len(observed_in_client) * 100.0) / total_f, 1)
+        if total_f > 0 and len(observed_fields) > 0
+        else (100.0 if total_f == 0 else 0.0)
+    )
+
+    has_required_telemetry = bool(
+        has_query_results
+        or (tech_logs_count > 0 and obs_pct > 75.0 and len(missing_labels) == 0)
+    )
+    return has_required_telemetry, present_labels, missing_labels
+
+
 def compute_dynamic_compatibility(
     *,
     schema_compat_pct: float,
@@ -1717,23 +1896,28 @@ def compute_dynamic_compatibility(
     perimeter: str = "other",
     observed_field_compat_pct: float = 0.0,
     has_query_results: bool = False,
+    has_required_telemetry: bool = False,
     lint_valid: bool = True,
     multi_client: bool = False,
 ) -> tuple[float, float, float, float]:
-    """Calcula a porcentagem de compatibilidade dinâmica do D.A.N.T.E. ponderando:
-    1. Presença de logs no Loki (volume de telemetria, janelas e recência temporal);
-    2. Contexto de ameaça (severidade, criticidade MITRE ATT&CK, subtécnica e perímetro);
-    3. Correspondência dos logs com o cenário de ameaça (campos observados nos logs reais,
-       resultados comprovados na query e validação de schema).
+    """Calcula a porcentagem de compatibilidade dinâmica recalibrada do D.A.N.T.E.:
+
+    1. Alta Compatibilidade (95%+ / 'excellent'):
+       Regra de detecção curada encontra mais de 75% (> 75%) dos campos necessários em um cliente
+       E a telemetria necessária habilitada, mesmo sem a existência de logs correspondentes
+       (Ex.: EvtID 4688 - TargetUserName, NewProcessName, CommandLine), ou possui disparo real comprovado.
+    2. Compatibilidade 80% a 94% ('good'):
+       Regra de detecção curada encontra mais de 50% (>= 50%) dos campos necessários em um cliente,
+       mesmo sem a existência de logs correspondentes e sem a telemetria específica necessária
+       (ex.: Command Line habilitado ou Registro sendo monitorado).
+    3. Descartadas (< 80% / 'bad'):
+       Regra de detecção possui abaixo de 50% (< 50%) de campos necessários encontrados em um cliente,
+       não tem logs correspondentes e/ou não possui a telemetria necessária habilitada.
 
     Retorna: (total_compat_pct, log_presence_delta, threat_context_delta, scenario_match_delta).
-    Regras candidatas com schema homologado variam dinamicamente de 80.0% a 100.0%.
-    Regras com schema incompatível (< 80.0%) ou erros críticos são descartadas.
     """
-    if schema_compat_pct < 80.0:
-        return round(schema_compat_pct, 1), 0.0, 0.0, 0.0
-
-    base_admission = 80.0
+    if schema_compat_pct < 50.0 or not lint_valid:
+        return round(min(49.0, schema_compat_pct), 1), 0.0, 0.0, 0.0
 
     # 1. Presença de logs (até +8.0%)
     if tech_logs_count > 100:
@@ -1764,7 +1948,7 @@ def compute_dynamic_compatibility(
     elif any_3d:
         p_rec = 0.8
     elif tech_logs_count > 0:
-        p_rec = 1.0
+        p_rec = 1.4
     else:
         p_rec = 0.4
 
@@ -1809,48 +1993,51 @@ def compute_dynamic_compatibility(
         t_spec = 0.3
 
     perim_clean = str(perimeter or "").lower()
-    core_perims = {"identity_iam", "firewall", "waf_web", "antimalware_edr", "cloud_saas"}
+    core_perims = {"identity_iam", "firewall", "waf_web", "antimalware_edr", "endpoint_edr", "cloud_saas"}
     t_perim = 0.5 if perim_clean in core_perims else 0.2
     threat_context_delta = min(6.0, t_sev + t_tac + t_spec + t_perim)
 
-    # 3. Correspondência dos logs com cenário de ameaça (até +6.0%)
+    # 3. Correspondência dos logs e telemetria com o cenário de ameaça (até +6.0%)
     if observed_field_compat_pct >= 100.0:
         m_obs = 3.0
-    elif observed_field_compat_pct >= 75.0:
-        m_obs = 2.4
+    elif observed_field_compat_pct > 75.0:
+        m_obs = 2.5
     elif observed_field_compat_pct >= 50.0:
         m_obs = 1.8
     elif observed_field_compat_pct >= 25.0:
-        m_obs = 1.2
+        m_obs = 1.0
     elif observed_field_compat_pct > 0.0:
-        m_obs = 0.8
+        m_obs = 0.6
     else:
-        m_obs = 0.5
+        m_obs = 0.3
 
     has_results_bool = bool(has_query_results or matched_lines_count > 0)
     if has_results_bool:
         m_match = 2.5
-    elif tech_logs_count > 0:
-        m_match = 1.0
+    elif has_required_telemetry and observed_field_compat_pct > 75.0:
+        m_match = 2.0
+    elif tech_logs_count > 0 and observed_field_compat_pct >= 50.0:
+        m_match = 1.2
     else:
-        m_match = 0.5
+        m_match = 0.4
 
     m_lint = 0.5 if lint_valid else 0.0
     scenario_match_delta = min(6.0, m_obs + m_match + m_lint)
 
-    # REGRA CRÍTICA D.A.N.T.E.: SOMENTE regras com evidência comprovada de logs encontrados
-    # na query da regra (has_query_results / matched_lines_count > 0) podem atingir 80.0%+ de compatibilidade.
-    # Sem eventos encontrados no Loki, a regra é estritamente limitada a < 80.0% (teto de 75.0%)
-    # e descartada da lista de candidatas para implementação no SIEM.
-    if not has_results_bool:
-        base_no_logs = 40.0
-        score_no_logs = (
-            base_no_logs
-            + (log_presence_delta * 0.5)
-            + (threat_context_delta * 0.8)
-            + (scenario_match_delta * 0.6)
-        )
-        total_score = min(75.0, max(30.0, round(score_no_logs, 1)))
+    combined_deltas = log_presence_delta + threat_context_delta + scenario_match_delta
+
+    # Faixa 1: Alta Compatibilidade (95% a 100%)
+    # > 75% dos campos necessários encontrados no cliente + telemetria necessária (ou logs correspondentes)
+    if (
+        observed_field_compat_pct > 75.0
+        and (has_required_telemetry or has_results_bool)
+        and (tech_logs_count > 0 or has_results_bool)
+    ):
+        field_bonus = ((observed_field_compat_pct - 75.0) / 25.0) * 1.8
+        context_bonus = (combined_deltas / 20.0) * 2.4
+        hits_bonus = 0.8 if has_results_bool else 0.2
+        total_score = round(95.0 + field_bonus + context_bonus + hits_bonus, 1)
+        total_score = min(100.0, max(95.0, total_score))
         return (
             total_score,
             round(log_presence_delta, 1),
@@ -1858,10 +2045,31 @@ def compute_dynamic_compatibility(
             round(scenario_match_delta, 1),
         )
 
-    total_score = round(
-        base_admission + log_presence_delta + threat_context_delta + scenario_match_delta, 1
+    # Faixa 2: Compatibilidade 80% a 94% (Candidata Qualificada)
+    # >= 50% dos campos necessários encontrados no cliente, mesmo sem logs correspondentes e sem telemetria específica
+    if (observed_field_compat_pct >= 50.0 and tech_logs_count > 0) or has_results_bool:
+        field_span = max(0.0, min(50.0, observed_field_compat_pct - 50.0))
+        field_bonus = (field_span / 50.0) * 7.5
+        context_bonus = (combined_deltas / 20.0) * 6.8
+        total_score = round(80.0 + field_bonus + context_bonus, 1)
+        total_score = min(94.9, max(80.0, total_score))
+        return (
+            total_score,
+            round(log_presence_delta, 1),
+            round(threat_context_delta, 1),
+            round(scenario_match_delta, 1),
+        )
+
+    # Faixa 3: Descartadas (< 80%)
+    # Abaixo de 50% dos campos necessários encontrados no cliente, sem logs correspondentes e/ou sem telemetria
+    base_discard = 25.0 + (max(0.0, observed_field_compat_pct) * 0.7)
+    score_discard = (
+        base_discard
+        + (log_presence_delta * 0.5)
+        + (threat_context_delta * 1.0)
+        + (scenario_match_delta * 0.7)
     )
-    total_score = min(100.0, max(80.0, total_score))
+    total_score = min(78.0, max(25.0, round(score_discard, 1)))
     return (
         total_score,
         round(log_presence_delta, 1),
@@ -1892,13 +2100,14 @@ async def evaluate_rule_across_clients(
     mitre_technique: str = "",
 ) -> tuple[Literal["excellent", "good", "bad"], str, float, list[CurationClientEvaluation]]:
     """Passo 2.3: Executa a query convertida no Loki de todos os clientes em etapas progressivas
-    (15m -> 1h -> 6h -> 24h -> 3d) e categoriza a regra.
+    (15m -> 1h -> 6h -> 24h -> 3d) e categoriza a regra segundo os 3 limiares recalibrados:
 
-    Critérios obrigatórios de qualificação:
-    1. Compatibilidade dos campos convertidos para LogQL com os logs reais vistos durante as queries.
-    2. Resultados obtidos no retorno da query: se não houver evidências de resultados nos logs
-       (matched_lines_count == 0), a regra de detecção NÃO pode ser categorizada como 'excellent'.
-    3. Resiliência a timeout: se der timeout em um cliente, não interrompe a curadoria.
+    1. Alta Compatibilidade (95%+ / 'excellent'): > 75% dos campos necessários encontrados em um cliente
+       + telemetria necessária habilitada (mesmo sem logs correspondentes) ou logs correspondentes encontrados.
+    2. Compatibilidade 80% a 94% ('good'): >= 50% dos campos necessários encontrados em um cliente,
+       mesmo sem logs correspondentes e sem telemetria especializada.
+    3. Descartadas (< 80% / 'bad'): < 50% dos campos necessários encontrados em um cliente,
+       sem logs correspondentes e/ou sem telemetria necessária habilitada.
     """
     total_fields = len(mapped_fields)
     compatible_fields_list = [m.logql_field for m in mapped_fields if m.compatible]
@@ -1910,14 +2119,13 @@ async def evaluate_rule_across_clients(
         else 100.0
     )
 
-    # Se a regra possuir compatibilidade de campos inferior a 80.0%,
-    # ela não é considerada candidata e nunca entra na curadoria.
-    if incompatible_fields_list or schema_compat_pct < 80.0:
+    # Se a regra possuir compatibilidade de schema inferior a 50.0%, ela é descartada (< 80%).
+    if schema_compat_pct < 50.0:
         bad_reason = (
-            f"Não elegível: compatibilidade de campos ({schema_compat_pct:.1f}%) inferior ao limiar mínimo de 80.0% "
-            f"para implementação ({len(incompatible_fields_list)} campo(s) incompatível(is): {', '.join(incompatible_fields_list)})."
+            f"Descartada (< 80%): compatibilidade de campos ({schema_compat_pct:.1f}%) abaixo do limiar mínimo "
+            f"({len(incompatible_fields_list)} campo(s) incompatível(is): {', '.join(incompatible_fields_list)})."
         )
-        return "bad", bad_reason, schema_compat_pct, []
+        return "bad", bad_reason, min(78.0, schema_compat_pct), []
 
     stream_expr = _extract_stream_expression(logql_query)
     tech_base_expr = f'{{job="{technology.job}", ss_groups=~"{technology.ss_groups_regex}"}} | json'
@@ -2151,50 +2359,44 @@ async def evaluate_rule_across_clients(
                 except Exception:
                     instant_ok = False
 
-            if not (rule_query_ok or instant_ok or rule_timed_out):
+            if not (rule_query_ok or instant_ok or tech_query_ok or rule_timed_out):
                 continue
 
             # Extrai todos os campos JSON reais vistos nos logs durante as queries executadas
-            observed_fields: set[str] = set()
+            raw_observed_fields: set[str] = set()
             for line_str in matched_lines + tech_lines:
                 try:
                     parsed_line = json.loads(line_str)
                     if isinstance(parsed_line, dict):
                         flat_items = _flatten_json_items(parsed_line)
-                        observed_fields.update(flat_items.keys())
-                        global_observed_fields.update(flat_items.keys())
-                        # Reconhecimento bidirecional de compatibilidade (data_win_ <-> win_)
-                        for k in list(flat_items.keys()):
-                            if k.startswith("data_win_"):
-                                alt_k = k.replace("data_win_", "win_")
-                                observed_fields.add(alt_k)
-                                global_observed_fields.add(alt_k)
-                            elif k.startswith("win_"):
-                                alt_k = f"data_{k}"
-                                observed_fields.add(alt_k)
-                                global_observed_fields.add(alt_k)
-                            elif k == "data_action":
-                                observed_fields.add("action")
-                                global_observed_fields.add("action")
-                            elif k == "action":
-                                observed_fields.add("data_action")
-                                global_observed_fields.add("data_action")
+                        raw_observed_fields.update(flat_items.keys())
+                        exp_keys = _expand_observed_field_aliases(set(flat_items.keys()))
                         for fk, fv in flat_items.items():
                             val_str = str(fv).strip()
-                            if val_str and fk in compatible_fields_list:
-                                bucket = global_field_samples.setdefault(fk, [])
-                                if val_str not in bucket and len(bucket) < 4:
-                                    bucket.append(val_str)
+                            if val_str:
+                                for cand_cf in compatible_fields_list:
+                                    if cand_cf == fk or cand_cf.lower() == fk.lower() or cand_cf in exp_keys:
+                                        bucket = global_field_samples.setdefault(cand_cf, [])
+                                        if val_str not in bucket and len(bucket) < 4:
+                                            bucket.append(val_str)
                 except Exception:
                     continue
+
+            observed_fields = _expand_observed_field_aliases(raw_observed_fields)
+            global_observed_fields.update(observed_fields)
+            obs_lower_set = {f.lower() for f in observed_fields}
 
             matched_count = len(matched_lines)
             tech_logs_count = max(len(tech_lines), scanned_tech_logs, matched_count)
             has_results = matched_count > 0
 
-            # Critério 1: Compatibilidade dos campos convertidos para LogQL com os logs reais vistos
-            observed_in_client = [f for f in compatible_fields_list if f in observed_fields]
-            missing_in_client = [f for f in compatible_fields_list if f not in observed_fields]
+            # Critério 1: Compatibilidade dos campos necessários da regra com os logs do cliente
+            observed_in_client = [
+                f for f in compatible_fields_list if f in observed_fields or f.lower() in obs_lower_set
+            ]
+            missing_in_client = [
+                f for f in compatible_fields_list if f not in observed_fields and f.lower() not in obs_lower_set
+            ]
             if total_fields > 0 and len(observed_fields) > 0:
                 observed_compat_pct = round((len(observed_in_client) * 100.0) / total_fields, 1)
             elif total_fields == 0:
@@ -2202,43 +2404,67 @@ async def evaluate_rule_across_clients(
             else:
                 observed_compat_pct = 0.0
 
+            has_req_telemetry, present_tel_labels, missing_tel_labels = _evaluate_client_telemetry_readiness(
+                mapped_fields=mapped_fields,
+                observed_fields=observed_fields,
+                tech_logs_count=tech_logs_count,
+                has_query_results=has_results,
+            )
+
             win_steps_str = " → ".join(windows_evaluated) if windows_evaluated else "15 minutos"
+
+            # Calcula a compatibilidade dinâmica deste cliente específico
+            c_score, c_lp, c_tc, c_sm = compute_dynamic_compatibility(
+                schema_compat_pct=schema_compat_pct,
+                tech_logs_count=tech_logs_count,
+                matched_lines_count=matched_count,
+                matched_windows=[matched_window] if matched_window else [],
+                severity=severity,
+                mitre_tactic=mitre_tactic,
+                mitre_technique=mitre_technique,
+                perimeter=technology.perimeter,
+                observed_field_compat_pct=observed_compat_pct,
+                has_query_results=has_results,
+                has_required_telemetry=has_req_telemetry,
+                lint_valid=True,
+                multi_client=False,
+            )
 
             # Fatores detalhados da qualificação neste cliente
             client_factors: list[CurationQualificationFactor] = []
-            if observed_compat_pct >= 100.0:
+            if observed_compat_pct > 75.0:
                 client_factors.append(
                     CurationQualificationFactor(
-                        criterion="1. Compatibilidade de Campos com Logs Reais",
+                        criterion="1. Cobertura de Campos Necessários (> 75%)",
                         status="met",
                         impact="excellent",
                         summary=(
-                            f"100% dos campos convertidos ({', '.join(observed_in_client)}) foram "
-                            f"encontrados e validados nos logs reais vistos em '{ds_name}'."
+                            f"{observed_compat_pct:.0f}% dos campos necessários ({', '.join(observed_in_client)}) "
+                            f"encontrados em '{ds_name}' (acima do limiar de 75% para Alta Compatibilidade)."
                         ),
                     )
                 )
-            elif len(observed_in_client) > 0:
+            elif observed_compat_pct >= 50.0:
                 client_factors.append(
                     CurationQualificationFactor(
-                        criterion="1. Compatibilidade de Campos com Logs Reais",
+                        criterion="1. Cobertura de Campos Necessários (50% a 75%)",
                         status="partial",
                         impact="good",
                         summary=(
-                            f"{observed_compat_pct:.0f}% dos campos convertidos ({', '.join(observed_in_client)}) "
-                            f"foram vistos nos logs reais; não observados na amostra atual: {', '.join(missing_in_client)}."
+                            f"{observed_compat_pct:.0f}% dos campos necessários ({', '.join(observed_in_client)}) "
+                            f"encontrados em '{ds_name}'; ausentes na amostra atual: {', '.join(missing_in_client)}."
                         ),
                     )
                 )
             else:
                 client_factors.append(
                     CurationQualificationFactor(
-                        criterion="1. Compatibilidade de Campos com Logs Reais",
-                        status="partial",
-                        impact="good",
+                        criterion="1. Cobertura de Campos Necessários (< 50%)",
+                        status="not_met",
+                        impact="bad",
                         summary=(
-                            f"0% observado nos logs atuais (sem eventos com os campos {', '.join(compatible_fields_list)} "
-                            f"na amostra de '{ds_name}'), embora 100% compatíveis com o schema Wazuh/Loki."
+                            f"Apenas {observed_compat_pct:.0f}% dos campos necessários encontrados em '{ds_name}' "
+                            f"(abaixo do mínimo de 50%; ausentes: {', '.join(missing_in_client)})."
                         ),
                     )
                 )
@@ -2246,50 +2472,93 @@ async def evaluate_rule_across_clients(
             if has_results:
                 client_factors.append(
                     CurationQualificationFactor(
-                        criterion="2. Resultados Obtidos no Retorno da Query",
+                        criterion="2. Telemetria & Logs Correspondentes",
                         status="met",
                         impact="excellent",
                         summary=(
-                            f"Evidência comprovada nos logs: a query retornou {matched_count} evento(s) "
-                            f"real(is) no datasource Loki '{ds_name}'."
+                            f"Telemetria ativa e disparo comprovado: a query retornou {matched_count} evento(s) "
+                            f"correspondente(s) no datasource Loki '{ds_name}'."
+                        ),
+                    )
+                )
+            elif has_req_telemetry:
+                tel_detail = f" ({', '.join(present_tel_labels)})" if present_tel_labels else ""
+                client_factors.append(
+                    CurationQualificationFactor(
+                        criterion="2. Telemetria Necessária Habilitada",
+                        status="met",
+                        impact="excellent",
+                        summary=(
+                            f"Telemetria necessária habilitada em '{ds_name}'{tel_detail}; "
+                            "0 logs de ataque correspondentes no momento (pronta para detecção em tempo real)."
+                        ),
+                    )
+                )
+            elif observed_compat_pct >= 50.0 and tech_logs_count > 0:
+                miss_tel_detail = (
+                    f" Telemetria específica pendente: {', '.join(missing_tel_labels)}."
+                    if missing_tel_labels
+                    else ""
+                )
+                client_factors.append(
+                    CurationQualificationFactor(
+                        criterion="2. Telemetria Base Disponível (80% a 94%)",
+                        status="partial",
+                        impact="good",
+                        summary=(
+                            f"Mais de 50% dos campos necessários presentes em '{ds_name}' ({tech_logs_count} logs da tecnologia), "
+                            f"sem logs correspondentes no período.{miss_tel_detail}"
                         ),
                     )
                 )
             else:
                 client_factors.append(
                     CurationQualificationFactor(
-                        criterion="2. Resultados Obtidos no Retorno da Query",
-                        status="partial",
-                        impact="good",
+                        criterion="2. Telemetria & Logs Correspondentes",
+                        status="not_met",
+                        impact="bad",
                         summary=(
-                            f"0 resultados obtidos no retorno da query em '{ds_name}'. "
-                            "Sem evidências de resultados nos logs, a regra não pode ser categorizada como Excelente Candidata."
+                            f"Abaixo de 50% dos campos necessários em '{ds_name}', sem logs correspondentes "
+                            "e/ou telemetria necessária desabilitada."
                         ),
                     )
                 )
 
-            # Critério 1 + Critério 2 para categorização no cliente:
-            # SOMENTE pode ser 'excellent' se houver evidência real de resultados no retorno da query
-            # (has_results / matched_count > 0) E 100% de compatibilidade dos campos com os logs reais vistos!
-            if has_results and observed_compat_pct >= 100.0:
+            # Categorização recalibrada no cliente:
+            # 1) Alta Compatibilidade (95%+ / 'excellent'): c_score >= 95.0 (> 75% campos + telemetria ou hits)
+            # 2) Compatibilidade 80% a 94% ('good'): 80.0 <= c_score < 95.0 (>= 50% campos)
+            # 3) Descartada (< 80% / 'bad'): c_score < 80.0 (< 50% campos, sem logs e/ou telemetria)
+            if c_score >= 95.0:
                 client_quality: CurationCandidateQuality = "excellent"
-                reason = (
-                    f"Excelente candidata em '{c_name}': query LogQL executada no Loki '{ds_name}' "
-                    f"retornou {matched_count} resultado(s) real(is) e 100% dos campos convertidos "
-                    f"({', '.join(observed_in_client)}) foram confirmados nos logs reais vistos."
-                )
-            elif has_results:
+                if has_results:
+                    reason = (
+                        f"Alta Compatibilidade ({c_score:.1f}%) em '{c_name}': {observed_compat_pct:.0f}% dos campos "
+                        f"necessários ({', '.join(observed_in_client)}) validados, telemetria habilitada e "
+                        f"{matched_count} log(s) correspondente(s) em '{ds_name}'."
+                    )
+                else:
+                    reason = (
+                        f"Alta Compatibilidade ({c_score:.1f}%) em '{c_name}': mais de 75% ({observed_compat_pct:.0f}%) "
+                        f"dos campos necessários ({', '.join(observed_in_client)}) e telemetria necessária encontrados "
+                        f"em '{ds_name}', pronta para detecção mesmo sem ocorrências de ataque no período."
+                    )
+            elif c_score >= 80.0:
                 client_quality = "good"
+                miss_note = (
+                    f" (telemetria complementar sugerida: {', '.join(missing_tel_labels)})"
+                    if missing_tel_labels
+                    else ""
+                )
                 reason = (
-                    f"Boa candidata em '{c_name}': query LogQL executada no Loki '{ds_name}' "
-                    f"retornou {matched_count} resultado(s) real(is) e {observed_compat_pct:.0f}% dos campos "
-                    f"({', '.join(observed_in_client)}) confirmados nos logs reais vistos."
+                    f"Compatibilidade {c_score:.1f}% (faixa 80% a 94%) em '{c_name}': {observed_compat_pct:.0f}% "
+                    f"dos campos necessários ({', '.join(observed_in_client)}) encontrados no cliente{miss_note}."
                 )
             elif tech_logs_count > 0 or instant_ok or rule_query_ok or rule_timed_out:
                 client_quality = "bad"
                 reason = (
-                    f"Não elegível em '{c_name}': 0 eventos retornados na query da regra nas "
-                    f"janelas consultadas ({win_steps_str}), embora decoders/logs da tecnologia existam."
+                    f"Descartada em '{c_name}' ({c_score:.1f}% < 80%): apenas {observed_compat_pct:.0f}% dos campos "
+                    f"necessários encontrados (< 50%), 0 logs correspondentes nas janelas ({win_steps_str}) "
+                    "e/ou telemetria necessária não habilitada."
                 )
             else:
                 continue
@@ -2304,22 +2573,6 @@ async def evaluate_rule_across_clients(
                 elif tl not in other_tech_samples and len(other_tech_samples) < 5:
                     other_tech_samples.append(tl)
             chosen_tech_samples = (preferred_tech_samples + other_tech_samples)[:5]
-
-            # Calcula a compatibilidade dinâmica deste cliente específico
-            c_score, c_lp, c_tc, c_sm = compute_dynamic_compatibility(
-                schema_compat_pct=schema_compat_pct,
-                tech_logs_count=tech_logs_count,
-                matched_lines_count=matched_count,
-                matched_windows=[matched_window] if matched_window else [],
-                severity=severity,
-                mitre_tactic=mitre_tactic,
-                mitre_technique=mitre_technique,
-                perimeter=technology.perimeter,
-                observed_field_compat_pct=observed_compat_pct,
-                has_query_results=has_results,
-                lint_valid=True,
-                multi_client=False,
-            )
 
             client_evaluations.append(
                 CurationClientEvaluation(
@@ -2366,16 +2619,24 @@ async def evaluate_rule_across_clients(
             continue
 
     # Atualiza os campos mapeados da regra com a presença e valores reais vistos nos logs
+    global_obs_lower = {f.lower() for f in global_observed_fields}
     for mf in mapped_fields:
-        mf.observed_in_logs = mf.logql_field in global_observed_fields
+        mf.observed_in_logs = (
+            mf.logql_field in global_observed_fields or mf.logql_field.lower() in global_obs_lower
+        )
         mf.sample_values = global_field_samples.get(mf.logql_field, [])[:4]
 
-    # Ordena avaliações: primeiro 'excellent', depois 'good', depois alfabético por nome do cliente
+    # Ordena avaliações: primeiro 'excellent' (95%+), depois 'good' (80%-94%), depois por score e nome
     client_evaluations.sort(
-        key=lambda ev: (0 if ev.classification == "excellent" else 1, -ev.matched_lines_count, ev.client_name.lower())
+        key=lambda ev: (
+            0 if ev.classification == "excellent" else (1 if ev.classification == "good" else 2),
+            -(ev.field_compatibility_pct or 0.0),
+            -ev.matched_lines_count,
+            ev.client_name.lower(),
+        )
     )
 
-    excellent_clients = [ev for ev in client_evaluations if ev.classification == "excellent" and ev.has_query_results]
+    excellent_clients = [ev for ev in client_evaluations if ev.classification == "excellent"]
     good_clients = [ev for ev in client_evaluations if ev.classification == "good"]
 
     # Consolidação da compatibilidade dinâmica global da regra
@@ -2384,9 +2645,21 @@ async def evaluate_rule_across_clients(
     obs_fields_global = [m.logql_field for m in mapped_fields if m.observed_in_logs]
     global_obs_pct = (
         round((len(obs_fields_global) * 100.0) / total_fields, 1)
-        if total_fields > 0
-        else 100.0
+        if total_fields > 0 and len(global_observed_fields) > 0
+        else (100.0 if total_fields == 0 else 0.0)
     )
+    best_client_obs_pct = max(
+        (ev.observed_field_compatibility_pct for ev in client_evaluations),
+        default=global_obs_pct,
+    )
+    effective_obs_pct = max(global_obs_pct, best_client_obs_pct)
+    global_has_telemetry, _, _ = _evaluate_client_telemetry_readiness(
+        mapped_fields=mapped_fields,
+        observed_fields=global_observed_fields,
+        tech_logs_count=total_tech_all,
+        has_query_results=(total_hits_all > 0),
+    )
+    has_telemetry_any = bool(global_has_telemetry or len(excellent_clients) > 0)
     all_matched_windows = [ev.matched_window for ev in client_evaluations if ev.matched_window]
     has_multi = len([ev for ev in client_evaluations if ev.tech_logs_count > 0]) >= 2
     global_dynamic_score, _g_lp, _g_tc, _g_sm = compute_dynamic_compatibility(
@@ -2398,21 +2671,12 @@ async def evaluate_rule_across_clients(
         mitre_tactic=mitre_tactic,
         mitre_technique=mitre_technique,
         perimeter=technology.perimeter,
-        observed_field_compat_pct=global_obs_pct,
+        observed_field_compat_pct=effective_obs_pct,
         has_query_results=(total_hits_all > 0),
+        has_required_telemetry=has_telemetry_any,
         lint_valid=True,
         multi_client=has_multi,
     )
-
-    # REGRA CRÍTICA D.A.N.T.E.: Se não houver logs reais encontrados para a query da regra
-    # (total_hits_all == 0), a regra NÃO é elegível para o SIEM e é categorizada como "bad" (< 80%).
-    if total_hits_all == 0:
-        overall_reason = (
-            f"Não elegível para o SIEM ({global_dynamic_score:.1f}% de compatibilidade): "
-            f"0 eventos retornados na query LogQL nas etapas progressivas no Loki dos clientes. "
-            "Regras candidatas a implementação no SIEM exigem evidências reais de telemetria encontrada (≥ 80%)."
-        )
-        return "bad", overall_reason, global_dynamic_score, client_evaluations
 
     if excellent_clients:
         names = ", ".join(
@@ -2420,47 +2684,34 @@ async def evaluate_rule_across_clients(
             for ev in excellent_clients
         )
         total_hits = sum(ev.matched_lines_count for ev in excellent_clients)
-        overall_reason = (
-            f"Excelente candidata para o Baseline ({global_dynamic_score:.1f}% de compatibilidade dinâmica): "
-            f"100% dos campos convertidos ({', '.join(compatible_fields_list)}) confirmados nos logs reais vistos "
-            f"durante as queries e o retorno comprovou {total_hits} evento(s) real(is) em {len(excellent_clients)} "
-            f"cliente(s) [{names}]."
-        )
+        if total_hits > 0:
+            overall_reason = (
+                f"Alta Compatibilidade ({global_dynamic_score:.1f}%): {effective_obs_pct:.0f}% dos campos necessários "
+                f"({', '.join(obs_fields_global or compatible_fields_list)}) e telemetria confirmados, "
+                f"com {total_hits} log(s) correspondente(s) em {len(excellent_clients)} cliente(s) [{names}]."
+            )
+        else:
+            overall_reason = (
+                f"Alta Compatibilidade ({global_dynamic_score:.1f}%): mais de 75% ({effective_obs_pct:.0f}%) dos campos "
+                f"necessários ({', '.join(obs_fields_global or compatible_fields_list)}) e telemetria necessária "
+                f"habilitada em {len(excellent_clients)} cliente(s) [{names}], mesmo sem logs de ataque correspondentes."
+            )
         return "excellent", overall_reason, global_dynamic_score, client_evaluations
 
-    good_clients_with_hits = [ev for ev in client_evaluations if ev.matched_lines_count > 0]
-    if good_clients_with_hits:
-        names = ", ".join(ev.client_name for ev in good_clients_with_hits)
-        total_hits = sum(ev.matched_lines_count for ev in good_clients_with_hits)
+    if good_clients:
+        names = ", ".join(ev.client_name for ev in good_clients)
         overall_reason = (
-            f"Boa candidata para o Baseline ({global_dynamic_score:.1f}% de compatibilidade dinâmica): "
-            f"query LogQL validada com {total_hits} evento(s) comprovado(s) em {len(good_clients_with_hits)} "
-            f"cliente(s) ({names}) com campos compatíveis ({', '.join(obs_fields_global or compatible_fields_list)})."
+            f"Compatibilidade {global_dynamic_score:.1f}% (faixa 80% a 94%): {effective_obs_pct:.0f}% dos campos "
+            f"necessários ({', '.join(obs_fields_global or compatible_fields_list)}) encontrados em "
+            f"{len(good_clients)} cliente(s) [{names}], mesmo sem logs correspondentes ou telemetria especializada."
         )
         return "good", overall_reason, global_dynamic_score, client_evaluations
 
-    # Caso não haja nenhum cliente cadastrado ainda no Grafana, valida contra o Loki principal
-    try:
-        b_ds_uid = str(baseline_ds.get("uid") or "loki")
-        b_resp = await asyncio.wait_for(
-            grafana.loki_instant_query(b_ds_uid, logql_query),
-            timeout=4.0,
-        )
-        if str(b_resp.get("status") or "").lower() in ("", "success"):
-            return (
-                "good",
-                (
-                    f"Boa candidata para o Baseline ({global_dynamic_score:.1f}% de compatibilidade): "
-                    f"sintaxe LogQL e campos ({', '.join(compatible_fields_list)}) validados contra o Loki, "
-                    "com decoders ativos."
-                ),
-                global_dynamic_score,
-                [],
-            )
-    except Exception:
-        pass
-
-    return "bad", "Má candidata: sem clientes compatíveis ou falha na validação no Loki.", global_dynamic_score, []
+    overall_reason = (
+        f"Descartada ({global_dynamic_score:.1f}% < 80%): apenas {effective_obs_pct:.0f}% dos campos necessários "
+        "encontrados nos clientes (< 50%), sem logs correspondentes e/ou sem a telemetria necessária habilitada."
+    )
+    return "bad", overall_reason, global_dynamic_score, client_evaluations
 
 
 # =============================================================================
@@ -2516,11 +2767,16 @@ class CurationStore:
                         migrated_titles = True
                         continue
 
-                    # REGRA CRÍTICA: SOMENTE regras com eventos reais retornados na query são mantidas na curadoria
-                    has_proven_hits = int(item.get("total_matched_results") or 0) > 0 or any(
-                        ev.get("has_query_results") for ev in item.get("client_evaluations") or [] if isinstance(ev, dict)
+                    # Purga registros legados que usavam placeholder pysigma_ast ou | logfmt
+                    has_legacy_ast = (
+                        "| logfmt" in str(item.get("logql_query") or "")
+                        or any(
+                            isinstance(m, dict) and str(m.get("logql_field") or "") in ("pysigma_ast", "data_pysigma_ast")
+                            for m in (item.get("mapped_fields") or [])
+                        )
                     )
-                    if not has_proven_hits:
+                    if has_legacy_ast:
+                        purged_unverified += 1
                         migrated_titles = True
                         continue
                     # Regras fabricadas (sem arquivo real na fonte / URL inexistente) são purgadas
@@ -2620,14 +2876,17 @@ class CurationStore:
                     except Exception:
                         pass
 
-                # Se houver regras descartadas corrompidas (com placeholder fake (?i)T ou URL raiz), regenera tudo
+                # Se houver regras descartadas corrompidas (com placeholder fake (?i)T, pysigma_ast ou URL raiz), regenera tudo
                 has_corrupted_discarded = any(
                     "full_log =~" in (r.logql_query or "")
+                    or "| logfmt" in (r.logql_query or "")
+                    or any(m.logql_field in ("pysigma_ast", "data_pysigma_ast") for m in r.mapped_fields)
                     or r.source_url in ROOT_OR_DIR_URL_PATTERNS
                     or "/tree/master/" in (r.source_url or "")
                     for r in self._discarded_rules.values()
                 )
                 if has_corrupted_discarded:
+                    purged_unverified += len(self._discarded_rules)
                     self._discarded_rules.clear()
                     migrated_titles = True
                 if purged_unverified:
@@ -2859,7 +3118,7 @@ class CurationStore:
         updated_existing_rules: list[CuratedRuleItem],
         summary: CurationRunSummary,
     ) -> None:
-        """Persiste apenas as novas regras excelentes/boas e atualiza estatísticas do ciclo."""
+        """Persiste apenas as novas regras excelentes (95%+) e boas (80%-94%) e atualiza estatísticas do ciclo."""
         with self._lock:
             self._load_locked()
             for updated in updated_existing_rules:
@@ -2867,7 +3126,6 @@ class CurationStore:
                     updated.id in self._rules
                     and updated.classification in ("excellent", "good")
                     and (updated.field_compatibility_pct or 0.0) >= 80.0
-                    and (updated.total_matched_results > 0 or any(ev.has_query_results for ev in updated.client_evaluations))
                 ):
                     orig_rule = self._rules[updated.id]
                     updated.ignored = orig_rule.ignored
@@ -2877,10 +3135,8 @@ class CurationStore:
                     del self._rules[updated.id]
 
             for item in new_rules:
-                # Regra 2: Apenas regras com >= 80% de compatibilidade e logs comprovados são admitidas
+                # Regra 2: Apenas regras com >= 80% de compatibilidade (95%+ Alta Compatibilidade ou 80%-94% Qualificada) são admitidas
                 if item.classification not in ("excellent", "good") or (item.field_compatibility_pct or 0.0) < 80.0:
-                    continue
-                if (item.total_matched_results or 0) == 0 and not any(ev.has_query_results for ev in item.client_evaluations):
                     continue
                 # Regra 3: NUNCA repetir regra já curada
                 if self._is_already_seen_locked(
@@ -2892,12 +3148,10 @@ class CurationStore:
                     item.external_id, item.title, item.original_title, item.logql_query
                 )
 
-            # Purga qualquer regra prévia que não atinja mais os critérios estritos de 80%+ com logs comprovados
+            # Purga qualquer regra prévia que fique abaixo do limiar de 80%
             for rid in list(self._rules.keys()):
                 r = self._rules[rid]
                 if (r.field_compatibility_pct or 0.0) < 80.0 or r.classification not in ("excellent", "good"):
-                    del self._rules[rid]
-                elif (r.total_matched_results or 0) == 0 and not any(ev.has_query_results for ev in r.client_evaluations):
                     del self._rules[rid]
 
             self._last_run_at = summary.ran_at
@@ -2992,11 +3246,6 @@ def _populate_curated_rule_qualification_details(item: CuratedRuleItem) -> None:
     total_tech = sum(ev.tech_logs_count for ev in item.client_evaluations)
     has_results = total_matched > 0
 
-    # Invariante Critério 2: se não houver evidências de resultados nos logs,
-    # a regra NUNCA pode ser categorizada como excelente candidata.
-    if not has_results and item.classification == "excellent":
-        item.classification = "good"
-
     sample_results: list[str] = []
     matched_windows: list[str] = []
     for ev in item.client_evaluations:
@@ -3016,7 +3265,17 @@ def _populate_curated_rule_qualification_details(item: CuratedRuleItem) -> None:
         else 100.0
     )
 
+    any_client_has_telemetry = False
     for ev in item.client_evaluations:
+        ev_obs_set = _expand_observed_field_aliases(set(ev.total_observed_log_fields or ev.observed_fields_in_logs or []))
+        ev_has_tel, _, _ = _evaluate_client_telemetry_readiness(
+            mapped_fields=item.mapped_fields,
+            observed_fields=ev_obs_set,
+            tech_logs_count=ev.tech_logs_count,
+            has_query_results=bool(ev.has_query_results or ev.matched_lines_count > 0),
+        )
+        if ev_has_tel:
+            any_client_has_telemetry = True
         c_score, c_lp, c_tc, c_sm = compute_dynamic_compatibility(
             schema_compat_pct=schema_compat_pct,
             tech_logs_count=ev.tech_logs_count,
@@ -3028,6 +3287,7 @@ def _populate_curated_rule_qualification_details(item: CuratedRuleItem) -> None:
             perimeter=item.perimeter,
             observed_field_compat_pct=float(ev.observed_field_compatibility_pct or 0.0),
             has_query_results=bool(ev.has_query_results or ev.matched_lines_count > 0),
+            has_required_telemetry=ev_has_tel,
             lint_valid=item.lint_valid,
             multi_client=False,
         )
@@ -3035,8 +3295,26 @@ def _populate_curated_rule_qualification_details(item: CuratedRuleItem) -> None:
         ev.log_presence_score = c_lp
         ev.threat_context_score = c_tc
         ev.scenario_match_score = c_sm
+        if c_score >= 95.0:
+            ev.classification = "excellent"
+        elif c_score >= 80.0:
+            ev.classification = "good"
+        else:
+            ev.classification = "bad"
 
     # 2. Recalcula a pontuação dinâmica global ponderada da regra
+    best_client_obs_pct = max(
+        (float(ev.observed_field_compatibility_pct or 0.0) for ev in item.client_evaluations),
+        default=obs_pct,
+    )
+    effective_obs_pct = max(obs_pct, best_client_obs_pct)
+    global_obs_set = _expand_observed_field_aliases(set(obs_fields))
+    global_has_tel, _, _ = _evaluate_client_telemetry_readiness(
+        mapped_fields=item.mapped_fields,
+        observed_fields=global_obs_set,
+        tech_logs_count=total_tech,
+        has_query_results=has_results,
+    )
     has_multi_clients = len([ev for ev in item.client_evaluations if ev.tech_logs_count > 0]) >= 2
     dynamic_score, log_score, threat_score, scenario_score = compute_dynamic_compatibility(
         schema_compat_pct=schema_compat_pct,
@@ -3047,11 +3325,20 @@ def _populate_curated_rule_qualification_details(item: CuratedRuleItem) -> None:
         mitre_tactic=item.mitre_tactic,
         mitre_technique=item.mitre_technique,
         perimeter=item.perimeter,
-        observed_field_compat_pct=obs_pct,
+        observed_field_compat_pct=effective_obs_pct,
         has_query_results=has_results,
+        has_required_telemetry=bool(global_has_tel or any_client_has_telemetry),
         lint_valid=item.lint_valid,
         multi_client=has_multi_clients,
     )
+
+    if not item.discarded:
+        if dynamic_score >= 95.0:
+            item.classification = "excellent"
+        elif dynamic_score >= 80.0:
+            item.classification = "good"
+        else:
+            item.classification = "bad"
 
     factors: list[CurationQualificationFactor] = []
 
@@ -3093,29 +3380,33 @@ def _populate_curated_rule_qualification_details(item: CuratedRuleItem) -> None:
         )
     )
 
-    # Pilar 3: Correspondência dos logs com o cenário de ameaça
+    # Pilar 3: Cobertura de Campos & Telemetria Necessária
     if has_results:
         p3_impact = "excellent"
         p3_status = "met"
-        match_desc = f"disparo real comprovado nos logs ({total_matched} evento(s) correspondente(s))"
-    elif obs_pct >= 50.0:
+        match_desc = f"disparo real comprovado nos logs ({total_matched} evento(s) correspondente(s)) e telemetria ativa"
+    elif effective_obs_pct > 75.0 and (global_has_tel or any_client_has_telemetry):
+        p3_impact = "excellent"
+        p3_status = "met"
+        match_desc = "mais de 75% dos campos necessários e telemetria habilitada encontrados no cliente (Alta Compatibilidade 95%+)"
+    elif effective_obs_pct >= 50.0:
         p3_impact = "good"
         p3_status = "met"
-        match_desc = "campos críticos observados em produção e decoders ativos prontos para interceptação preventiva"
+        match_desc = "mais de 50% dos campos necessários encontrados no cliente (Compatibilidade 80% a 94%)"
     else:
-        p3_impact = "good"
-        p3_status = "partial"
-        match_desc = "schema suportado e decoder Wazuh homologado no catálogo"
+        p3_impact = "bad"
+        p3_status = "not_met"
+        match_desc = "abaixo de 50% dos campos necessários encontrados no cliente (< 80% Descartada)"
 
     obs_sample = f" (ex: {', '.join(obs_fields[:4])})" if obs_fields else ""
     factors.append(
         CurationQualificationFactor(
-            criterion="3. Correspondência dos Logs com o Cenário de Ameaça",
+            criterion="3. Cobertura de Campos & Telemetria no Cliente",
             status=p3_status,
             impact=p3_impact,
             summary=(
-                f"{obs_pct:.0f}% dos campos observados em logs reais{obs_sample}; {match_desc} "
-                f"(+{scenario_score:.1f} pts de correspondência com a ameaça)."
+                f"{effective_obs_pct:.0f}% dos campos necessários observados{obs_sample}; {match_desc} "
+                f"(+{scenario_score:.1f} pts de correspondência com o cenário)."
             ),
         )
     )
@@ -3151,7 +3442,7 @@ def _populate_curated_rule_qualification_details(item: CuratedRuleItem) -> None:
     item.log_presence_score = log_score
     item.threat_context_score = threat_score
     item.scenario_match_score = scenario_score
-    item.observed_field_compatibility_pct = obs_pct
+    item.observed_field_compatibility_pct = effective_obs_pct
     item.total_matched_results = total_matched
     item.total_tech_logs_seen = total_tech
     item.has_query_results = has_results
@@ -3619,7 +3910,12 @@ async def _run_curation_cycle_unlocked(
             mitre_tactic = str(candidate.get("mitre_tactic") or MITRE_NOT_INFORMED)
             mitre_technique = str(candidate.get("mitre_technique") or MITRE_NOT_INFORMED)
 
-            if ai_enabled and not ai_circuit_broken:
+            logql_query, mapped_fields, lint_ok, lint_msg = convert_rule_to_logql(
+                candidate, tech, known_patterns
+            )
+            if lint_ok and mapped_fields:
+                heuristic_curated_count += 1
+            elif ai_enabled and not ai_circuit_broken:
                 supported_f_list = list(
                     SUPPORTED_WAZUH_LOKI_FIELDS.get(tech.slug)
                     or PERIMETER_DEFAULT_FIELDS.get(tech.perimeter)
@@ -3660,12 +3956,8 @@ async def _run_curation_cycle_unlocked(
                         lint_msg = ai_lint_msg
                         curation_engine = "ai"
                         ai_model = ai_model_used
-                        # A IA só traduz a consulta LogQL: contexto de ameaça e MITRE vêm da regra original
                         ai_curated_count += 1
                     else:
-                        logql_query, mapped_fields, lint_ok, lint_msg = convert_rule_to_logql(
-                            candidate, tech, known_patterns
-                        )
                         heuristic_curated_count += 1
                 except Exception as ai_exc:
                     consecutive_ai_failures += 1
@@ -3678,14 +3970,8 @@ async def _run_curation_cycle_unlocked(
                                 "Alternando para motor heurístico seguro no restante do ciclo para garantir performance."
                             )
                         )
-                    logql_query, mapped_fields, lint_ok, lint_msg = convert_rule_to_logql(
-                        candidate, tech, known_patterns
-                    )
                     heuristic_curated_count += 1
             else:
-                logql_query, mapped_fields, lint_ok, lint_msg = convert_rule_to_logql(
-                    candidate, tech, known_patterns
-                )
                 heuristic_curated_count += 1
 
             # Contexto de ameaça = conteúdo da regra original (descrição, tags, falsos positivos, refs)

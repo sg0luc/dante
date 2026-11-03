@@ -844,7 +844,7 @@ export const CuradoriaPage: React.FC = () => {
             <span className="font-metric-display text-metric-display font-bold text-emerald-400">{highCompatCount}</span>
           </div>
           <p className="text-outline font-body-sm text-[11px] leading-snug">
-            Score ≥ 95% (presença, contexto e cenário)
+            Score ≥ 95% (&gt; 75% campos + telemetria ativa)
           </p>
         </div>
 
@@ -858,7 +858,7 @@ export const CuradoriaPage: React.FC = () => {
             <span className="font-metric-display text-metric-display font-bold text-sky-400">{mediumCompatCount}</span>
           </div>
           <p className="text-outline font-body-sm text-[11px] leading-snug">
-            Aprovadas no limiar mínimo de 80%
+            &gt; 50% campos encontrados no cliente
           </p>
         </div>
 
@@ -872,7 +872,7 @@ export const CuradoriaPage: React.FC = () => {
             <span className="font-metric-display text-metric-display font-bold text-outline">{metrics?.discarded_bad_count ?? 0}</span>
           </div>
           <p className="text-outline font-body-sm text-[11px] leading-snug">
-            Barradas por incompatibilidade de schema
+            &lt; 50% campos, sem logs e/ou telemetria
           </p>
         </div>
 
@@ -1087,13 +1087,13 @@ export const CuradoriaPage: React.FC = () => {
                           <div className="flex flex-col gap-0.5">
                             <span
                               className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-code-sm text-[12px] ${cMeta.bg} ${cMeta.color} font-bold border ${cMeta.border} shadow-sm`}
-                              title={`Compatibilidade dinâmica de ${compatVal.toFixed(1)}% com base em presença de logs, contexto de ameaça e correspondência de cenário (Critério mínimo: 80%)`}
+                              title={`Compatibilidade dinâmica de ${compatVal.toFixed(1)}% — 95%+: > 75% campos + telemetria ativa; 80%-94%: > 50% campos encontrados; < 80%: descartada`}
                             >
                               <span className="material-symbols-outlined text-[15px]">{cMeta.icon}</span>
                               {compatVal % 1 !== 0 ? compatVal.toFixed(1) : compatVal.toFixed(0)}%
                             </span>
                             <span className="font-code-sm text-[9px] text-outline ml-1">
-                              {compatVal >= 80 ? "Candidata (≥ 80%)" : "Incompatível"}
+                              {compatVal >= 95 ? "Alta Compat. (95%+)" : compatVal >= 80 ? "Candidata (80% a 94%)" : "Incompatível"}
                             </span>
                           </div>
                         )}
@@ -1403,8 +1403,10 @@ export const CuradoriaPage: React.FC = () => {
                     </div>
                     <p className="text-outline text-[11px] leading-tight">
                       {detailRule.has_query_results
-                        ? `${detailRule.total_matched_results} eventos retornados na query da ameaça`
-                        : "Campos de payload suportados e decoders Wazuh ativos para prontidão proativa"}.
+                        ? `${(detailRule.observed_field_compatibility_pct ?? 100).toFixed(0)}% dos campos encontrados e ${detailRule.total_matched_results} log(s) correspondente(s)`
+                        : (detailRule.field_compatibility_pct ?? 0) >= 95
+                        ? `${(detailRule.observed_field_compatibility_pct ?? 100).toFixed(0)}% dos campos (> 75%) e telemetria necessária habilitada no cliente`
+                        : `${(detailRule.observed_field_compatibility_pct ?? 75).toFixed(0)}% dos campos necessários encontrados no cliente (faixa 80% a 94%)`}.
                     </p>
                   </div>
                 </div>
