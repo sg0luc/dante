@@ -1752,6 +1752,7 @@ class FieldDictionaryDetailOut(BaseModel):
     clients: list[FieldDictionaryClientItem] = Field(default_factory=list)
     last_updated_at: str | None = None
     is_scanning: bool = False
+    last_error: str | None = None
     ai_analysis: FieldDictionaryAIAnalysisOut | None = None
 
 
@@ -1763,6 +1764,7 @@ class FieldDictionarySummaryOut(BaseModel):
     client_count_with_telemetry: int
     last_updated_at: str | None = None
     is_scanning: bool = False
+    last_error: str | None = None
 
 
 class FieldDictionaryScanResponse(BaseModel):

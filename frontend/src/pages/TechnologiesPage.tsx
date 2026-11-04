@@ -133,6 +133,7 @@ export const TechnologiesPage: React.FC = () => {
   const [dictRescanning, setDictRescanning] = useState(false);
   const [dictAiAnalyzing, setDictAiAnalyzing] = useState(false);
   const [dictActiveTab, setDictActiveTab] = useState<"clients" | "ai">("clients");
+  const [dictModalError, setDictModalError] = useState<string | null>(null);
 
   // Agendamentos (Dicionário + Curadoria)
   const [schedulesModalOpen, setSchedulesModalOpen] = useState(false);
@@ -153,11 +154,17 @@ export const TechnologiesPage: React.FC = () => {
     setSelectedDictTech(tech);
     setDictLoading(true);
     setDictActiveTab("clients");
+    setDictModalError(null);
     try {
       const data = await api.getFieldDictionary(tech.slug);
       setDictDetail(data);
+      if (data.last_error) {
+        setDictModalError(`Último erro registrado na coleta: ${data.last_error}`);
+      }
     } catch (err: unknown) {
-      setActionError(err instanceof Error ? err.message : "Erro ao carregar o dicionário de campos.");
+      const msg = err instanceof Error ? err.message : "Erro ao carregar o dicionário de campos.";
+      setDictModalError(msg);
+      setActionError(msg);
     } finally {
       setDictLoading(false);
     }
@@ -166,6 +173,7 @@ export const TechnologiesPage: React.FC = () => {
   const handleRescanDictionary = async () => {
     if (!selectedDictTech) return;
     setDictRescanning(true);
+    setDictModalError(null);
     try {
       await api.rescanFieldDictionary(selectedDictTech.slug);
       setActionSuccess(`Reanálise de campos iniciada para ${selectedDictTech.name}.`);
@@ -174,13 +182,21 @@ export const TechnologiesPage: React.FC = () => {
         try {
           const updated = await api.getFieldDictionary(selectedDictTech.slug);
           setDictDetail(updated);
+          if (updated.last_error) {
+            setDictModalError(`Erro durante a varredura: ${updated.last_error}`);
+          }
           loadFieldSummaries();
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : "Falha ao consultar atualização do dicionário.";
+          setDictModalError(msg);
         } finally {
           setDictRescanning(false);
         }
       }, 3000);
     } catch (err: unknown) {
-      setActionError(err instanceof Error ? err.message : "Erro ao disparar reanálise de campos.");
+      const msg = err instanceof Error ? err.message : "Erro ao disparar reanálise de campos.";
+      setDictModalError(msg);
+      setActionError(msg);
       setDictRescanning(false);
     }
   };
@@ -188,13 +204,16 @@ export const TechnologiesPage: React.FC = () => {
   const handleRunAiAnalysis = async () => {
     if (!selectedDictTech) return;
     setDictAiAnalyzing(true);
+    setDictModalError(null);
     try {
       const analysis = await api.analyzeFieldDictionaryAI(selectedDictTech.slug);
       setDictDetail((prev) => (prev ? { ...prev, ai_analysis: analysis } : null));
       setDictActiveTab("ai");
       setActionSuccess("Análise de IA concluída com sucesso.");
     } catch (err: unknown) {
-      setActionError(err instanceof Error ? err.message : "Erro ao executar análise de IA.");
+      const msg = err instanceof Error ? err.message : "Erro ao executar análise de IA.";
+      setDictModalError(msg);
+      setActionError(msg);
     } finally {
       setDictAiAnalyzing(false);
     }
@@ -714,20 +733,40 @@ export const TechnologiesPage: React.FC = () => {
                         const dictSum = fieldSummaries[tech.slug.toLowerCase()];
                         const count = dictSum?.total_unique_fields ?? 0;
                         const isScanning = Boolean(dictSum?.is_scanning);
+                        const hasError = Boolean(dictSum?.last_error);
 
                         return (
                           <button
                             type="button"
                             onClick={() => openDictionaryModal(tech)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-outline/20 hover:border-primary/40 text-on-surface hover:text-primary transition-all font-code-sm text-code-sm cursor-pointer shadow-sm active:scale-95 group"
-                            title="Clique para ver o dicionário de campos por cliente e análise de IA"
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded border text-on-surface transition-all font-code-sm text-code-sm cursor-pointer shadow-sm active:scale-95 group ${
+                              hasError
+                                ? "bg-error-container/20 border-error/50 hover:bg-error-container/30 text-error"
+                                : "bg-surface-container hover:bg-surface-container-high border border-outline/20 hover:border-primary/40 hover:text-primary"
+                            }`}
+                            title={
+                              hasError
+                                ? `Erro na última varredura: ${dictSum?.last_error} (Clique para detalhes)`
+                                : "Clique para ver o dicionário de campos por cliente e análise de IA"
+                            }
                           >
-                            <span className={`material-symbols-outlined text-[15px] ${isScanning ? "animate-spin text-tertiary" : "text-primary group-hover:scale-110 transition-transform"}`}>
-                              {isScanning ? "sync" : "menu_book"}
+                            <span
+                              className={`material-symbols-outlined text-[15px] ${
+                                isScanning
+                                  ? "animate-spin text-tertiary"
+                                  : hasError
+                                  ? "text-error"
+                                  : "text-primary group-hover:scale-110 transition-transform"
+                              }`}
+                            >
+                              {isScanning ? "sync" : hasError ? "error" : "menu_book"}
                             </span>
                             <span className="font-semibold">
                               {count > 0 ? `${count} campos` : "0 campos"}
                             </span>
+                            {hasError && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-error animate-ping"></span>
+                            )}
                           </button>
                         );
                       })()}
@@ -1290,11 +1329,28 @@ export const TechnologiesPage: React.FC = () => {
         onClose={() => {
           setSelectedDictTech(null);
           setDictDetail(null);
+          setDictModalError(null);
         }}
         title={`Dicionário de Campos — ${selectedDictTech?.name ?? ""}`}
         maxWidth="840px"
       >
         <div className="flex flex-col space-y-space-md text-on-surface">
+          {dictModalError && (
+            <div className="p-3 rounded-lg bg-error-container/30 border border-error/40 text-error text-xs font-semibold flex items-start justify-between gap-2">
+              <div className="flex items-start gap-2">
+                <span className="material-symbols-outlined text-[18px] shrink-0 mt-0.5">error</span>
+                <span className="leading-relaxed whitespace-pre-wrap">{dictModalError}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDictModalError(null)}
+                className="text-outline hover:text-on-surface text-xs underline shrink-0"
+              >
+                Dispensar
+              </button>
+            </div>
+          )}
+
           {/* Header do Dicionário */}
           <div className="p-3 rounded-lg bg-surface-container-high/40 border border-outline/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
