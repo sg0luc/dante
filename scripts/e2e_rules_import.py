@@ -275,6 +275,10 @@ def main() -> int:
                 )
                 record(labels_ok, "10. Invariante: Labels de governanÃ§a (baseline, global, soc) aplicadas")
 
+                # Invariante 5: Grupo de avaliaÃ§Ã£o padrÃ£o SEMPRE 5m
+                group_5m_ok = g_rule.get("ruleGroup") == "5m"
+                record(group_5m_ok, "10.1. Invariante: Grupo de avaliaÃ§Ã£o padrÃ£o na importaÃ§Ã£o Ã© '5m'")
+
         # 11. ValidaÃ§Ã£o de importaÃ§Ã£o com especificaÃ§Ã£o YAML nativa do Loki Ruler
         valid_ruler_yaml = f"""
 groups:
@@ -707,28 +711,70 @@ groups:
         cur_preview_ok = status_cur == 200 and res_cur.get("total_rules") == 1 and res_cur.get("valid_count") == 1
         if cur_preview_ok:
             cur_item = res_cur["items"][0]
-            has_curation = (
+            static_preview_ok = (
                 cur_item.get("classification") in ["excellent", "good", "neutral", "bad"]
                 and isinstance(cur_item.get("field_compatibility_pct"), (int, float))
                 and cur_item.get("field_compatibility_pct") > 0
                 and isinstance(cur_item.get("mapped_fields"), list)
                 and len(cur_item.get("mapped_fields")) > 0
-                and bool(cur_item.get("ai_rationale"))
+                and cur_item.get("ai_rationale") is None
                 and isinstance(cur_item.get("qualification_factors"), list)
                 and res_cur.get("qualified_count", 0) >= 0
             )
             record(
-                has_curation,
-                "31. Preview de importação enriquece regra com curadoria, compatibilidade de campos e Parecer Técnico por IA",
+                static_preview_ok,
+                "31. Preview de importação realiza avaliação estática de compatibilidade e campos sem chamar IA automaticamente",
             )
+
+            # 32. Emissão sob demanda do Parecer Técnico por IA (botão com 3 estrelinhas)
+            status_ai, res_ai = call(
+                "POST",
+                "/api/rules/import/ai-opinion",
+                {"rule": cur_item, "technology": cur_item.get("technology")},
+                csrf=True,
+            )
+            on_demand_ai_ok = (
+                status_ai == 200
+                and bool(res_ai.get("ai_rationale"))
+                and res_ai.get("curation_engine") in ["ai", "heuristic"]
+            )
+            record(
+                on_demand_ai_ok,
+                "32. Parecer técnico por IA emitido com sucesso sob demanda via POST /api/rules/import/ai-opinion (botão 3 estrelinhas)",
+            )
+            if on_demand_ai_ok:
+                cur_item["ai_rationale"] = res_ai["ai_rationale"]
+                cur_item["ai_model"] = res_ai.get("ai_model")
+                cur_item["curation_engine"] = res_ai.get("curation_engine")
+
+            # 33. Validação do toggle em 'API Keys': desativação de rule_import_ai_enabled
+            st_ai_get, curr_ai_settings = call("GET", "/api/ai/settings")
+            update_payload = dict(curr_ai_settings)
+            update_payload["rule_import_ai_enabled"] = False
+            st_ai_put, _ = call("PUT", "/api/ai/settings", update_payload, csrf=True)
+
+            st_ai_dis, res_dis = call(
+                "POST",
+                "/api/rules/import/ai-opinion",
+                {"rule": cur_item, "technology": cur_item.get("technology")},
+                csrf=True,
+            )
+            toggle_disabled_ok = st_ai_dis == 400 and "desativada" in str(res_dis.get("detail", "")).lower()
+            record(
+                toggle_disabled_ok,
+                "33. Desativação da análise por IA na tela 'API Keys' bloqueia emissão de parecer com 400 Bad Request",
+            )
+            # Reativa para manter o sistema configurado
+            update_payload["rule_import_ai_enabled"] = True
+            call("PUT", "/api/ai/settings", update_payload, csrf=True)
         else:
             record(False, "31. Falha no preview de regra para validação de curadoria IA")
 
-        # 32. Validação da persistência de metadados de curadoria/IA ao importar regra no Grafana
+        # 34. Validação da persistência de metadados de curadoria/IA ao importar regra no Grafana
         if cur_preview_ok:
             status_import_cur, exec_cur_res = call("POST", "/api/rules/import", {"rules": [cur_item]}, csrf=True)
             import_cur_ok = status_import_cur == 200 and exec_cur_res.get("imported_count") == 1
-            record(import_cur_ok, "32. Importação de regra curada com parecer de IA executada com sucesso")
+            record(import_cur_ok, "34. Importação de regra curada com parecer de IA executada com sucesso")
             if import_cur_ok:
                 cur_uid = exec_cur_res["imported_uids"][0]
                 created_uids.append(cur_uid)
@@ -743,7 +789,7 @@ groups:
                 )
                 record(
                     cur_persisted_ok,
-                    "33. Regra gravada no Grafana preserva parecer técnico da IA e percentual de compatibilidade",
+                    "35. Regra gravada no Grafana preserva parecer técnico da IA e percentual de compatibilidade",
                 )
 
     finally:

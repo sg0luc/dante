@@ -225,13 +225,55 @@ try {
 
     # Aguardar leitura automática dos arquivos e preview com curadoria / IA
     Write-Host "Aguardando leitura automática, análise de compatibilidade e parecer técnico de IA..."
-    Start-Sleep -Seconds 4
+    for ($i = 0; $i -lt 30; $i++) {
+        Start-Sleep -Seconds 1
+        $checkCards = @"
+(() => {
+    return Array.from(document.querySelectorAll('button')).some(b => b.textContent && b.textContent.includes('Parecer IA'));
+})()
+"@
+        $resCheck = Exec-CDP "Runtime.evaluate" @{ expression = $checkCards }
+        if ($resCheck.result.value -eq $true) {
+            Write-Host "Regras validadas e botões de Parecer IA visíveis na tela!"
+            break
+        }
+    }
+    Start-Sleep -Seconds 1
+
+    # Clicar no botão 'Parecer IA' da primeira regra para emitir o parecer sob demanda
+    $aiClickCode = @"
+(() => {
+    const aiBtns = Array.from(document.querySelectorAll('button')).filter(b => b.textContent && b.textContent.includes('Parecer IA'));
+    if (aiBtns.length > 0) {
+        aiBtns[0].click();
+        return 'clicado_parecer_ia';
+    }
+    return 'botao_ia_nao_encontrado';
+})()
+"@
+    $resAiClick = Exec-CDP "Runtime.evaluate" @{ expression = $aiClickCode }
+    Write-Host "Clique no botão 3 estrelinhas (Parecer IA): $($resAiClick.result.value)"
+
+    for ($i = 0; $i -lt 20; $i++) {
+        Start-Sleep -Seconds 1
+        $checkDone = @"
+(() => {
+    return Array.from(document.querySelectorAll('button')).some(b => b.textContent && b.textContent.includes('Parecer IA ✓'));
+})()
+"@
+        $resDone = Exec-CDP "Runtime.evaluate" @{ expression = $checkDone }
+        if ($resDone.result.value -eq $true) {
+            Write-Host "Parecer por IA gerado e visualizado com sucesso!"
+            break
+        }
+    }
+    Start-Sleep -Seconds 1
 
     # Expandir primeira regra se necessário
     $expandCode = @"
 (() => {
     // Garante que o painel da primeira regra esteja expandido
-    const detailsButtons = Array.from(document.querySelectorAll('button')).filter(b => b.textContent && b.textContent.includes('Ver análise e parecer técnico'));
+    const detailsButtons = Array.from(document.querySelectorAll('button')).filter(b => b.textContent && (b.textContent.includes('Parecer IA') || b.textContent.includes('Detalhes')));
     if (detailsButtons.length > 0) {
         detailsButtons[0].click();
     }

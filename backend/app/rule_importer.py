@@ -45,6 +45,7 @@ from .schemas import (
     CurationClientEvaluation,
     CurationFieldMapping,
     CurationQualificationFactor,
+    RuleImportAIOpinionResponse,
     RuleImportExecuteResponse,
     RuleImportFileInput,
     RuleImportItemValidation,
@@ -64,6 +65,9 @@ from .technologies import (
 from .technology_insights import is_client_folder
 from .technology_store import get_tenant_scan_store, get_tenant_technology_store
 from .tenants import BASELINE_RULE_GROUP
+
+# Grupo de avaliação padrão para importação de regras no D.A.N.T.E. (padrão 5m)
+DEFAULT_IMPORT_RULE_GROUP = "5m"
 
 logger = logging.getLogger("dante.rule_importer")
 
@@ -906,15 +910,10 @@ def validate_rule_item(
     # Consolida pontuação e fatores de curadoria
     _populate_imported_item_curation(item, tech_obj)
 
-    # Gera parecer técnico por IA / Heurística
-    opinion_text, ai_model, curation_engine = generate_imported_rule_opinion(
-        item=item,
-        raw_rule=raw_rule,
-        technology=tech_obj,
-    )
-    item.ai_rationale = opinion_text
-    item.ai_model = ai_model
-    item.curation_engine = curation_engine
+    # Parecer técnico por IA gerado sob demanda no botão com 3 estrelinhas
+    item.ai_rationale = None
+    item.ai_model = None
+    item.curation_engine = "heuristic"
 
     return item
 
@@ -1226,16 +1225,10 @@ async def preview_rules_curated(
         # Consolida pontuação e fatores de qualificação
         _populate_imported_item_curation(item, tech_obj)
 
-        # Gera o Parecer Técnico por IA com o enriquecimento de telemetria
-        opinion_text, ai_model, curation_engine = generate_imported_rule_opinion(
-            item=item,
-            raw_rule=raw_dict,
-            technology=tech_obj,
-            ai_service=ai_service,
-        )
-        item.ai_rationale = opinion_text
-        item.ai_model = ai_model
-        item.curation_engine = curation_engine
+        # O parecer por IA é gerado sob demanda pelo usuário (botão com 3 estrelinhas)
+        item.ai_rationale = None
+        item.ai_model = None
+        item.curation_engine = "heuristic"
 
     q_count, h_count, d_count = _compute_summary_metrics(base_preview.items)
     base_preview.qualified_count = q_count
@@ -1277,7 +1270,7 @@ def build_baseline_grafana_payload(
     target_rule_group = (
         evaluation_group.strip()
         if evaluation_group and evaluation_group.strip()
-        else BASELINE_RULE_GROUP
+        else DEFAULT_IMPORT_RULE_GROUP
     )
 
     labels = {
@@ -1378,3 +1371,45 @@ def build_baseline_grafana_payload(
 
     # Aplica o contact point 'stg' (Homologação)
     return apply_contact_point(rule_payload, contact_point=contact_point)
+
+
+async def generate_rule_import_ai_opinion(
+    item: RuleImportItemValidation,
+    technology: Technology | None,
+    ai_service: AIService | None = None,
+) -> RuleImportAIOpinionResponse:
+    """Gera sob demanda parecer técnico por IA para uma regra importada específica.
+
+    Acionado exclusivamente pelo botão de 3 estrelinhas (auto_awesome) na linha da regra.
+    """
+    raw_dict: dict[str, Any] = {
+        "title": item.title,
+        "description": item.description,
+        "query": item.query,
+        "severity": item.severity,
+        "mitre_tactic": item.mitre_tactic,
+        "mitre_technique": item.mitre_technique,
+    }
+
+    opinion_text, ai_model, curation_engine = generate_imported_rule_opinion(
+        item=item,
+        raw_rule=raw_dict,
+        technology=technology,
+        ai_service=ai_service,
+    )
+
+    item.ai_rationale = opinion_text
+    item.ai_model = ai_model
+    item.curation_engine = curation_engine
+    if technology:
+        _populate_imported_item_curation(item, technology)
+
+    return RuleImportAIOpinionResponse(
+        ai_rationale=opinion_text,
+        ai_model=ai_model,
+        curation_engine=curation_engine,
+        classification=item.classification,
+        classification_reason=item.classification_reason,
+        qualification_factors=item.qualification_factors,
+    )
+

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { Modal } from "./Modal";
 import { api } from "../api";
 import {
+  AISettingsPublicResponse,
   LokiDatasourceItem,
   RuleImportItemValidation,
   RuleImportPreviewResponse,
@@ -36,19 +37,23 @@ export const RuleImportModal: React.FC<RuleImportModalProps> = ({
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [showManualEditor, setShowManualEditor] = useState<boolean>(false);
 
-  // Filtros de Curadoria e Visualização de Parecer
+  // Filtros e Visualização de Parecer
   const [filterTab, setFilterTab] = useState<"all" | "qualified" | "high" | "incompatible">("all");
   const [expandedIndices, setExpandedIndices] = useState<Set<number>>(new Set());
   const [importOnlyQualified, setImportOnlyQualified] = useState<boolean>(true);
+
+  // Provedor e Configurações de IA
+  const [aiSettings, setAISettings] = useState<AISettingsPublicResponse | null>(null);
+  const [generatingAIIndices, setGeneratingAIIndices] = useState<Set<number>>(new Set());
 
   // Data source Loki de destino
   const [datasources, setDatasources] = useState<LokiDatasourceItem[]>([]);
   const [selectedDatasourceUid, setSelectedDatasourceUid] = useState<string>("loki");
   const [datasourcesLoading, setDatasourcesLoading] = useState<boolean>(false);
 
-  // Grupo de avaliação (Evaluation Group / ruleGroup)
-  const [evaluationGroups, setEvaluationGroups] = useState<string[]>(["global-detections"]);
-  const [selectedEvaluationGroup, setSelectedEvaluationGroup] = useState<string>("global-detections");
+  // Grupo de avaliação padrão é 5m
+  const [evaluationGroups, setEvaluationGroups] = useState<string[]>(["5m"]);
+  const [selectedEvaluationGroup, setSelectedEvaluationGroup] = useState<string>("5m");
   const [evalGroupsLoading, setEvalGroupsLoading] = useState<boolean>(false);
 
   // Modal de criação de tecnologia para regras OK sem tecnologia
@@ -66,6 +71,10 @@ export const RuleImportModal: React.FC<RuleImportModalProps> = ({
   const [techSuccessMsg, setTechSuccessMsg] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isRuleImportAIEnabled = Boolean(
+    aiSettings?.enabled && aiSettings?.rule_import_ai_enabled
+  );
 
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return `${bytes} B`;
@@ -89,8 +98,9 @@ export const RuleImportModal: React.FC<RuleImportModalProps> = ({
     setTechSuccessMsg(null);
     setFilterTab("all");
     setExpandedIndices(new Set());
+    setGeneratingAIIndices(new Set());
     setImportOnlyQualified(true);
-    setSelectedEvaluationGroup("global-detections");
+    setSelectedEvaluationGroup("5m");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -105,9 +115,10 @@ export const RuleImportModal: React.FC<RuleImportModalProps> = ({
     setDatasourcesLoading(true);
     setEvalGroupsLoading(true);
     try {
-      const [dsRes, groupsRes] = await Promise.allSettled([
+      const [dsRes, groupsRes, aiRes] = await Promise.allSettled([
         api.getLokiDatasources(),
         api.getEvaluationGroups(),
+        api.getAISettings(),
       ]);
 
       if (dsRes.status === "fulfilled") {
@@ -122,9 +133,15 @@ export const RuleImportModal: React.FC<RuleImportModalProps> = ({
       }
 
       if (groupsRes.status === "fulfilled" && groupsRes.value.length > 0) {
-        setEvaluationGroups(groupsRes.value);
+        const uniqueGroups = Array.from(new Set(["5m", ...groupsRes.value]));
+        setEvaluationGroups(uniqueGroups);
+        setSelectedEvaluationGroup("5m");
       }
-    } catch (err: any) {
+
+      if (aiRes.status === "fulfilled") {
+        setAISettings(aiRes.value);
+      }
+    } catch (err: unknown) {
       console.warn("Falha ao carregar dados iniciais de importação:", err);
     } finally {
       setDatasourcesLoading(false);
@@ -166,28 +183,28 @@ export const RuleImportModal: React.FC<RuleImportModalProps> = ({
       return {
         label: `${compat.toFixed(1)}% Alta Compatibilidade`,
         shortLabel: "Excelente (≥ 95%)",
-        bg: "rgba(16, 185, 129, 0.16)",
-        color: "#34d399",
-        border: "1px solid rgba(16, 185, 129, 0.45)",
+        bg: "bg-emerald-950/40",
+        color: "text-emerald-400",
+        border: "border-emerald-500/40",
         icon: "verified",
       };
     }
     if (compat >= 80) {
       return {
-        label: `${compat.toFixed(1)}% Boa Candidata (≥ 80%)`,
+        label: `${compat.toFixed(1)}% Boa Compatibilidade`,
         shortLabel: "Qualificada (80%-94%)",
-        bg: "rgba(14, 165, 233, 0.16)",
-        color: "#38bdf8",
-        border: "1px solid rgba(14, 165, 233, 0.45)",
+        bg: "bg-sky-950/40",
+        color: "text-sky-400",
+        border: "border-sky-500/40",
         icon: "check_circle",
       };
     }
     return {
-      label: `${compat.toFixed(1)}% Incompatível (< 80%)`,
+      label: `${compat.toFixed(1)}% Incompatível`,
       shortLabel: "Incompatível (< 80%)",
-      bg: "rgba(244, 63, 94, 0.16)",
-      color: "#fb7185",
-      border: "1px solid rgba(244, 63, 94, 0.45)",
+      bg: "bg-rose-950/40",
+      color: "text-rose-400",
+      border: "border-rose-500/40",
       icon: "warning",
     };
   };
@@ -226,8 +243,8 @@ export const RuleImportModal: React.FC<RuleImportModalProps> = ({
           await runValidationForManualText();
         }
       }, 900);
-    } catch (err: any) {
-      setTechError(err.message || "Erro ao cadastrar tecnologia.");
+    } catch (err: unknown) {
+      setTechError(err instanceof Error ? err.message : "Erro ao cadastrar tecnologia.");
     } finally {
       setSavingTech(false);
     }
@@ -287,8 +304,8 @@ export const RuleImportModal: React.FC<RuleImportModalProps> = ({
         .finally(() => {
           setReadingFiles(false);
         });
-    } catch (err: any) {
-      setErrorMsg(err.message || "Erro no processamento de arquivos.");
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : "Erro no processamento de arquivos.");
       setReadingFiles(false);
     }
   };
@@ -341,8 +358,8 @@ export const RuleImportModal: React.FC<RuleImportModalProps> = ({
       if (res.general_error) {
         setErrorMsg(res.general_error);
       }
-    } catch (err: any) {
-      setErrorMsg(err.message || "Falha ao validar os arquivos de regras.");
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : "Falha ao validar os arquivos de regras.");
       setPreviewResult(null);
     } finally {
       setIsValidating(false);
@@ -366,11 +383,68 @@ export const RuleImportModal: React.FC<RuleImportModalProps> = ({
       if (res.general_error) {
         setErrorMsg(res.general_error);
       }
-    } catch (err: any) {
-      setErrorMsg(err.message || "Falha ao validar o conteúdo de regras.");
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : "Falha ao validar o conteúdo de regras.");
       setPreviewResult(null);
     } finally {
       setIsValidating(false);
+    }
+  };
+
+  // Parecer Técnico por IA emitido sob demanda exclusivamente ao clicar nas 3 estrelinhas
+  const handleGenerateAIOpinion = async (item: RuleImportItemValidation, e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (!isRuleImportAIEnabled) {
+      setErrorMsg(
+        "A análise e parecer por IA na importação de regras está desativada nas configurações de API Keys."
+      );
+      return;
+    }
+
+    setGeneratingAIIndices((prev) => new Set(prev).add(item.index));
+    setErrorMsg(null);
+
+    try {
+      const res = await api.generateRuleImportAIOpinion({
+        rule: item,
+        technology: item.technology,
+      });
+
+      setPreviewResult((prev) => {
+        if (!prev) return prev;
+        const updatedItems = prev.items.map((it) => {
+          if (it.index === item.index) {
+            return {
+              ...it,
+              ai_rationale: res.ai_rationale,
+              ai_model: res.ai_model,
+              curation_engine: res.curation_engine || "ai",
+              classification: res.classification ?? it.classification,
+              classification_reason: res.classification_reason ?? it.classification_reason,
+              qualification_factors:
+                res.qualification_factors && res.qualification_factors.length > 0
+                  ? res.qualification_factors
+                  : it.qualification_factors,
+            };
+          }
+          return it;
+        });
+        return { ...prev, items: updatedItems };
+      });
+
+      // Expande automaticamente a linha para visualização imediata do parecer emitido
+      setExpandedIndices((prev) => new Set(prev).add(item.index));
+    } catch (err: unknown) {
+      setErrorMsg(
+        err instanceof Error ? err.message : "Falha ao gerar parecer técnico por IA para a regra."
+      );
+    } finally {
+      setGeneratingAIIndices((prev) => {
+        const next = new Set(prev);
+        next.delete(item.index);
+        return next;
+      });
     }
   };
 
@@ -436,7 +510,7 @@ export const RuleImportModal: React.FC<RuleImportModalProps> = ({
       const res = await api.executeImportRules(
         rulesToImport,
         selectedDatasourceUid,
-        selectedEvaluationGroup.trim() || undefined
+        selectedEvaluationGroup.trim() || "5m"
       );
       if (res.failed_count > 0 && res.imported_count === 0) {
         const detail = res.failed?.[0]?.error ? `: ${res.failed[0].error}` : "";
@@ -455,82 +529,76 @@ export const RuleImportModal: React.FC<RuleImportModalProps> = ({
           handleClose();
         }, 1500);
       }
-    } catch (err: any) {
-      setErrorMsg(err.message || "Erro ao executar importação de regras.");
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : "Falha ao importar regras.");
     } finally {
       setIsImporting(false);
     }
   };
+
+  const modalTitle = (
+    <div className="flex items-center gap-3">
+      <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+        <span className="material-symbols-outlined text-[22px]">cloud_upload</span>
+      </div>
+      <div>
+        <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
+          Importar Regras de Detecção
+          <span className="text-[11px] font-mono font-medium px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+            Loki Ruler
+          </span>
+        </h2>
+        <p className="text-xs text-slate-400">
+          Curadoria estática de campos, compatibilidade com telemetria Wazuh e parecer técnico por IA sob demanda
+        </p>
+      </div>
+    </div>
+  );
 
   return (
     <>
       <Modal
         isOpen={isOpen}
         onClose={handleClose}
-        title="Importar Regras de Detecção (Loki Ruler)"
-        maxWidth="1000px"
+        title={modalTitle}
+        maxWidth="1180px"
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          {/* Banner de Invariantes e Diretriz de Segurança */}
-          <div
-            style={{
-              backgroundColor: "rgba(30, 41, 59, 0.7)",
-              border: "1px solid var(--border-color)",
-              borderRadius: "6px",
-              padding: "12px 14px",
-              fontSize: "0.85rem",
-              color: "var(--text-muted)",
-              lineHeight: "1.4",
-            }}
-          >
-            <div style={{ fontWeight: 600, color: "var(--text-main)", marginBottom: "4px" }}>
-              Diretrizes de Governança, Curadoria e Segurança:
-            </div>
-            <div>
-              1. Formatos suportados: especificação <strong>Loki Ruler</strong> (YAML ou JSON) com suporte a múltiplos arquivos e múltiplos documentos.
-            </div>
-            <div>
-              2. <strong>Padrão de Curadoria &amp; Parecer Técnico por IA</strong>: cada regra importada é avaliada quanto à compatibilidade de campos do schema Wazuh e telemetria ativa nos clientes.
-            </div>
-            <div>
-              3. Todas as regras importadas são salvas na pasta <strong>Global (Baseline)</strong> no estágio de <strong>Homologação (Contact Point &apos;stg&apos;)</strong>.
-            </div>
-            <div>
-              4. Regras com erros ou sem tecnologia cadastrada ficam bloqueadas ou com chip amarelo até a tecnologia ser cadastrada.
+        <div className="space-y-5 text-slate-200">
+          {/* Banner de Invariantes e Diretriz de Governança */}
+          <div className="rounded-xl border border-sky-500/20 bg-sky-950/20 p-3.5 flex items-start gap-3">
+            <span className="material-symbols-outlined text-sky-400 text-xl mt-0.5 shrink-0">
+              shield
+            </span>
+            <div className="text-xs leading-relaxed text-slate-300">
+              <span className="text-sky-300 font-semibold block mb-0.5">
+                Diretrizes de Governança, Curadoria e Segurança
+              </span>
+              Regras importadas são direcionadas para a pasta <strong>Global (Baseline)</strong> no estágio de <strong>Homologação (Contact Point &apos;stg&apos;)</strong>.
+              A avaliação inicial valida a sintaxe LogQL e mapeia a compatibilidade dos campos. O <strong>parecer técnico por IA</strong> é acionado sob demanda exclusivamente no botão com 3 estrelinhas (
+              <span className="inline-flex items-center gap-0.5 font-semibold text-purple-300 mx-1">
+                <span className="material-symbols-outlined text-[13px]">auto_awesome</span> Parecer IA
+              </span>
+              ) na linha de cada regra.
             </div>
           </div>
 
-          {/* Destino das Regras: Data Source e Grupo de Avaliação */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-              gap: "12px",
-              backgroundColor: "var(--bg-input)",
-              padding: "12px",
-              borderRadius: "6px",
-              border: "1px solid var(--border-color)",
-            }}
-          >
+          {/* Configuração de Destino: Data Source Loki e Grupo de Avaliação */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-900/60 p-4 rounded-xl border border-slate-800">
             {/* Seletor de Data Source Loki */}
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label
-                className="form-label"
-                style={{ fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "6px" }}
-              >
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-2">
                 <span>Data Source Loki de Destino *</span>
                 {datasourcesLoading && (
-                  <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                  <span className="text-[11px] text-slate-500 font-normal">
                     (carregando...)
                   </span>
                 )}
               </label>
               <select
-                className="input"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500 transition-colors"
                 value={selectedDatasourceUid}
                 onChange={(e) => setSelectedDatasourceUid(e.target.value)}
                 disabled={datasourcesLoading || isImporting}
-                style={{ fontSize: "0.85rem" }}
               >
                 {datasources.map((ds) => (
                   <option key={ds.uid} value={ds.uid}>
@@ -539,61 +607,51 @@ export const RuleImportModal: React.FC<RuleImportModalProps> = ({
                   </option>
                 ))}
               </select>
-              <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px" }}>
-                Data source Loki onde as consultas da regra serão executadas no Grafana.
-              </div>
+              <p className="text-[11px] text-slate-400 mt-1">
+                Data source interno onde as expressões LogQL serão executadas no Grafana.
+              </p>
             </div>
 
-            {/* Grupo de Avaliação (Evaluation Group) */}
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label
-                className="form-label"
-                style={{ fontSize: "0.85rem", display: "flex", alignItems: "center", gap: "6px" }}
-              >
-                <span>Grupo de Avaliação (ruleGroup)</span>
+            {/* Grupo de Avaliação (Evaluation Group) - Padrão 5m */}
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-2">
+                <span>Grupo de Avaliação (ruleGroup) *</span>
                 {evalGroupsLoading && (
-                  <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                  <span className="text-[11px] text-slate-500 font-normal">
                     (carregando...)
                   </span>
                 )}
               </label>
               <input
-                className="input"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-mono transition-colors"
                 list="evaluation-groups-datalist"
                 value={selectedEvaluationGroup}
                 onChange={(e) => setSelectedEvaluationGroup(e.target.value)}
-                placeholder="global-detections"
+                placeholder="5m"
                 disabled={isImporting}
-                style={{ fontSize: "0.85rem" }}
               />
               <datalist id="evaluation-groups-datalist">
                 {evaluationGroups.map((g) => (
                   <option key={g} value={g} />
                 ))}
               </datalist>
-              <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px" }}>
-                Grupo do Grafana Alerting. Padrão canônico: <strong>global-detections</strong>.
-              </div>
+              <p className="text-[11px] text-slate-400 mt-1">
+                Intervalo de avaliação no Grafana Alerting. Padrão canônico: <strong className="text-sky-300">5m</strong>.
+              </p>
             </div>
           </div>
 
-          {/* Zona de Upload / Arrastar e Soltar */}
+          {/* Zona de Upload / Arrastar e Soltar (Dropzone) */}
           <div
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            style={{
-              border: `2px dashed ${isDragging ? "var(--primary-color)" : "var(--border-color)"}`,
-              borderRadius: "8px",
-              padding: "24px 16px",
-              textAlign: "center",
-              cursor: "pointer",
-              backgroundColor: isDragging
-                ? "rgba(99, 102, 241, 0.08)"
-                : "rgba(15, 23, 42, 0.4)",
-              transition: "all 0.2s ease",
-            }}
+            className={`rounded-2xl border-2 border-dashed p-6 text-center cursor-pointer transition-all ${
+              isDragging
+                ? "border-sky-500 bg-sky-950/30 shadow-lg shadow-sky-500/10"
+                : "border-slate-700/80 bg-slate-900/40 hover:border-slate-600 hover:bg-slate-900/70"
+            }`}
           >
             <input
               ref={fileInputRef}
@@ -601,79 +659,74 @@ export const RuleImportModal: React.FC<RuleImportModalProps> = ({
               multiple
               accept=".json,.yaml,.yml,application/json,text/yaml,text/x-yaml"
               onChange={handleFileInputChange}
-              style={{ display: "none" }}
+              className="hidden"
             />
-            <div style={{ fontSize: "2rem", marginBottom: "6px" }}>📁</div>
-            <div style={{ fontWeight: 600, color: "var(--text-main)", marginBottom: "4px" }}>
-              Arraste e solte arquivos YAML/JSON ou clique para selecionar
+            <div className="w-12 h-12 mx-auto mb-2 rounded-xl bg-slate-800/80 border border-slate-700 flex items-center justify-center text-sky-400">
+              <span className="material-symbols-outlined text-[28px]">
+                {readingFiles ? "progress_activity" : "upload_file"}
+              </span>
             </div>
-            <div style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>
+            <p className="text-sm font-semibold text-slate-200 mb-1">
+              Arraste e solte arquivos YAML/JSON ou clique para selecionar
+            </p>
+            <p className="text-xs text-slate-400 mb-3">
               Suporta múltiplos arquivos simultâneos (.yaml, .yml, .json) ou múltiplos documentos separados por &apos;---&apos;
+            </p>
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                .yaml
+              </span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                .yml
+              </span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                .json
+              </span>
             </div>
           </div>
 
           {/* Lista de Arquivos Carregados */}
           {uploadedFiles.length > 0 && (
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "6px",
-                maxHeight: "150px",
-                overflowY: "auto",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "0.8rem",
-                  fontWeight: 600,
-                  color: "var(--text-muted)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.5px",
-                }}
-              >
-                Arquivos Selecionados ({uploadedFiles.length})
-              </div>
-              {uploadedFiles.map((f) => (
-                <div
-                  key={f.filename}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "6px 10px",
-                    backgroundColor: "var(--bg-input)",
-                    borderRadius: "4px",
-                    fontSize: "0.85rem",
+            <div className="space-y-2 max-h-36 overflow-y-auto p-1">
+              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                <span>Arquivos Selecionados ({uploadedFiles.length})</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUploadedFiles([]);
+                    setPreviewResult(null);
+                    setErrorMsg(null);
                   }}
+                  className="text-xs text-rose-400 hover:text-rose-300 transition-colors"
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span>📄</span>
-                    <span style={{ fontWeight: 500, color: "var(--text-main)" }}>{f.filename}</span>
-                    <span style={{ color: "var(--text-muted)", fontSize: "0.78rem" }}>
-                      ({formatFileSize(f.size)})
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveFile(f.filename);
-                    }}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: "var(--status-firing)",
-                      cursor: "pointer",
-                      fontSize: "0.85rem",
-                      padding: "2px 6px",
-                    }}
-                    title="Remover arquivo"
+                  Limpar todos
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {uploadedFiles.map((f) => (
+                  <div
+                    key={f.filename}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700 text-xs text-slate-200"
                   >
-                    ✕
-                  </button>
-                </div>
-              ))}
+                    <span className="material-symbols-outlined text-sm text-sky-400">
+                      description
+                    </span>
+                    <span className="font-medium max-w-[220px] truncate">{f.filename}</span>
+                    <span className="text-slate-400 text-[11px]">({formatFileSize(f.size)})</span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveFile(f.filename);
+                      }}
+                      className="text-slate-400 hover:text-rose-400 transition-colors"
+                      title="Remover arquivo"
+                    >
+                      <span className="material-symbols-outlined text-sm">close</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
@@ -681,24 +734,24 @@ export const RuleImportModal: React.FC<RuleImportModalProps> = ({
           <div>
             <button
               type="button"
-              className="btn btn-sm btn-secondary"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-sky-400 transition-colors"
               onClick={() => setShowManualEditor(!showManualEditor)}
-              style={{ fontSize: "0.8rem" }}
             >
-              {showManualEditor ? "▾ Ocultar Editor Manual" : "▸ Colar Conteúdo YAML/JSON Manualmente"}
+              <span className="material-symbols-outlined text-base">
+                {showManualEditor ? "expand_less" : "expand_more"}
+              </span>
+              <span>{showManualEditor ? "Ocultar Editor Manual" : "Colar Conteúdo YAML/JSON Manualmente"}</span>
             </button>
           </div>
 
           {showManualEditor && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <div className="space-y-2 bg-slate-900/80 p-3 rounded-xl border border-slate-800">
               <textarea
-                className="textarea"
-                rows={7}
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-xs text-slate-200 font-mono focus:outline-none focus:border-sky-500"
+                rows={6}
                 value={jsonContent}
                 onChange={(e) => setJsonContent(e.target.value)}
-                placeholder={`Cole aqui o conteúdo YAML ou JSON das regras Loki Ruler. Exemplo:
-
-groups:
+                placeholder={`groups:
   - name: windows_security_alerts
     rules:
       - alert: "AD/Windows - Escalonamento de Privilegio"
@@ -711,12 +764,11 @@ groups:
         annotations:
           summary: "Membro adicionado a grupo privilegiado"
           description: "Detecta modificação de grupos sensíveis no Active Directory."`}
-                style={{ fontFamily: "var(--font-mono)", fontSize: "0.82rem" }}
               />
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <div className="flex justify-end">
                 <button
                   type="button"
-                  className="btn btn-sm btn-primary"
+                  className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-medium transition-colors disabled:opacity-50"
                   onClick={() => runValidationForManualText()}
                   disabled={isValidating || isImporting || !jsonContent.trim()}
                 >
@@ -728,312 +780,155 @@ groups:
 
           {/* Mensagens de Feedback Global */}
           {errorMsg && (
-            <div
-              className="alert-box"
-              style={{
-                backgroundColor: "rgba(239, 68, 68, 0.15)",
-                color: "var(--status-firing)",
-                border: "1px solid rgba(239, 68, 68, 0.3)",
-                borderRadius: "6px",
-                padding: "10px 12px",
-                fontSize: "0.85rem",
-              }}
-            >
-              <strong>Erro:</strong> {errorMsg}
+            <div className="p-3.5 rounded-xl border border-rose-500/40 bg-rose-950/30 text-rose-300 text-xs flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-base shrink-0">error</span>
+                <span>{errorMsg}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setErrorMsg(null)}
+                className="text-rose-400 hover:text-rose-200"
+              >
+                <span className="material-symbols-outlined text-sm">close</span>
+              </button>
             </div>
           )}
 
           {successMsg && (
-            <div
-              className="alert-box"
-              style={{
-                backgroundColor: "rgba(34, 197, 94, 0.15)",
-                color: "var(--status-normal)",
-                border: "1px solid rgba(34, 197, 94, 0.3)",
-                borderRadius: "6px",
-                padding: "10px 12px",
-                fontSize: "0.85rem",
-              }}
-            >
-              <strong>Sucesso:</strong> {successMsg}
+            <div className="p-3.5 rounded-xl border border-emerald-500/40 bg-emerald-950/30 text-emerald-300 text-xs flex items-center gap-2">
+              <span className="material-symbols-outlined text-base shrink-0">check_circle</span>
+              <span>{successMsg}</span>
             </div>
           )}
 
-          {/* Estado de Carregamento / Validação */}
+          {/* Status de Validação */}
           {isValidating && (
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "24px 16px",
-                backgroundColor: "rgba(15, 23, 42, 0.5)",
-                borderRadius: "8px",
-                border: "1px solid var(--border-color)",
-                gap: "10px",
-              }}
-            >
-              <div
-                style={{
-                  width: "28px",
-                  height: "28px",
-                  border: "3px solid rgba(99, 102, 241, 0.2)",
-                  borderTopColor: "var(--primary-color)",
-                  borderRadius: "50%",
-                  animation: "spin 0.8s linear infinite",
-                }}
-              />
-              <div style={{ fontWeight: 600, fontSize: "0.9rem", color: "var(--text-main)" }}>
-                Executando Análise de Curadoria e Parecer Técnico com IA...
-              </div>
-              <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", textAlign: "center", maxWidth: "480px" }}>
-                Validando sintaxe LogQL, mapeando campos para o schema Wazuh (| json), aferindo telemetria no Loki dos clientes e sintetizando parecer técnico SOC.
-              </div>
+            <div className="py-8 text-center text-slate-400">
+              <span className="material-symbols-outlined animate-spin text-2xl text-sky-400">
+                progress_activity
+              </span>
+              <p className="mt-2 text-xs font-medium">
+                Validando estrutura LogQL e compatibilidade de campos nos clientes...
+              </p>
             </div>
           )}
 
-          {/* Painel Completo de Resultados de Curadoria */}
-          {previewResult && !previewResult.general_error && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {/* Dashboard de Métricas da Curadoria */}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-                  gap: "10px",
-                }}
-              >
-                {/* Total Analisadas */}
-                <div
-                  style={{
-                    backgroundColor: "rgba(30, 41, 59, 0.6)",
-                    border: "1px solid var(--border-color)",
-                    borderRadius: "6px",
-                    padding: "10px 12px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "2px",
-                  }}
-                >
-                  <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase" }}>
-                    Total Analisadas
+          {/* Painel de Resultados do Preview */}
+          {previewResult && !isValidating && (
+            <div className="space-y-4 pt-2">
+              {/* Cards de Métricas de Curadoria e Compatibilidade */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 flex flex-col justify-between">
+                  <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                    Total Regras
                   </span>
-                  <span style={{ fontSize: "1.3rem", fontWeight: 700, color: "var(--text-main)" }}>
+                  <div className="text-xl font-bold text-slate-100 mt-1">
                     {previewResult.total_rules}
-                  </span>
-                  <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                    {uploadedFiles.length > 0 ? `${uploadedFiles.length} arquivo(s)` : "Entrada manual"}
-                  </span>
+                  </div>
                 </div>
 
-                {/* Qualificadas (>= 80%) */}
-                <div
-                  style={{
-                    backgroundColor: "rgba(14, 165, 233, 0.08)",
-                    border: "1px solid rgba(14, 165, 233, 0.3)",
-                    borderRadius: "6px",
-                    padding: "10px 12px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "2px",
-                  }}
-                >
-                  <span style={{ fontSize: "0.75rem", color: "#38bdf8", textTransform: "uppercase", fontWeight: 600 }}>
-                    Aptas ao SIEM (≥ 80%)
+                <div className="p-3 rounded-xl bg-emerald-950/20 border border-emerald-500/30 flex flex-col justify-between">
+                  <span className="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider">
+                    Válidas
                   </span>
-                  <span style={{ fontSize: "1.3rem", fontWeight: 700, color: "#38bdf8" }}>
-                    {previewResult.qualified_count ?? qualifiedRules.length}
-                  </span>
-                  <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                    Aderência comprovada
-                  </span>
+                  <div className="text-xl font-bold text-emerald-300 mt-1">
+                    {previewResult.valid_count}
+                  </div>
                 </div>
 
-                {/* Alta Compatibilidade (>= 95%) */}
-                <div
-                  style={{
-                    backgroundColor: "rgba(16, 185, 129, 0.08)",
-                    border: "1px solid rgba(16, 185, 129, 0.3)",
-                    borderRadius: "6px",
-                    padding: "10px 12px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "2px",
-                  }}
-                >
-                  <span style={{ fontSize: "0.75rem", color: "#34d399", textTransform: "uppercase", fontWeight: 600 }}>
-                    Alta Compatibilidade (≥ 95%)
+                <div className="p-3 rounded-xl bg-sky-950/20 border border-sky-500/30 flex flex-col justify-between">
+                  <span className="text-[11px] font-semibold text-sky-400 uppercase tracking-wider">
+                    Alta Compatibilidade
                   </span>
-                  <span style={{ fontSize: "1.3rem", fontWeight: 700, color: "#34d399" }}>
+                  <div className="text-xl font-bold text-sky-300 mt-1">
                     {previewResult.high_compatibility_count ?? highCompatRules.length}
-                  </span>
-                  <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                    Telemetria plena
-                  </span>
+                  </div>
                 </div>
 
-                {/* Incompatíveis (< 80%) ou Inválidas */}
-                <div
-                  style={{
-                    backgroundColor: "rgba(244, 63, 94, 0.08)",
-                    border: "1px solid rgba(244, 63, 94, 0.3)",
-                    borderRadius: "6px",
-                    padding: "10px 12px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "2px",
-                  }}
-                >
-                  <span style={{ fontSize: "0.75rem", color: "#fb7185", textTransform: "uppercase", fontWeight: 600 }}>
-                    Incompatíveis (&lt; 80%)
+                <div className="p-3 rounded-xl bg-rose-950/20 border border-rose-500/30 flex flex-col justify-between">
+                  <span className="text-[11px] font-semibold text-rose-400 uppercase tracking-wider">
+                    Incompatíveis
                   </span>
-                  <span style={{ fontSize: "1.3rem", fontWeight: 700, color: "#fb7185" }}>
+                  <div className="text-xl font-bold text-rose-300 mt-1">
                     {previewResult.discarded_count ?? incompatibleRules.length}
-                  </span>
-                  <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                    Telemetria ou schema ausente
-                  </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Barra de Filtros e Controles de Expansão */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: "8px",
-                  padding: "6px 10px",
-                  backgroundColor: "var(--bg-input)",
-                  borderRadius: "6px",
-                }}
-              >
-                <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+              {/* Filtros e Ações em Lote */}
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                <div className="flex flex-wrap gap-1.5">
                   <button
                     type="button"
                     onClick={() => setFilterTab("all")}
-                    style={{
-                      padding: "4px 10px",
-                      borderRadius: "4px",
-                      border: "none",
-                      fontSize: "0.78rem",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      backgroundColor: filterTab === "all" ? "var(--primary-color)" : "transparent",
-                      color: filterTab === "all" ? "#fff" : "var(--text-muted)",
-                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      filterTab === "all"
+                        ? "bg-slate-700 text-white"
+                        : "bg-slate-900 text-slate-400 hover:text-slate-200"
+                    }`}
                   >
-                    Todas ({previewResult.total_rules})
+                    Todas ({previewResult.items.length})
                   </button>
                   <button
                     type="button"
                     onClick={() => setFilterTab("qualified")}
-                    style={{
-                      padding: "4px 10px",
-                      borderRadius: "4px",
-                      border: "none",
-                      fontSize: "0.78rem",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      backgroundColor: filterTab === "qualified" ? "rgba(14, 165, 233, 0.25)" : "transparent",
-                      color: filterTab === "qualified" ? "#38bdf8" : "var(--text-muted)",
-                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      filterTab === "qualified"
+                        ? "bg-sky-600 text-white"
+                        : "bg-slate-900 text-slate-400 hover:text-sky-300"
+                    }`}
                   >
-                    Qualificadas ({previewResult.qualified_count ?? qualifiedRules.length})
+                    Qualificadas ≥80% ({qualifiedRules.length})
                   </button>
                   <button
                     type="button"
                     onClick={() => setFilterTab("high")}
-                    style={{
-                      padding: "4px 10px",
-                      borderRadius: "4px",
-                      border: "none",
-                      fontSize: "0.78rem",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      backgroundColor: filterTab === "high" ? "rgba(16, 185, 129, 0.25)" : "transparent",
-                      color: filterTab === "high" ? "#34d399" : "var(--text-muted)",
-                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      filterTab === "high"
+                        ? "bg-emerald-600 text-white"
+                        : "bg-slate-900 text-slate-400 hover:text-emerald-300"
+                    }`}
                   >
-                    Alta Compatibilidade ({previewResult.high_compatibility_count ?? highCompatRules.length})
+                    Alta Compatibilidade ≥95% ({highCompatRules.length})
                   </button>
                   <button
                     type="button"
                     onClick={() => setFilterTab("incompatible")}
-                    style={{
-                      padding: "4px 10px",
-                      borderRadius: "4px",
-                      border: "none",
-                      fontSize: "0.78rem",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      backgroundColor: filterTab === "incompatible" ? "rgba(244, 63, 94, 0.25)" : "transparent",
-                      color: filterTab === "incompatible" ? "#fb7185" : "var(--text-muted)",
-                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      filterTab === "incompatible"
+                        ? "bg-rose-600 text-white"
+                        : "bg-slate-900 text-slate-400 hover:text-rose-300"
+                    }`}
                   >
-                    Incompatíveis ({previewResult.discarded_count ?? incompatibleRules.length})
+                    Ajuste Necessário ({incompatibleRules.length})
                   </button>
                 </div>
 
-                <div style={{ display: "flex", gap: "6px" }}>
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => expandAll(previewResult.items)}
-                    style={{
-                      background: "none",
-                      border: "1px solid var(--border-color)",
-                      color: "var(--text-muted)",
-                      borderRadius: "4px",
-                      padding: "2px 8px",
-                      fontSize: "0.74rem",
-                      cursor: "pointer",
-                    }}
+                    onClick={() => expandAll(filteredItems)}
+                    className="text-xs text-slate-400 hover:text-slate-200"
                   >
-                    Expandir Todos
+                    Expandir Todas
                   </button>
+                  <span className="text-slate-600">•</span>
                   <button
                     type="button"
                     onClick={collapseAll}
-                    style={{
-                      background: "none",
-                      border: "1px solid var(--border-color)",
-                      color: "var(--text-muted)",
-                      borderRadius: "4px",
-                      padding: "2px 8px",
-                      fontSize: "0.74rem",
-                      cursor: "pointer",
-                    }}
+                    className="text-xs text-slate-400 hover:text-slate-200"
                   >
-                    Recolher
+                    Recolher Todas
                   </button>
                 </div>
               </div>
 
-              {/* Lista de Regras com Parecer Técnico e Compatibilidade de Campos */}
-              <div
-                id="rules-preview-list-container"
-                data-testid="rules-preview-list"
-                style={{
-                  maxHeight: "440px",
-                  overflowY: "auto",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "12px",
-                  paddingRight: "4px",
-                }}
-              >
+              {/* Lista de Regras Avaliadas */}
+              <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1">
                 {filteredItems.length === 0 ? (
-                  <div
-                    style={{
-                      textAlign: "center",
-                      padding: "24px",
-                      color: "var(--text-muted)",
-                      fontSize: "0.85rem",
-                    }}
-                  >
-                    Nenhuma regra corresponde ao filtro selecionado ({filterTab}).
+                  <div className="text-center py-12 text-slate-400 text-xs">
+                    Nenhuma regra encontrada para o filtro selecionado ({filterTab}).
                   </div>
                 ) : (
                   filteredItems.map((item: RuleImportItemValidation) => {
@@ -1041,567 +936,250 @@ groups:
                     const isItemTechMissing = item.technology_missing;
                     const compatMeta = getCompatibilityMeta(item);
                     const isExpanded = expandedIndices.has(item.index);
-                    const hasCuration = Boolean(item.ai_rationale || (item.mapped_fields && item.mapped_fields.length > 0));
+                    const isGeneratingAI = generatingAIIndices.has(item.index);
+                    const hasAIOpinion = Boolean(item.ai_rationale);
 
                     return (
                       <div
                         key={item.index}
-                        style={{
-                          border: `1px solid ${
-                            isItemInvalid
-                              ? "rgba(239, 68, 68, 0.6)"
-                              : isItemTechMissing
-                              ? "rgba(234, 179, 8, 0.6)"
-                              : compatMeta.border
-                          }`,
-                          borderRadius: "8px",
-                          padding: "12px 14px",
-                          backgroundColor: isItemInvalid
-                            ? "rgba(239, 68, 68, 0.05)"
+                        className={`rounded-xl border p-4 transition-all ${
+                          isItemInvalid
+                            ? "border-rose-500/50 bg-rose-950/10"
                             : isItemTechMissing
-                            ? "rgba(234, 179, 8, 0.05)"
-                            : "rgba(15, 23, 42, 0.4)",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: "8px",
-                        }}
+                            ? "border-amber-500/50 bg-amber-950/10"
+                            : `${compatMeta.border} bg-slate-900/40`
+                        }`}
                       >
-                        {/* Linha Superior: Título, Badges e Botão de Ação */}
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "flex-start",
-                            gap: "10px",
-                          }}
-                        >
-                          <div style={{ flex: 1 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                              <span style={{ fontWeight: 600, fontSize: "0.94rem", color: "var(--text-main)" }}>
+                        {/* Linha Principal do Card */}
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                              <span className="font-semibold text-sm text-slate-100">
                                 {item.title}
                               </span>
                               {/* Badge de Compatibilidade Dinâmica */}
                               <span
-                                style={{
-                                  backgroundColor: compatMeta.bg,
-                                  color: compatMeta.color,
-                                  border: compatMeta.border,
-                                  borderRadius: "4px",
-                                  padding: "2px 8px",
-                                  fontSize: "0.75rem",
-                                  fontWeight: 600,
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: "4px",
-                                }}
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold border ${compatMeta.bg} ${compatMeta.color} ${compatMeta.border}`}
                               >
-                                <span>{compatMeta.icon === "verified" ? "★" : compatMeta.icon === "check_circle" ? "✓" : "⚠"}</span>
+                                <span className="material-symbols-outlined text-[13px]">
+                                  {compatMeta.icon}
+                                </span>
                                 <span>{compatMeta.label}</span>
                               </span>
                             </div>
 
                             {item.description && (
-                              <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "4px" }}>
+                              <p className="text-xs text-slate-400 line-clamp-2 mb-2">
                                 {item.description}
-                              </div>
+                              </p>
                             )}
+
+                            {/* Tags de Metadados: Tecnologia, Tática, Severidade */}
+                            <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                              {item.filename && (
+                                <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono border border-slate-700">
+                                  {item.filename}
+                                </span>
+                              )}
+                              {item.technology_name && (
+                                <span className="px-2 py-0.5 rounded bg-sky-950/40 text-sky-300 border border-sky-500/30">
+                                  {item.technology_name}
+                                </span>
+                              )}
+                              {item.mitre_tactic && (
+                                <span className="px-2 py-0.5 rounded bg-purple-950/40 text-purple-300 border border-purple-500/30">
+                                  {item.mitre_tactic} ({item.mitre_technique || "T1059"})
+                                </span>
+                              )}
+                              <span
+                                className={`px-2 py-0.5 rounded font-semibold uppercase ${
+                                  item.severity === "critical"
+                                    ? "bg-rose-950/40 text-rose-300 border border-rose-500/30"
+                                    : item.severity === "high"
+                                    ? "bg-amber-950/40 text-amber-300 border border-amber-500/30"
+                                    : "bg-slate-800 text-slate-300 border border-slate-700"
+                                }`}
+                              >
+                                {item.severity}
+                              </span>
+                            </div>
                           </div>
 
-                          {/* Ações e Status */}
-                          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+                          {/* Botões de Ação na Linha */}
+                          <div className="flex items-center gap-2 shrink-0">
                             {isItemTechMissing && (
                               <button
                                 type="button"
-                                className="btn btn-sm btn-secondary"
+                                className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-medium inline-flex items-center gap-1 transition-colors"
                                 onClick={() => handleOpenCreateTech(item)}
-                                style={{
-                                  fontSize: "0.78rem",
-                                  padding: "3px 8px",
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: "4px",
-                                  backgroundColor: "rgba(234, 179, 8, 0.15)",
-                                  borderColor: "rgba(234, 179, 8, 0.4)",
-                                  color: "#fbbf24",
-                                }}
-                                title="Cadastrar esta tecnologia no catálogo para liberar a importação"
+                                title="Cadastrar tecnologia para liberar a regra"
                               >
-                                <span>➕ Criar Tecnologia</span>
+                                <span className="material-symbols-outlined text-[14px]">add</span>
+                                <span>Criar Tecnologia</span>
                               </button>
                             )}
 
-                            <span
-                              className="badge"
-                              style={{
-                                backgroundColor: isItemInvalid
-                                  ? "rgba(239, 68, 68, 0.2)"
-                                  : isItemTechMissing
-                                  ? "rgba(234, 179, 8, 0.2)"
-                                  : "rgba(34, 197, 94, 0.2)",
-                                color: isItemInvalid
-                                  ? "#ef4444"
-                                  : isItemTechMissing
-                                  ? "#fbbf24"
-                                  : "#22c55e",
-                                borderColor: isItemInvalid
-                                  ? "rgba(239, 68, 68, 0.4)"
-                                  : isItemTechMissing
-                                  ? "rgba(234, 179, 8, 0.4)"
-                                  : "rgba(34, 197, 94, 0.4)",
-                                fontWeight: 600,
-                              }}
+                            {/* Botão de 3 Estrelinhas de IA (auto_awesome) para Parecer Técnico Sob Demanda */}
+                            <button
+                              type="button"
+                              onClick={(e) => handleGenerateAIOpinion(item, e)}
+                              disabled={isGeneratingAI || !isRuleImportAIEnabled}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-medium inline-flex items-center gap-1.5 transition-all shadow-sm ${
+                                !isRuleImportAIEnabled
+                                  ? "bg-slate-800/40 border border-slate-800 text-slate-500 cursor-not-allowed opacity-60"
+                                  : hasAIOpinion
+                                  ? "bg-purple-950/60 border border-purple-500/50 text-purple-300 hover:bg-purple-900/60"
+                                  : "bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 hover:text-white"
+                              }`}
+                              title={
+                                !isRuleImportAIEnabled
+                                  ? "A análise por IA para regras importadas está desativada nas configurações de API Keys"
+                                  : hasAIOpinion
+                                  ? "Parecer por IA gerado com sucesso. Clique para regenerar."
+                                  : "Gerar parecer técnico por IA sob demanda (Contexto de Ameaça, Aderência de Campos e Diretrizes SOC)"
+                              }
                             >
-                              {isItemInvalid
-                                ? "✕ Inválida"
-                                : isItemTechMissing
-                                ? "⚠ Sem Tecnologia"
-                                : "✓ Válida"}
-                            </span>
-
-                            {hasCuration && (
-                              <button
-                                type="button"
-                                onClick={() => toggleExpand(item.index)}
-                                style={{
-                                  backgroundColor: isExpanded ? "rgba(99, 102, 241, 0.25)" : "rgba(30, 41, 59, 0.8)",
-                                  border: "1px solid rgba(99, 102, 241, 0.4)",
-                                  color: isExpanded ? "#a5b4fc" : "#c7d2fe",
-                                  borderRadius: "4px",
-                                  padding: "3px 9px",
-                                  fontSize: "0.76rem",
-                                  cursor: "pointer",
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: "4px",
-                                  fontWeight: 500,
-                                }}
+                              <span
+                                className={`material-symbols-outlined text-[15px] ${
+                                  isGeneratingAI ? "animate-spin text-purple-400" : hasAIOpinion ? "text-purple-300" : "text-sky-400"
+                                }`}
                               >
-                                <span>✦</span>
-                                <span>{isExpanded ? "Recolher Parecer" : "Ver Parecer & Compatibilidade"}</span>
-                              </button>
-                            )}
+                                {isGeneratingAI ? "progress_activity" : "auto_awesome"}
+                              </span>
+                              <span>
+                                {isGeneratingAI
+                                  ? "Gerando Parecer..."
+                                  : hasAIOpinion
+                                  ? "Parecer IA ✓"
+                                  : "Parecer IA"}
+                              </span>
+                            </button>
+
+                            {/* Botão de Expandir / Recolher Detalhes */}
+                            <button
+                              type="button"
+                              onClick={() => toggleExpand(item.index)}
+                              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-xs font-medium inline-flex items-center gap-1 transition-colors"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">
+                                {isExpanded ? "expand_less" : "expand_more"}
+                              </span>
+                              <span>{isExpanded ? "Recolher" : "Detalhes"}</span>
+                            </button>
                           </div>
                         </div>
 
-                        {/* Badges de Metadados Principais */}
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                          {item.filename && (
-                            <span
-                              className="badge badge-tag"
-                              style={{
-                                backgroundColor: "rgba(99, 102, 241, 0.15)",
-                                color: "#a5b4fc",
-                                borderColor: "rgba(99, 102, 241, 0.3)",
-                              }}
-                            >
-                              📄 {item.filename}
-                            </span>
-                          )}
-                          {item.technology_name && (
-                            <span className="badge badge-tag">
-                              Tecnologia: {item.technology_name}
-                            </span>
-                          )}
-                          {item.severity && (
-                            <span className="badge badge-tag">
-                              Severidade: {item.severity.toUpperCase()}
-                            </span>
-                          )}
-                          {item.mitre_tactic && (
-                            <span className="badge badge-tag">
-                              Tática: {item.mitre_tactic}
-                            </span>
-                          )}
-                          {item.mitre_technique && (
-                            <span className="badge badge-tag">
-                              Técnica: {item.mitre_technique}
-                            </span>
-                          )}
-                          {item.already_exists && (
-                            <span
-                              className="badge"
-                              style={{
-                                backgroundColor: "rgba(234, 179, 8, 0.2)",
-                                color: "#eab308",
-                                borderColor: "rgba(234, 179, 8, 0.4)",
-                              }}
-                            >
-                              Já no Baseline
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Aviso: Tecnologia Ausente */}
-                        {isItemTechMissing && (
-                          <div
-                            style={{
-                              backgroundColor: "rgba(234, 179, 8, 0.1)",
-                              border: "1px solid rgba(234, 179, 8, 0.25)",
-                              borderRadius: "4px",
-                              padding: "6px 10px",
-                              fontSize: "0.82rem",
-                              color: "#fbbf24",
-                              lineHeight: "1.4",
-                            }}
-                          >
-                            A regra está correta, mas a tecnologia{" "}
-                            <strong>{item.suggested_technology_name || item.suggested_technology_slug}</strong>{" "}
-                            ({item.suggested_technology_slug}) ainda não existe no catálogo. Clique em &quot;Criar Tecnologia&quot; ao lado para cadastrá-la.
-                          </div>
-                        )}
-
-                        {/* Alerta de Incompatibilidade de Telemetria */}
-                        {!isItemInvalid && (item.field_compatibility_pct ?? 100) < 80 && (
-                          <div
-                            style={{
-                              backgroundColor: "rgba(244, 63, 94, 0.12)",
-                              border: "1px solid rgba(244, 63, 94, 0.3)",
-                              borderRadius: "4px",
-                              padding: "8px 10px",
-                              fontSize: "0.82rem",
-                              color: "#fca5a5",
-                              lineHeight: "1.4",
-                            }}
-                          >
-                            <strong>Alerta de Incompatibilidade ({item.field_compatibility_pct?.toFixed(0)}% &lt; 80%):</strong>{" "}
-                            {item.classification_reason || "Esta regra não atingiu o limiar de 80% de aderência de campos ou telemetria necessária nos clientes avaliados."}
-                          </div>
-                        )}
-
-                        {/* Exibição de Erros Impeditivos */}
-                        {item.errors.length > 0 && (
-                          <div
-                            style={{
-                              backgroundColor: "rgba(239, 68, 68, 0.15)",
-                              border: "1px solid rgba(239, 68, 68, 0.3)",
-                              borderRadius: "4px",
-                              padding: "8px 10px",
-                              fontSize: "0.82rem",
-                              color: "#fca5a5",
-                            }}
-                          >
-                            <div style={{ fontWeight: 600, marginBottom: "2px" }}>
-                              Erros impeditivos de importação:
-                            </div>
-                            <ul style={{ margin: 0, paddingLeft: "18px" }}>
-                              {item.errors.map((err, errIdx) => (
-                                <li key={errIdx}>{err}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {/* Painel Expandido de Curadoria, Parecer IA e Campos Mapeados */}
+                        {/* Painel Expandido: Parecer Técnico de IA, Compatibilidade e Query */}
                         {isExpanded && (
-                          <div
-                            style={{
-                              marginTop: "6px",
-                              padding: "12px",
-                              backgroundColor: "rgba(10, 15, 30, 0.8)",
-                              borderRadius: "6px",
-                              border: "1px solid rgba(99, 102, 241, 0.25)",
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: "12px",
-                            }}
-                          >
+                          <div className="mt-3 pt-3 border-t border-slate-800 space-y-3 text-xs">
                             {/* Bloco 1: Parecer Técnico da IA */}
-                            {item.ai_rationale && (
-                              <div
-                                style={{
-                                  backgroundColor: "rgba(88, 28, 135, 0.18)",
-                                  border: "1px solid rgba(168, 85, 247, 0.35)",
-                                  borderRadius: "6px",
-                                  padding: "10px 12px",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "6px",
-                                    color: "#d8b4fe",
-                                    fontSize: "0.78rem",
-                                    fontWeight: 700,
-                                    textTransform: "uppercase",
-                                    letterSpacing: "0.5px",
-                                    marginBottom: "6px",
-                                  }}
-                                >
-                                  <span>✦</span>
-                                  <span>
-                                    Parecer Técnico da IA — Contexto de Ameaça e Diretrizes SOC{" "}
-                                    {item.ai_model ? `(${item.ai_model})` : ""}
-                                  </span>
+                            {item.ai_rationale ? (
+                              <div className="rounded-xl border border-purple-500/30 bg-purple-950/20 p-3.5 space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-1.5 text-purple-300 font-semibold uppercase tracking-wider text-[11px]">
+                                    <span className="material-symbols-outlined text-[15px]">
+                                      auto_awesome
+                                    </span>
+                                    <span>Parecer Técnico por IA (D.A.N.T.E. Cognitive Engine)</span>
+                                  </div>
+                                  {item.ai_model && (
+                                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-900/40 text-purple-200 border border-purple-500/30">
+                                      {item.ai_model}
+                                    </span>
+                                  )}
                                 </div>
-                                <div
-                                  style={{
-                                    fontSize: "0.82rem",
-                                    color: "#f3e8ff",
-                                    lineHeight: "1.55",
-                                    whiteSpace: "pre-line",
-                                  }}
-                                >
+                                <div className="text-slate-200 leading-relaxed whitespace-pre-line text-xs font-sans">
                                   {item.ai_rationale}
                                 </div>
                               </div>
+                            ) : (
+                              <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-3 flex items-center justify-between text-slate-400">
+                                <div className="flex items-center gap-2">
+                                  <span className="material-symbols-outlined text-slate-500 text-base">
+                                    psychology
+                                  </span>
+                                  <span>
+                                    Parecer técnico por IA ainda não gerado para esta regra.
+                                  </span>
+                                </div>
+                                {isRuleImportAIEnabled && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => handleGenerateAIOpinion(item, e)}
+                                    disabled={isGeneratingAI}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-purple-600 hover:bg-purple-500 text-white font-medium text-xs transition-colors"
+                                  >
+                                    <span className="material-symbols-outlined text-[14px]">
+                                      auto_awesome
+                                    </span>
+                                    <span>Gerar Parecer Agora</span>
+                                  </button>
+                                )}
+                              </div>
                             )}
 
-                            {/* Bloco 2: Composição Dinâmica dos 3 Eixos */}
-                            <div
-                              style={{
-                                backgroundColor: "rgba(15, 23, 42, 0.6)",
-                                border: "1px solid var(--border-color)",
-                                borderRadius: "6px",
-                                padding: "10px",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  fontSize: "0.76rem",
-                                  color: "var(--text-muted)",
-                                  fontWeight: 700,
-                                  textTransform: "uppercase",
-                                  marginBottom: "8px",
-                                }}
-                              >
-                                Composição dos 3 Eixos da Compatibilidade Dinâmica (Base 80.0%)
-                              </div>
-                              <div
-                                style={{
-                                  display: "grid",
-                                  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                                  gap: "8px",
-                                  fontSize: "0.78rem",
-                                }}
-                              >
-                                {/* Eixo 1 */}
-                                <div
-                                  style={{
-                                    backgroundColor: "rgba(2, 132, 199, 0.08)",
-                                    border: "1px solid rgba(2, 132, 199, 0.25)",
-                                    borderRadius: "4px",
-                                    padding: "6px 8px",
-                                  }}
-                                >
-                                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 600, color: "#38bdf8" }}>
-                                    <span>1. Presença de Logs</span>
-                                    <span>+{(item.log_presence_score ?? 0).toFixed(1)} pts</span>
-                                  </div>
-                                  <div style={{ color: "var(--text-muted)", fontSize: "0.73rem", marginTop: "2px" }}>
-                                    Volume de telemetria ({item.total_tech_logs_seen ?? 0} logs observados) nas janelas progressivas.
-                                  </div>
+                            {/* Bloco 2: Aderência de Campos e Schema Wazuh */}
+                            <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3 space-y-2">
+                              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+                                Mapeamento e Aderência dos Campos (Schema Wazuh / Loki)
+                              </span>
+                              {item.mapped_fields && item.mapped_fields.length > 0 ? (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {item.mapped_fields.map((mf, mfIdx) => (
+                                    <span
+                                      key={mfIdx}
+                                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono border ${
+                                        mf.compatible
+                                          ? "bg-emerald-950/30 text-emerald-300 border-emerald-500/30"
+                                          : "bg-rose-950/30 text-rose-300 border-rose-500/30"
+                                      }`}
+                                    >
+                                      <span>{mf.compatible ? "✓" : "✕"}</span>
+                                      <span>{mf.logql_field || mf.original_field}</span>
+                                    </span>
+                                  ))}
                                 </div>
+                              ) : (
+                                <p className="text-slate-400 text-xs">
+                                  Telemetria padrão baseada no fluxo do Wazuh (| json).
+                                </p>
+                              )}
 
-                                {/* Eixo 2 */}
-                                <div
-                                  style={{
-                                    backgroundColor: "rgba(245, 158, 11, 0.08)",
-                                    border: "1px solid rgba(245, 158, 11, 0.25)",
-                                    borderRadius: "4px",
-                                    padding: "6px 8px",
-                                  }}
-                                >
-                                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 600, color: "#fbbf24" }}>
-                                    <span>2. Contexto de Ameaça</span>
-                                    <span>+{(item.threat_context_score ?? 0).toFixed(1)} pts</span>
-                                  </div>
-                                  <div style={{ color: "var(--text-muted)", fontSize: "0.73rem", marginTop: "2px" }}>
-                                    Severidade {item.severity.toUpperCase()} e técnica {item.mitre_technique || "—"} no MITRE ATT&amp;CK.
-                                  </div>
-                                </div>
-
-                                {/* Eixo 3 */}
-                                <div
-                                  style={{
-                                    backgroundColor: "rgba(16, 185, 129, 0.08)",
-                                    border: "1px solid rgba(16, 185, 129, 0.25)",
-                                    borderRadius: "4px",
-                                    padding: "6px 8px",
-                                  }}
-                                >
-                                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 600, color: "#34d399" }}>
-                                    <span>3. Correspondência Cenário</span>
-                                    <span>+{(item.scenario_match_score ?? 0).toFixed(1)} pts</span>
-                                  </div>
-                                  <div style={{ color: "var(--text-muted)", fontSize: "0.73rem", marginTop: "2px" }}>
-                                    {(item.observed_field_compatibility_pct ?? 100).toFixed(0)}% dos campos encontrados no schema Wazuh.
+                              {item.client_evaluations && item.client_evaluations.length > 0 && (
+                                <div className="pt-2 border-t border-slate-800/80">
+                                  <span className="text-[11px] font-medium text-slate-400 block mb-1">
+                                    Presença de Telemetria nos Ambientes de Clientes:
+                                  </span>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {item.client_evaluations.map((ce, ceIdx) => (
+                                      <span
+                                        key={ceIdx}
+                                        className={`px-2 py-0.5 rounded text-[11px] border ${
+                                          ce.classification === "excellent"
+                                            ? "bg-emerald-950/30 text-emerald-300 border-emerald-500/30"
+                                            : ce.classification === "good"
+                                            ? "bg-sky-950/30 text-sky-300 border-sky-500/30"
+                                            : "bg-rose-950/30 text-rose-300 border-rose-500/30"
+                                        }`}
+                                      >
+                                        {ce.client_name}: {(ce.field_compatibility_pct ?? 100).toFixed(0)}%
+                                      </span>
+                                    ))}
                                   </div>
                                 </div>
-                              </div>
+                              )}
                             </div>
 
-                            {/* Bloco 3: Aderência dos Campos Mapeados (Schema Wazuh / Clientes) */}
-                            {item.mapped_fields && item.mapped_fields.length > 0 && (
-                              <div>
-                                <div
-                                  style={{
-                                    fontSize: "0.76rem",
-                                    color: "var(--text-muted)",
-                                    fontWeight: 700,
-                                    textTransform: "uppercase",
-                                    marginBottom: "6px",
-                                  }}
-                                >
-                                  Campos Mapeados para o Schema Wazuh (| json) ({item.mapped_fields.length})
-                                </div>
-                                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                                  {item.mapped_fields.map((mf, mfIdx) => {
-                                    const isObs = item.observed_fields_in_logs?.includes(mf.logql_field);
-                                    return (
-                                      <div
-                                        key={mfIdx}
-                                        style={{
-                                          display: "inline-flex",
-                                          alignItems: "center",
-                                          gap: "6px",
-                                          backgroundColor: "rgba(15, 23, 42, 0.7)",
-                                          border: `1px solid ${
-                                            !mf.compatible
-                                              ? "rgba(239, 68, 68, 0.4)"
-                                              : isObs
-                                              ? "rgba(16, 185, 129, 0.4)"
-                                              : "rgba(14, 165, 233, 0.3)"
-                                          }`,
-                                          borderRadius: "4px",
-                                          padding: "3px 8px",
-                                          fontSize: "0.76rem",
-                                          fontFamily: "var(--font-mono)",
-                                        }}
-                                      >
-                                        <span style={{ color: "var(--text-muted)" }}>{mf.original_field} →</span>
-                                        <span style={{ color: mf.compatible ? "#38bdf8" : "#fca5a5", fontWeight: 600 }}>
-                                          {mf.logql_field}
-                                        </span>
-                                        <span
-                                          style={{
-                                            fontSize: "0.68rem",
-                                            padding: "1px 4px",
-                                            borderRadius: "3px",
-                                            backgroundColor: mf.compatible
-                                              ? isObs
-                                                ? "rgba(16, 185, 129, 0.2)"
-                                                : "rgba(14, 165, 233, 0.2)"
-                                              : "rgba(239, 68, 68, 0.2)",
-                                            color: mf.compatible
-                                              ? isObs
-                                                ? "#34d399"
-                                                : "#7dd3fc"
-                                              : "#f87171",
-                                          }}
-                                        >
-                                          {!mf.compatible
-                                            ? "Incompatível"
-                                            : isObs
-                                            ? "Confirmado em logs"
-                                            : "Schema OK"}
-                                        </span>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
+                            {/* Bloco 3: Consulta LogQL e Comparador */}
+                            <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-3 font-mono text-[11px] text-slate-300 overflow-x-auto">
+                              <div className="text-[10px] uppercase tracking-wider text-slate-400 font-sans font-semibold mb-1 flex items-center justify-between">
+                                <span>Expressão LogQL</span>
+                                <span>
+                                  Threshold: {item.threshold_operator} {item.threshold_value} | for: {item.for_duration}
+                                </span>
                               </div>
-                            )}
-
-                            {/* Bloco 4: Avaliação por Ambiente de Cliente */}
-                            {item.client_evaluations && item.client_evaluations.length > 0 && (
-                              <div>
-                                <div
-                                  style={{
-                                    fontSize: "0.76rem",
-                                    color: "var(--text-muted)",
-                                    fontWeight: 700,
-                                    textTransform: "uppercase",
-                                    marginBottom: "6px",
-                                  }}
-                                >
-                                  Avaliação nos Ambientes de Clientes ({item.client_evaluations.length})
-                                </div>
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: "4px",
-                                    maxHeight: "120px",
-                                    overflowY: "auto",
-                                  }}
-                                >
-                                  {item.client_evaluations.map((ev) => {
-                                    const evCompat = ev.field_compatibility_pct ?? 100;
-                                    const isEvGood = evCompat >= 80;
-                                    return (
-                                      <div
-                                        key={ev.client_uid}
-                                        style={{
-                                          display: "flex",
-                                          justifyContent: "space-between",
-                                          alignItems: "center",
-                                          backgroundColor: "rgba(15, 23, 42, 0.5)",
-                                          border: "1px solid var(--border-color)",
-                                          borderRadius: "4px",
-                                          padding: "4px 8px",
-                                          fontSize: "0.78rem",
-                                        }}
-                                      >
-                                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                                          <span style={{ fontWeight: 600, color: "var(--text-main)" }}>
-                                            {ev.client_name}
-                                          </span>
-                                          <span style={{ color: "var(--text-muted)", fontSize: "0.72rem" }}>
-                                            ({ev.tech_logs_count} logs da tecnologia)
-                                          </span>
-                                        </div>
-                                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                          <span style={{ color: "var(--text-muted)", fontSize: "0.72rem" }}>
-                                            {ev.reason}
-                                          </span>
-                                          <span
-                                            style={{
-                                              color: isEvGood ? "#34d399" : "#fb7185",
-                                              fontWeight: 700,
-                                              fontSize: "0.76rem",
-                                            }}
-                                          >
-                                            {evCompat.toFixed(1)}%
-                                          </span>
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Bloco 5: Expressão LogQL Completa */}
-                            {item.query && (
-                              <div>
-                                <div
-                                  style={{
-                                    fontSize: "0.74rem",
-                                    color: "var(--text-muted)",
-                                    fontWeight: 700,
-                                    textTransform: "uppercase",
-                                    marginBottom: "4px",
-                                  }}
-                                >
-                                  Expressão LogQL
-                                </div>
-                                <div
-                                  style={{
-                                    fontSize: "0.76rem",
-                                    fontFamily: "var(--font-mono)",
-                                    backgroundColor: "rgba(2, 6, 23, 0.8)",
-                                    border: "1px solid var(--border-color)",
-                                    padding: "6px 8px",
-                                    borderRadius: "4px",
-                                    color: "var(--text-main)",
-                                    wordBreak: "break-all",
-                                  }}
-                                >
-                                  {item.query}
-                                </div>
-                              </div>
-                            )}
+                              <code className="text-sky-300">{item.query}</code>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -1612,143 +1190,89 @@ groups:
             </div>
           )}
 
-          {/* Rodapé do Modal */}
-          <div
-            className="modal-footer"
-            style={{
-              padding: "14px 0 0 0",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: "10px",
-            }}
-          >
-            {/* Opção de Importar Apenas Qualificadas */}
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              {Boolean(previewResult && previewResult.discarded_count && previewResult.discarded_count > 0 && qualifiedRules.length > 0) && (
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    fontSize: "0.82rem",
-                    color: "#38bdf8",
-                    cursor: "pointer",
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={importOnlyQualified}
-                    onChange={(e) => setImportOnlyQualified(e.target.checked)}
-                  />
-                  <span>Importar apenas regras qualificadas (≥ 80%)</span>
-                </label>
+          {/* Rodapé e Ações Finais */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-800">
+            <div className="text-xs text-slate-400">
+              {previewResult && previewResult.valid_count > 0 && (
+                <span>
+                  Serão importadas <strong>{rulesToImport.length}</strong> regra(s) no baseline global.
+                </span>
               )}
             </div>
 
-            <div style={{ display: "flex", gap: "10px" }}>
+            <div className="flex items-center gap-3">
               <button
                 type="button"
-                className="btn btn-secondary"
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition-colors"
                 onClick={handleClose}
                 disabled={isImporting}
               >
                 Cancelar
               </button>
-
               <button
                 type="button"
-                className="btn btn-primary"
+                className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                 onClick={handleImport}
                 disabled={
                   isImporting ||
                   isValidating ||
-                  readingFiles ||
                   !previewResult ||
                   rulesToImport.length === 0
                 }
               >
                 {isImporting
-                  ? "Importando regras..."
-                  : isValidating
-                  ? "Validando..."
-                  : readingFiles
-                  ? "Lendo arquivos..."
-                  : previewResult && rulesToImport.length > 0
-                  ? `Importar ${rulesToImport.length} Regra(s) ${
-                      importOnlyQualified && qualifiedRules.length > 0 && qualifiedRules.length < validRules.length
-                        ? "Qualificada(s)"
-                        : "Válida(s)"
-                    }`
-                  : "Importar Regras"}
+                  ? "Importando Regras..."
+                  : `Importar ${rulesToImport.length} Regra(s) no Baseline`}
               </button>
             </div>
           </div>
         </div>
       </Modal>
 
-      {/* Sub-Modal: Criação de Tecnologia para regras pendentes */}
+      {/* Modal de Criação Rápida de Tecnologia para regras sem tecnologia cadastrada */}
       <Modal
         isOpen={isCreateTechOpen}
         onClose={() => setIsCreateTechOpen(false)}
-        title="Criar Tecnologia a partir da Regra"
-        maxWidth="580px"
+        title="Cadastrar Nova Tecnologia"
+        maxWidth="640px"
       >
-        <form onSubmit={handleSaveTechnology}>
+        <form onSubmit={handleSaveTechnology} className="space-y-4 text-slate-200">
           {techError && (
-            <div className="alert-box" style={{ marginBottom: "12px" }}>
-              {techError}
+            <div className="p-3 rounded-lg border border-rose-500/40 bg-rose-950/30 text-rose-300 text-xs flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm">error</span>
+              <span>{techError}</span>
             </div>
           )}
           {techSuccessMsg && (
-            <div
-              className="alert-box"
-              style={{
-                marginBottom: "12px",
-                backgroundColor: "rgba(34, 197, 94, 0.15)",
-                color: "var(--status-normal)",
-                borderColor: "rgba(34, 197, 94, 0.3)",
-              }}
-            >
-              {techSuccessMsg}
+            <div className="p-3 rounded-lg border border-emerald-500/40 bg-emerald-950/30 text-emerald-300 text-xs flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm">check_circle</span>
+              <span>{techSuccessMsg}</span>
             </div>
           )}
 
-          <div
-            style={{
-              backgroundColor: "rgba(15, 23, 42, 0.5)",
-              border: "1px solid var(--border-color)",
-              borderRadius: "6px",
-              padding: "10px 12px",
-              fontSize: "0.83rem",
-              color: "var(--text-muted)",
-              marginBottom: "14px",
-              lineHeight: "1.4",
-            }}
-          >
+          <p className="text-xs text-slate-400 leading-relaxed">
             Cadastre a tecnologia correspondente ao seletor da regra. Após salvar, o validador reavaliará as regras automaticamente.
-          </div>
+          </p>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" style={{ fontSize: "0.85rem" }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
                 Nome da Tecnologia *
               </label>
               <input
-                className="input"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
                 value={techForm.name}
                 onChange={(e) => setTechForm({ ...techForm, name: e.target.value })}
-                placeholder="Ex.: Crowdstrike Falcon, PfSense"
+                placeholder="Ex.: Crowdstrike Falcon"
                 required
               />
             </div>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" style={{ fontSize: "0.85rem" }}>
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
                 Slug *
               </label>
               <input
-                className="input"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
                 value={techForm.slug}
                 onChange={(e) => setTechForm({ ...techForm, slug: e.target.value })}
                 placeholder="ex.: crowdstrike_falcon"
@@ -1757,25 +1281,25 @@ groups:
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "12px", marginBottom: "12px" }}>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" style={{ fontSize: "0.85rem" }}>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
                 Grupo de Regras Wazuh (rule_groups regex) *
               </label>
               <input
-                className="input"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 font-mono focus:outline-none focus:border-sky-500"
                 value={techForm.rule_groups_regex}
                 onChange={(e) => setTechForm({ ...techForm, rule_groups_regex: e.target.value })}
                 placeholder="ex.: .*crowdstrike.*"
                 required
               />
             </div>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" style={{ fontSize: "0.85rem" }}>
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
                 Label job
               </label>
               <input
-                className="input"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
                 value={techForm.job || "wazuh"}
                 onChange={(e) => setTechForm({ ...techForm, job: e.target.value })}
                 required
@@ -1783,12 +1307,12 @@ groups:
             </div>
           </div>
 
-          <div className="form-group" style={{ marginBottom: "14px" }}>
-            <label className="form-label" style={{ fontSize: "0.85rem" }}>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
               Descrição
             </label>
             <textarea
-              className="textarea"
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
               rows={2}
               value={techForm.description || ""}
               onChange={(e) => setTechForm({ ...techForm, description: e.target.value })}
@@ -1796,37 +1320,20 @@ groups:
             />
           </div>
 
-          <label
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              fontSize: "0.82rem",
-              color: "var(--text-muted)",
-              marginBottom: 16,
-              cursor: "pointer",
-            }}
-          >
+          <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer">
             <input
               type="checkbox"
               checked={techForm.confirm_without_logs ?? true}
               onChange={(e) => setTechForm({ ...techForm, confirm_without_logs: e.target.checked })}
+              className="rounded bg-slate-900 border-slate-700 text-sky-600 focus:ring-sky-500"
             />
             Confirmar cadastro mesmo que ainda não existam logs no Loki para esta tecnologia
           </label>
 
-          <div
-            className="modal-footer"
-            style={{
-              padding: "10px 0 0 0",
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: "10px",
-            }}
-          >
+          <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
             <button
               type="button"
-              className="btn btn-secondary"
+              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors"
               onClick={() => setIsCreateTechOpen(false)}
               disabled={savingTech}
             >
@@ -1834,7 +1341,7 @@ groups:
             </button>
             <button
               type="submit"
-              className="btn btn-primary"
+              className="px-4 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-medium transition-colors disabled:opacity-50"
               disabled={savingTech || !techForm.slug || !techForm.name || !techForm.rule_groups_regex}
             >
               {savingTech ? "Salvando..." : "Salvar Tecnologia e Revalidar"}

@@ -799,8 +799,29 @@ class RuleImportExecuteRequest(BaseModel):
     )
     evaluation_group: str | None = Field(
         default=None,
-        description="Grupo de avaliação (evaluation group / ruleGroup) no Grafana Alerting. Se omitido, usa o grupo padrão 'global-detections'.",
+        description="Grupo de avaliação (evaluation group / ruleGroup) no Grafana Alerting. Se omitido, usa o grupo padrão '5m'.",
     )
+
+
+class RuleImportAIOpinionRequest(BaseModel):
+    """Requisição para emissão sob demanda de parecer técnico por IA para uma regra importada."""
+
+    rule: RuleImportItemValidation
+    technology: str | None = Field(
+        default=None,
+        description="Slug da tecnologia para contextualização da telemetria e schema (opcional).",
+    )
+
+
+class RuleImportAIOpinionResponse(BaseModel):
+    """Parecer técnico e enriquecimento emitido sob demanda por IA para uma regra importada."""
+
+    ai_rationale: str
+    ai_model: str | None = None
+    curation_engine: Literal["ai", "heuristic"] = "ai"
+    classification: CurationCandidateQuality | None = None
+    classification_reason: str | None = None
+    qualification_factors: list[CurationQualificationFactor] = Field(default_factory=list)
 
 
 class RuleImportExecuteResponse(BaseModel):
@@ -1564,6 +1585,7 @@ class AISettingsData(BaseModel):
     enabled: bool = True
     ai_analysis_enabled: bool = True
     curation_enabled: bool = True
+    rule_import_ai_enabled: bool = True
     cache_enabled: bool = True
 
 
@@ -1579,6 +1601,7 @@ class AISettingsPublicResponse(BaseModel):
     enabled: bool
     ai_analysis_enabled: bool = True
     curation_enabled: bool = True
+    rule_import_ai_enabled: bool = True
     cache_enabled: bool
     available_providers: list[dict[str, Any]]
     cached_rules_count: int = 0
@@ -1595,6 +1618,7 @@ class AISettingsUpdateRequest(BaseModel):
     enabled: bool = True
     ai_analysis_enabled: bool = True
     curation_enabled: bool = True
+    rule_import_ai_enabled: bool = True
     cache_enabled: bool = True
 
 

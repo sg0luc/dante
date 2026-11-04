@@ -61,6 +61,8 @@ from ..schemas import (
     ApplyRuleAISuggestionsResponse,
     RuleDetail,
     RuleImprovementEvaluation,
+    RuleImportAIOpinionRequest,
+    RuleImportAIOpinionResponse,
     RuleImportExecuteRequest,
     RuleImportExecuteResponse,
     RuleImportPreviewRequest,
@@ -81,8 +83,10 @@ from ..schemas import (
     ToggleTenantPauseRequest,
 )
 from ..rule_importer import (
-    preview_rules_curated,
+    DEFAULT_IMPORT_RULE_GROUP,
     build_baseline_grafana_payload,
+    generate_rule_import_ai_opinion,
+    preview_rules_curated,
     preview_rules_json,
     preview_rules_multiple,
 )
@@ -505,6 +509,41 @@ async def preview_rules_import(
 
 
 @router.post(
+    "/rules/import/ai-opinion",
+    response_model=RuleImportAIOpinionResponse,
+    dependencies=[Depends(require_csrf_header)],
+    tags=["rules"],
+)
+async def generate_rule_import_ai_opinion_endpoint(
+    payload: RuleImportAIOpinionRequest,
+    sys_settings: SystemSettingsStore = Depends(get_system_settings_store),
+    ai_service = Depends(get_rules_ai_service),
+) -> RuleImportAIOpinionResponse:
+    """Gera sob demanda parecer técnico por IA para uma regra importada específica."""
+    ai_cfg = sys_settings.get_ai_settings()
+    if not (ai_cfg.enabled and ai_cfg.rule_import_ai_enabled):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A análise e parecer por IA na importação de regras está desativada nas configurações de API Keys.",
+        )
+
+    tech_store = get_technology_store()
+    tech_slug = payload.technology or payload.rule.technology
+    tech_obj = None
+    if tech_slug:
+        try:
+            tech_obj = tech_store.get(tech_slug)
+        except Exception:
+            pass
+
+    return await generate_rule_import_ai_opinion(
+        item=payload.rule,
+        technology=tech_obj,
+        ai_service=ai_service,
+    )
+
+
+@router.post(
     "/rules/import",
     response_model=RuleImportExecuteResponse,
     dependencies=[Depends(require_csrf_header)],
@@ -588,7 +627,7 @@ async def execute_rules_import(
     target_evaluation_group = (
         payload.evaluation_group.strip()
         if payload.evaluation_group and payload.evaluation_group.strip()
-        else None
+        else DEFAULT_IMPORT_RULE_GROUP
     )
 
     prefix_settings = sys_settings.get_baseline_prefix()
@@ -612,7 +651,7 @@ async def execute_rules_import(
             failed.append({"title": item.title, "error": str(exc)})
 
     if imported_uids:
-        target_group = target_evaluation_group or BASELINE_RULE_GROUP
+        target_group = target_evaluation_group or DEFAULT_IMPORT_RULE_GROUP
         await grafana.set_rule_group_interval(
             baseline_folder_uid,
             target_group,

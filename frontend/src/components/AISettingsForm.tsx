@@ -24,6 +24,7 @@ export const AISettingsForm: React.FC<AISettingsFormProps> = ({
   const [baseUrlInput, setBaseUrlInput] = useState<string>("");
   const [analysisEnabled, setAnalysisEnabled] = useState<boolean>(true);
   const [curationEnabled, setCurationEnabled] = useState<boolean>(true);
+  const [ruleImportAIEnabled, setRuleImportAIEnabled] = useState<boolean>(true);
   const [cacheEnabled, setCacheEnabled] = useState<boolean>(true);
   const [showKey, setShowKey] = useState<boolean>(false);
 
@@ -45,6 +46,7 @@ export const AISettingsForm: React.FC<AISettingsFormProps> = ({
       setBaseUrlInput(data.api_base_url || "");
       setAnalysisEnabled(data.ai_analysis_enabled !== undefined ? data.ai_analysis_enabled : true);
       setCurationEnabled(data.curation_enabled !== undefined ? data.curation_enabled : data.enabled);
+      setRuleImportAIEnabled(data.rule_import_ai_enabled !== undefined ? data.rule_import_ai_enabled : true);
       setCacheEnabled(data.cache_enabled);
       setApiKeyInput(""); // Preserva chave salva no servidor
     } catch (err: unknown) {
@@ -134,6 +136,7 @@ export const AISettingsForm: React.FC<AISettingsFormProps> = ({
         enabled: curationEnabled,
         ai_analysis_enabled: analysisEnabled,
         curation_enabled: curationEnabled,
+        rule_import_ai_enabled: ruleImportAIEnabled,
         cache_enabled: cacheEnabled,
       });
 
@@ -443,6 +446,34 @@ export const AISettingsForm: React.FC<AISettingsFormProps> = ({
               aria-hidden="true"
               className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
                 curationEnabled ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </div>
+
+        {/* Switch: Análise e Parecer por IA na Importação de Regras */}
+        <div className="border-t border-slate-800 pt-3.5 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <span className="text-sm font-medium text-slate-200 block">
+              Análise e Parecer por IA na Importação de Regras
+            </span>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Habilita a geração sob demanda do parecer técnico, contexto de ameaças e diretrizes SOC via IA no modal de importação de regras (botão com 3 estrelinhas).
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={ruleImportAIEnabled}
+            onClick={() => setRuleImportAIEnabled(!ruleImportAIEnabled)}
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-sky-500/50 ${
+              ruleImportAIEnabled ? "bg-sky-600" : "bg-slate-700"
+            }`}
+          >
+            <span
+              aria-hidden="true"
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                ruleImportAIEnabled ? "translate-x-5" : "translate-x-0"
               }`}
             />
           </button>

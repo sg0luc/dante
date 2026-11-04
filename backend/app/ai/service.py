@@ -156,6 +156,15 @@ class AIService:
             return True
         return bool(cfg.api_key and len(cfg.api_key.strip()) > 5)
 
+    def is_rule_import_ai_enabled(self) -> bool:
+        """Indica se o parecer e análise por IA na importação de regras está habilitado."""
+        cfg = self.get_raw_settings()
+        if not (cfg.rule_import_ai_enabled and cfg.enabled):
+            return False
+        if cfg.provider == "ollama":
+            return True
+        return bool(cfg.api_key and len(cfg.api_key.strip()) > 5)
+
     def is_analysis_enabled(self) -> bool:
         """Indica se o módulo de Análises e Recomendações por IA está habilitado e configurado."""
         cfg = self.get_raw_settings()
@@ -181,6 +190,7 @@ class AIService:
             enabled=raw.enabled,
             ai_analysis_enabled=raw.ai_analysis_enabled,
             curation_enabled=raw.curation_enabled,
+            rule_import_ai_enabled=raw.rule_import_ai_enabled,
             cache_enabled=raw.cache_enabled,
             available_providers=AVAILABLE_AI_PROVIDERS,
             cached_rules_count=self.cache.count(),
@@ -206,6 +216,7 @@ class AIService:
             enabled=effective_curation,
             ai_analysis_enabled=req.ai_analysis_enabled,
             curation_enabled=effective_curation,
+            rule_import_ai_enabled=req.rule_import_ai_enabled if req.rule_import_ai_enabled is not None else current.rule_import_ai_enabled,
             cache_enabled=req.cache_enabled,
         )
 

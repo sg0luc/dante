@@ -505,6 +505,20 @@ export interface RuleImportExecuteResponse {
   failed: Array<{ title: string; error: string }>;
 }
 
+export interface RuleImportAIOpinionRequest {
+  rule: RuleImportItemValidation;
+  technology?: string | null;
+}
+
+export interface RuleImportAIOpinionResponse {
+  ai_rationale: string;
+  ai_model?: string | null;
+  curation_engine?: "ai" | "heuristic";
+  classification?: CurationCandidateQuality | null;
+  classification_reason?: string | null;
+  qualification_factors?: CurationQualificationFactor[];
+}
+
 export interface BaselinePrefixSettings {
   enabled: boolean;
   template: string;
@@ -1173,6 +1187,7 @@ export interface AISettingsPublicResponse {
   enabled: boolean;
   ai_analysis_enabled: boolean;
   curation_enabled: boolean;
+  rule_import_ai_enabled: boolean;
   cache_enabled: boolean;
   available_providers: AIProviderInfo[];
   cached_rules_count: number;
@@ -1187,6 +1202,7 @@ export interface AISettingsUpdateRequest {
   enabled?: boolean;
   ai_analysis_enabled: boolean;
   curation_enabled: boolean;
+  rule_import_ai_enabled: boolean;
   cache_enabled: boolean;
 }
 

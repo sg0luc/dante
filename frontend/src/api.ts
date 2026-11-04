@@ -38,6 +38,8 @@ import {
   LokiSyntheticResult,
   PortalConfig,
   RuleDetail,
+  RuleImportAIOpinionRequest,
+  RuleImportAIOpinionResponse,
   RuleImportExecuteResponse,
   RuleImportFileInput,
   RuleImportItemValidation,
@@ -542,6 +544,14 @@ export const api = {
         datasource_uid: datasourceUid || undefined,
         evaluation_group: evaluationGroup?.trim() || undefined,
       }),
+    }),
+
+  generateRuleImportAIOpinion: (
+    payload: RuleImportAIOpinionRequest
+  ): Promise<RuleImportAIOpinionResponse> =>
+    request<RuleImportAIOpinionResponse>("/api/rules/import/ai-opinion", {
+      method: "POST",
+      body: JSON.stringify(payload),
     }),
 
   createRule: (payload: CreateRulePayload): Promise<CreateRuleResponse> =>
