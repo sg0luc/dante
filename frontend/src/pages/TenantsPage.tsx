@@ -137,7 +137,7 @@ export const TenantsPage: React.FC = () => {
     }
     const cleanLokiUrl = createLokiUrl.trim();
     if (cleanLokiUrl && !/^https?:\/\//i.test(cleanLokiUrl)) {
-      setCreateError("A URL do Loki deve começar com http:// ou https://.");
+      setCreateError("A URL da Telemetria deve começar com http:// ou https://.");
       return;
     }
 
@@ -151,7 +151,7 @@ export const TenantsPage: React.FC = () => {
         loki_url: cleanLokiUrl || undefined,
       });
       setActionSuccess(
-        `Tenant "${cleanTitle}" criado com pasta, data source Loki e grupo de avaliação (5m).`
+        `Tenant "${cleanTitle}" criado com pasta, telemetria dedicada e grupo de avaliação (5m).`
       );
       setCreateModalOpen(false);
       await loadTenants();
@@ -174,7 +174,7 @@ export const TenantsPage: React.FC = () => {
     const tenant = datasourceModalTenant;
     const cleanUrl = datasourceUrlInput.trim();
     if (cleanUrl && !/^https?:\/\//i.test(cleanUrl)) {
-      setDatasourceError("A URL do Loki deve começar com http:// ou https://.");
+      setDatasourceError("A URL da telemetria deve começar com http:// ou https://.");
       return;
     }
 
@@ -188,7 +188,7 @@ export const TenantsPage: React.FC = () => {
       setTimeout(() => setActionSuccess(null), 4000);
     } catch (err: unknown) {
       setDatasourceError(
-        err instanceof Error ? err.message : "Erro ao criar o data source Loki."
+        err instanceof Error ? err.message : "Erro ao criar o data source de telemetria."
       );
     } finally {
       setDatasourceLoadingUid(null);
@@ -306,11 +306,11 @@ export const TenantsPage: React.FC = () => {
         <div className="space-y-space-xs max-w-4xl">
           <div className="flex items-center gap-space-xs">
             <span className="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
-            <span className="font-code-sm text-code-sm text-outline tracking-wider uppercase">Grafana Provisioning • Multi-Tenant Core</span>
+            <span className="font-code-sm text-code-sm text-outline tracking-wider uppercase">Provisionamento Multi-Tenant Core</span>
           </div>
           <h1 className="font-headline-xl text-headline-xl text-on-surface tracking-tight font-bold">Tenants</h1>
           <p className="font-body-md text-body-md text-outline leading-relaxed max-w-3xl">
-            Cada tenant é um conjunto dedicado no Grafana: pasta de regras (<span className="font-code-sm text-code-sm text-secondary bg-surface-container-high px-1.5 py-0.5 rounded">grafana_folder</span>), data source Loki e grupo de avaliação com o próprio nome, segregando clientes SIEM por telemetria, regras e intervalo de avaliação.
+            Cada tenant é um conjunto segregado: repositório de regras (<span className="font-code-sm text-code-sm text-secondary bg-surface-container-high px-1.5 py-0.5 rounded">tenant_scope</span>), base de telemetria dedicada e grupo de avaliação com o próprio nome, segregando clientes SIEM por telemetria, regras e intervalo de avaliação.
           </p>
         </div>
 
@@ -411,7 +411,7 @@ export const TenantsPage: React.FC = () => {
         {/* Card 5 */}
         <div className="bg-surface-container-low rounded-xl p-space-md flex flex-col justify-between shadow-sm relative overflow-hidden group hover:bg-surface-container transition-colors">
           <div className="flex items-center justify-between">
-            <span className="font-label-uppercase text-label-uppercase text-outline tracking-wider uppercase">Data Sources Loki</span>
+            <span className="font-label-uppercase text-label-uppercase text-outline tracking-wider uppercase">Bases de Telemetria</span>
             <span className="material-symbols-outlined text-[16px] text-secondary">database</span>
           </div>
           <div className="my-space-xs flex items-baseline gap-2">
@@ -420,7 +420,7 @@ export const TenantsPage: React.FC = () => {
               {metrics.totalTenants > 0 ? Math.round((metrics.withDatasource / metrics.totalTenants) * 100) : 100}% OK
             </span>
           </div>
-          <span className="font-body-sm text-body-sm text-outline">Todos os tenants com Loki dedicado</span>
+          <span className="font-body-sm text-body-sm text-outline">Todos os tenants com telemetria dedicada</span>
         </div>
       </section>
 
@@ -467,7 +467,7 @@ export const TenantsPage: React.FC = () => {
               <tr className="bg-surface-container-lowest text-outline font-code-sm text-code-sm uppercase tracking-wider">
                 <th className="py-2.5 px-space-md font-semibold">Tenant</th>
                 <th className="py-2.5 px-space-md font-semibold">UID</th>
-                <th className="py-2.5 px-space-md font-semibold">Loki</th>
+                <th className="py-2.5 px-space-md font-semibold">Telemetria</th>
                 <th className="py-2.5 px-space-md font-semibold">Sandbox</th>
                 <th className="py-2.5 px-space-md font-semibold">Regras</th>
                 <th className="py-2.5 px-space-md font-semibold">Tecnologias</th>
@@ -518,7 +518,7 @@ export const TenantsPage: React.FC = () => {
                             onClick={() => handleOpenDatasourceModal(t)}
                             className="px-2 py-1 rounded bg-amber-500/15 text-amber-300 font-code-sm text-xs border border-amber-500/30 hover:bg-amber-500/25"
                           >
-                            + Criar Loki DS
+                            + Criar Telemetria DS
                           </button>
                         )}
                       </td>
@@ -666,7 +666,7 @@ export const TenantsPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="text-xs text-outline uppercase block mb-1">URL do Loki (opcional)</label>
+            <label className="text-xs text-outline uppercase block mb-1">URL da Telemetria (opcional)</label>
             <input
               type="text"
               placeholder="http://loki:3100"
@@ -701,11 +701,11 @@ export const TenantsPage: React.FC = () => {
         isOpen={Boolean(datasourceModalTenant)}
         onClose={() => setDatasourceModalTenant(null)}
         maxWidth="480px"
-        title="Criar Data Source Loki"
+        title="Criar Data Source de Telemetria"
       >
         <div className="flex flex-col gap-space-md text-on-surface">
           <p className="text-xs text-outline">
-            Provisione o data source Loki homônimo para o tenant <strong>{datasourceModalTenant?.title}</strong>.
+            Provisione o data source de telemetria homônimo para o tenant <strong>{datasourceModalTenant?.title}</strong>.
           </p>
 
           {datasourceError && (
@@ -713,7 +713,7 @@ export const TenantsPage: React.FC = () => {
           )}
 
           <div>
-            <label className="text-xs text-outline uppercase block mb-1">URL do Loki</label>
+            <label className="text-xs text-outline uppercase block mb-1">URL da Telemetria</label>
             <input
               type="text"
               placeholder="http://loki:3100"
@@ -761,8 +761,8 @@ export const TenantsPage: React.FC = () => {
               </p>
               <p className="text-xs text-error">
                 {tenantToDelete.rules_count > 0
-                  ? `ATENÇÃO: Este tenant possui ${tenantToDelete.rules_count} regra(s) de detecção que serão excluídas do Grafana permanentemente.`
-                  : "A pasta de regras e o data source Loki homônimo serão removidos."}
+                  ? `ATENÇÃO: Este tenant possui ${tenantToDelete.rules_count} regra(s) de detecção que serão excluídas permanentemente da plataforma.`
+                  : "O repositório de regras e o data source de telemetria homônimo serão removidos."}
               </p>
               {deleteError && (
                 <div className="p-2 rounded bg-error-container/30 text-error text-xs font-semibold">
@@ -809,7 +809,7 @@ export const TenantsPage: React.FC = () => {
                 {sandboxModalTarget.enable ? (
                   <>
                     <p>
-                      Esta ação criará no Grafana o data source dedicado{" "}
+                      Esta ação criará na engine o data source dedicado{" "}
                       <span className="font-mono text-tertiary font-semibold">
                         {sandboxModalTarget.tenant.sandbox_datasource_name ||
                           `sandbox-${sandboxModalTarget.tenant.title.toLowerCase()}`}
@@ -827,7 +827,7 @@ export const TenantsPage: React.FC = () => {
                         {sandboxModalTarget.tenant.sandbox_datasource_name ||
                           `sandbox-${sandboxModalTarget.tenant.title.toLowerCase()}`}
                       </span>{" "}
-                      será excluído permanentemente da instância do Grafana.
+                      será excluído permanentemente da plataforma.
                     </p>
                     <p>
                       Validações de regras que utilizam este sandbox passarão a reportar que o ambiente de testes do cliente está inativo.
@@ -864,7 +864,7 @@ export const TenantsPage: React.FC = () => {
               </p>
               <p className="text-xs text-outline">
                 {tenantToToggle.pause
-                  ? "As regras pausadas cessarão a avaliação no Loki até serem reativadas."
+                  ? "As regras pausadas cessarão a avaliação na telemetria até serem reativadas."
                   : "As regras voltarão a avaliar telemetria normalmente."}
               </p>
             </div>

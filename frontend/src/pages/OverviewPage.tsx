@@ -335,7 +335,7 @@ export const OverviewPage: React.FC = () => {
 
     const seenEventKeys = new Set<string>();
 
-    // 1. Eventos reais históricos (anotações de transição do Grafana + sintéticos)
+    // 1. Eventos reais históricos (anotações de transição da engine + sintéticos)
     const historyEvents = alertHistory?.events || [];
     historyEvents.forEach((ev) => {
       const ts = ev.timestamp ? new Date(ev.timestamp).getTime() : NaN;
@@ -445,7 +445,7 @@ export const OverviewPage: React.FC = () => {
             </h1>
           </div>
           <p className="font-body-sm text-body-sm text-on-surface-variant max-w-3xl">
-            Monitoramento consolidado de regras de detecção, clientes e alertas ativos integrado ao Grafana Alerting e Loki Ruler.
+            Monitoramento consolidado de regras de detecção, clientes e alertas ativos integrado à engine de detecção e telemetria.
           </p>
         </div>
 

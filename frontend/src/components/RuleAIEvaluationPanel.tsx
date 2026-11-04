@@ -94,7 +94,7 @@ export const RuleAIEvaluationPanel: React.FC<RuleAIEvaluationPanelProps> = ({
               Analisando regra com Inteligência Artificial
             </strong>
             <p className="text-xs text-slate-400 m-0 leading-relaxed">
-              Executando faixas temporais progressivas no Loki (15m → 1h → 6h → 24h → 3d), aferindo aderência de campos do schema Wazuh e gerando parecer técnico...
+              Executando faixas temporais progressivas na telemetria (15m → 1h → 6h → 24h → 3d), aferindo aderência de campos do schema Wazuh e gerando parecer técnico...
             </p>
           </div>
         </div>
@@ -309,7 +309,7 @@ export const RuleAIEvaluationPanel: React.FC<RuleAIEvaluationPanelProps> = ({
                   Implementação de Recomendações Técnicas
                 </span>
                 <span className="text-[11px] text-slate-400">
-                  Aplica as otimizações recomendadas pela IA diretamente no Grafana Alerting
+                  Aplica as otimizações recomendadas pela IA diretamente na engine de alertas
                 </span>
               </div>
             </div>

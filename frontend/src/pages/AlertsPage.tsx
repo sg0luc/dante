@@ -659,7 +659,7 @@ export const AlertsPage: React.FC = () => {
           <div className="flex items-center gap-space-sm">
             <span className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-tertiary"></span>
-              Loki Engine &amp; Ruler: OK
+              Alerting &amp; Telemetry Engine: OK
             </span>
             <span className="text-surface-variant">|</span>
             <span>Alertmanager Ingest: Ativo</span>

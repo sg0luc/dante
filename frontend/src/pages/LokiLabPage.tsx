@@ -184,7 +184,7 @@ export const LokiLabPage: React.FC = () => {
         setSelectedDatasourceUid((prev) => prev || s.datasource_uid);
       }
     } catch (err) {
-      setStatusError(err instanceof Error ? err.message : "Falha ao consultar o Loki");
+      setStatusError(err instanceof Error ? err.message : "Falha ao consultar a telemetria");
     } finally {
       setStatusLoading(false);
     }
@@ -395,11 +395,11 @@ export const LokiLabPage: React.FC = () => {
             <h1 className="font-headline-xl text-headline-xl text-on-surface tracking-tight flex items-center gap-space-sm font-bold">
               Logs Sintéticos
               <span className="px-2 py-0.5 rounded-full font-code-sm text-code-sm bg-tertiary-container/30 text-tertiary font-medium">
-                Loki Push Engine
+                Telemetry Push Engine
               </span>
             </h1>
             <p className="font-body-md text-body-md text-on-surface-variant mt-0.5 max-w-3xl">
-              Injete linhas JSON de teste no Loki e valide suas regras LogQL no Grafana Explore com simulação em tempo real.
+              Injete linhas JSON de teste na telemetria e valide suas regras LogQL com simulação em tempo real.
             </p>
           </div>
 
@@ -419,7 +419,7 @@ export const LokiLabPage: React.FC = () => {
               type="button"
             >
               <span className="material-symbols-outlined text-[16px] text-tertiary">health_and_safety</span>
-              <span>Verificar Loki</span>
+              <span>Verificar Telemetria</span>
             </button>
             <button
               onClick={loadRecent}
@@ -439,12 +439,12 @@ export const LokiLabPage: React.FC = () => {
         </div>
       )}
 
-      {/* Loki Target Datasource Status Card */}
+      {/* Telemetry Target Datasource Status Card */}
       <div className="w-full bg-surface-container-lowest rounded-xl p-space-md mb-space-lg shadow-md border border-outline-variant/20">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-space-md">
           <div className="flex flex-col gap-1.5">
             <span className="font-label-uppercase text-label-uppercase text-outline uppercase tracking-wider text-xs">
-              Datasource Loki de Injeção
+              Datasource de Telemetria para Injeção
             </span>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
@@ -453,7 +453,7 @@ export const LokiLabPage: React.FC = () => {
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-tertiary"></span>
                 </span>
                 <span className="font-headline-md text-headline-md text-on-surface font-bold">
-                  {currentDatasource?.name || status?.datasource || "Loki"}
+                  {currentDatasource?.name || status?.datasource || "Telemetria"}
                 </span>
                 <span className={`px-2 py-0.5 rounded font-code-sm text-code-sm font-semibold ${
                   currentDatasource?.is_internal
@@ -471,7 +471,7 @@ export const LokiLabPage: React.FC = () => {
               </div>
               <span className="text-surface-variant">|</span>
               <span className="font-body-sm text-body-sm text-on-surface-variant">
-                Loki operacional via endpoint REST /loki/api/v1/push
+                Engine de telemetria operacional via endpoint de ingestão
               </span>
             </div>
           </div>
@@ -705,7 +705,7 @@ export const LokiLabPage: React.FC = () => {
                   <span className="material-symbols-outlined text-[13px]">done_all</span>
                   Ingestão Confirmada
                 </span>
-                <span className="font-code-sm text-code-sm text-outline">Loki sync: OK</span>
+                <span className="font-code-sm text-code-sm text-outline">Sync Telemetria: OK</span>
               </div>
               <p className="font-body-sm text-body-sm text-on-surface mt-1">
                 {result.lines_sent} linha(s) injetada(s) com sucesso. O stream agora tem {result.verified_count} entradas consultáveis na janela de verificação.
@@ -731,17 +731,6 @@ export const LokiLabPage: React.FC = () => {
                 <span className="material-symbols-outlined text-[16px]">content_copy</span>
                 <span>{copied ? "Copiado!" : "Copiar LogQL"}</span>
               </button>
-              {result?.grafana_explore_url && (
-                <a
-                  href={result.grafana_explore_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="h-8 px-space-sm rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-body-sm text-body-sm flex items-center gap-1.5 transition-colors"
-                >
-                  <span>Abrir no Grafana Explore</span>
-                  <span className="material-symbols-outlined text-[16px]">north_east</span>
-                </a>
-              )}
             </div>
           </div>
 
@@ -788,11 +777,11 @@ export const LokiLabPage: React.FC = () => {
         isOpen={isSelectModalOpen}
         onClose={() => setIsSelectModalOpen(false)}
         maxWidth="520px"
-        title="Selecionar Data Source Loki"
+        title="Selecionar Data Source de Telemetria"
       >
         <div className="flex flex-col gap-space-md text-on-surface">
           <p className="text-xs text-outline">
-            Selecione em qual data source Loki os logs sintéticos devem ser injetados.
+            Selecione em qual data source de telemetria os logs sintéticos devem ser injetados.
           </p>
 
           <div className="space-y-2 max-h-60 overflow-y-auto">

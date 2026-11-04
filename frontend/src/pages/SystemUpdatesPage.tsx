@@ -160,9 +160,9 @@ export const SystemUpdatesPage: React.FC = () => {
               <span>Integridade dos Tenants &amp; Baseline</span>
             </div>
             <p>
-              Atualizações de código preservam a integridade dos tenants no Grafana e pastas
+              Atualizações de código preservam a integridade dos tenants e repositórios de regras
               de baseline institucional. Grupos de avaliação canônicos (<code className="font-mono text-tertiary">5m</code>)
-              e datasources Loki associados são idempotentemente mantidos.
+              e datasources de telemetria associados são idempotentemente mantidos.
             </p>
           </div>
         </div>

@@ -96,7 +96,7 @@ export const RuleGrafanaBlocks: React.FC<RuleGrafanaBlocksProps> = ({ rule }) =>
         </div>
       </div>
 
-      {/* BLOCO A: Query LogQL (Loki) */}
+      {/* BLOCO A: Query LogQL (Telemetria) */}
       <div className="rounded-xl border border-blue-500/30 bg-slate-900/50 overflow-hidden shadow-sm">
         {/* Header Bloco A estilo Grafana Alerting */}
         <div className="px-4 py-2.5 bg-blue-950/40 border-b border-blue-500/20 flex flex-wrap items-center justify-between gap-2">
@@ -105,11 +105,11 @@ export const RuleGrafanaBlocks: React.FC<RuleGrafanaBlocksProps> = ({ rule }) =>
               A
             </span>
             <span className="text-sm font-semibold text-slate-100 flex items-center gap-1.5">
-              Query (Loki)
+              Query (Telemetria)
             </span>
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-blue-900/40 text-blue-300 border border-blue-700/50">
               <span className="material-symbols-outlined text-[12px]">storage</span>
-              {rule.folder_title ? `${rule.folder_title} (Loki)` : "Grafana Loki"}
+              {rule.folder_title ? `${rule.folder_title} (Telemetria)` : "Engine de Telemetria"}
             </span>
           </div>
 
@@ -180,7 +180,7 @@ export const RuleGrafanaBlocks: React.FC<RuleGrafanaBlocksProps> = ({ rule }) =>
 
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-amber-900/30 text-amber-300 border border-amber-700/40">
             <span className="material-symbols-outlined text-[12px]">functions</span>
-            Grafana Expression Engine (__expr__)
+            Pipeline de Expressões (__expr__)
           </span>
         </div>
 
@@ -306,12 +306,12 @@ export const RuleGrafanaBlocks: React.FC<RuleGrafanaBlocksProps> = ({ rule }) =>
         </div>
       ))}
 
-      {/* Anotações da Regra (Grafana Annotations) */}
+      {/* Anotações da Regra */}
       {rule.annotations && Object.keys(rule.annotations).length > 0 && (
         <div className="p-3.5 bg-slate-900/50 rounded-xl border border-slate-700/60 flex flex-col gap-2.5">
           <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
             <span className="material-symbols-outlined text-[15px] text-slate-400">notes</span>
-            Anotações da Regra (Grafana Annotations)
+            Anotações da Regra
           </h4>
           <div className="flex flex-col gap-2 text-xs">
             {rule.annotations.summary && (
@@ -342,7 +342,7 @@ export const RuleGrafanaBlocks: React.FC<RuleGrafanaBlocksProps> = ({ rule }) =>
       <div className="p-3.5 bg-slate-900/50 rounded-xl border border-slate-700/60 flex flex-col gap-2.5">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
           <span className="material-symbols-outlined text-[15px] text-slate-400">label</span>
-          Labels & Classificação (Grafana Tags)
+          Labels & Classificação
         </h4>
         <div className="flex flex-wrap gap-1.5">
           {Object.entries(rule.labels || {}).map(([k, v]) => {
@@ -383,7 +383,7 @@ export const RuleGrafanaBlocks: React.FC<RuleGrafanaBlocksProps> = ({ rule }) =>
             error
           </span>
           <div>
-            <strong className="block text-rose-300 font-semibold mb-0.5">Último erro de avaliação no Grafana:</strong>
+            <strong className="block text-rose-300 font-semibold mb-0.5">Último erro de avaliação na engine:</strong>
             <p className="font-mono text-[11px] leading-relaxed text-rose-200/90 m-0 break-all">
               {rule.last_error}
             </p>

@@ -206,7 +206,7 @@ export const AISettingsForm: React.FC<AISettingsFormProps> = ({
           <strong className="text-emerald-300 font-semibold block mb-0.5">
             Garantia Absoluta de Privacidade e Segurança
           </strong>
-          Sob nenhuma hipótese os dados confidenciais ou logs de clientes no Loki são enviados para a IA.
+          Sob nenhuma hipótese os dados confidenciais ou logs de clientes na base de telemetria são enviados para a IA.
           O modelo recebe apenas a especificação técnica da regra (Sigma/SPL/LogQL) e o catálogo de campos técnicos sanitizados.
         </div>
       </div>

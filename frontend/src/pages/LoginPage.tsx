@@ -210,10 +210,10 @@ export const LoginPage: React.FC = () => {
       {/* Footer System Info */}
       <footer className="relative z-10 w-full px-6 py-3 border-t border-outline-variant/20 bg-surface-container-lowest/60 backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-2 text-code-sm text-[11px] text-outline">
         <div>
-          <span>D.A.N.T.E. Framework • Engine de Detecção Grafana + Loki</span>
+          <span>D.A.N.T.E. Framework • Engine de Detecção & Telemetria</span>
         </div>
         <div className="flex items-center gap-3">
-          <span>Cluster: <span className="text-on-surface-variant font-mono">wazuh-loki-prod</span></span>
+          <span>Cluster: <span className="text-on-surface-variant font-mono">wazuh-siem-prod</span></span>
           <span>•</span>
           <span>Regras: <span className="text-on-surface-variant font-mono">Ruler 5m Baseline</span></span>
         </div>

@@ -291,7 +291,7 @@ export const HomologationPage: React.FC = () => {
             <h1 className="font-headline-xl text-headline-xl text-on-surface tracking-tight font-bold flex items-center gap-space-sm">
               Homologação
               <span className="px-2 py-0.5 rounded font-code-sm text-code-sm bg-surface-container text-secondary font-medium tracking-normal">
-                Grafana Provisioning
+                Provisionamento de Alertas
               </span>
             </h1>
             <p className="font-body-md text-body-md text-on-surface-variant/90 leading-relaxed">
@@ -404,7 +404,7 @@ export const HomologationPage: React.FC = () => {
           <div className="flex items-center gap-space-sm">
             <span className="material-symbols-outlined text-secondary text-[18px]">hub</span>
             <h2 className="font-label-uppercase text-label-uppercase tracking-wider uppercase text-on-surface font-semibold">
-              Contact Points no Grafana &amp; Mapeamento de Estágios
+              Canais de Notificação (Contact Points) &amp; Estágios
             </h2>
           </div>
           <div className="flex flex-wrap items-center gap-2 font-code-sm text-code-sm text-on-surface-variant">
@@ -452,13 +452,13 @@ export const HomologationPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Section 4: Summary Table by Client (Pasta Grafana) */}
+      {/* Section 4: Summary Table by Client */}
       {overview && overview.clients.length > 0 && (
         <div className="rounded-xl bg-surface-container-low overflow-hidden shadow-sm">
           <div className="px-space-md py-space-sm bg-surface-container flex items-center justify-between">
             <div className="flex items-center gap-space-sm font-label-uppercase text-label-uppercase text-outline tracking-wider uppercase font-semibold">
               <span className="material-symbols-outlined text-[16px]">folder_special</span>
-              <span>Distribuição por Cliente &amp; Tenant (Pasta Grafana)</span>
+              <span>Distribuição por Cliente &amp; Tenant</span>
             </div>
             <span className="font-code-sm text-code-sm text-outline">{overview.clients.length} pastas ativas</span>
           </div>
@@ -1010,7 +1010,7 @@ export const HomologationPage: React.FC = () => {
       >
         <div className="flex flex-col gap-space-md text-on-surface">
           <p className="text-xs text-outline">
-            Selecione qual Contact Point do Grafana corresponde a cada estágio de deploy (stg, dev e prod).
+            Selecione qual Contact Point (canal) corresponde a cada estágio de deploy (stg, dev e prod).
           </p>
 
           {cpModalError && (

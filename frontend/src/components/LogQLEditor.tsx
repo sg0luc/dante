@@ -114,7 +114,7 @@ export const GRAFANA_LOGQL_FUNCTIONS: LogQLFunctionItem[] = [
     signature: '| regexp "<re>"',
     insertText: '| regexp "(?P<field>.*)"',
     cursorOffset: 16,
-    description: "Extrai campos nomeados via expressão regular RE2 do Loki.",
+    description: "Extrai campos nomeados via expressão regular RE2 da telemetria.",
   },
   {
     name: "decolorize",
@@ -446,7 +446,7 @@ export const LogQLEditor: React.FC<LogQLEditorProps> = ({
               justifyContent: "space-between",
             }}
           >
-            <span>Funções LogQL (Grafana)</span>
+            <span>Funções LogQL da Engine</span>
             <span style={{ fontSize: "0.68rem" }}>↑↓ Navegar • Enter / Tab Aplicar</span>
           </div>
           {suggestions.map((fn, index) => {

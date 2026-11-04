@@ -423,7 +423,7 @@ export const GlobalMatrixPage: React.FC = () => {
             <span className="font-body-sm text-body-sm text-on-surface-variant truncate">
               Pasta {baselineConfig.baseline_folder_title || baselineConfig.baseline_folder_uid}
             </span>
-            <span className="font-code-sm text-code-sm text-secondary">Loki OK</span>
+            <span className="font-code-sm text-code-sm text-secondary">Telemetria OK</span>
           </div>
         </div>
 
@@ -965,7 +965,7 @@ export const GlobalMatrixPage: React.FC = () => {
 
           <div className="form-group">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-              <label className="form-label" style={{ marginBottom: 0 }}>Query em LogQL (Loki)</label>
+              <label className="form-label" style={{ marginBottom: 0 }}>Query em LogQL (Telemetria)</label>
               <LogQLActionButtons
                 linting={logqlAssist.linting}
                 executing={logqlAssist.executing}
@@ -987,7 +987,7 @@ export const GlobalMatrixPage: React.FC = () => {
           {/* Resultado do Linting Sintático e Semântico */}
           {logqlAssist.lintResult && <LogQLLintPanel lintResult={logqlAssist.lintResult} />}
 
-          {/* Resultado da execução real da query no Grafana */}
+          {/* Resultado da execução real da query na telemetria */}
           {logqlAssist.timeoutNotification && <LogQLTimeoutNotice message={logqlAssist.timeoutNotification} />}
           {logqlAssist.queryResult && <LogQLQueryResultPanel queryResult={logqlAssist.queryResult} />}
 
@@ -1051,7 +1051,7 @@ export const GlobalMatrixPage: React.FC = () => {
         </form>
       </Modal>
 
-      {/* Modal para Arbitrar qual pasta do Grafana é o Baseline Global */}
+      {/* Modal para Arbitrar qual repositório é o Baseline Global */}
       <Modal
         isOpen={arbitrateModalOpen}
         onClose={() => {
@@ -1062,7 +1062,7 @@ export const GlobalMatrixPage: React.FC = () => {
       >
         <div>
           <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginBottom: "14px" }}>
-            O Dante utiliza uma pasta do Grafana como repositório canônico das regras de detecção de referência (Baseline). Em Grafanas externos, o UID geralmente é gerado aleatoriamente e não será necessariamente <code>global</code>.
+            O D.A.N.T.E. utiliza uma pasta/repositório como repositório canônico das regras de detecção de referência (Baseline). Em instâncias externas, o identificador geralmente é arbitrado e não será necessariamente <code>global</code>.
           </p>
 
           {arbitratingError && (
@@ -1073,7 +1073,7 @@ export const GlobalMatrixPage: React.FC = () => {
 
           <div className="form-group">
             <label className="form-label" style={{ fontWeight: 600 }}>
-              Pasta do Grafana para o Baseline
+              Repositório para o Baseline
             </label>
             <select
               className="select"

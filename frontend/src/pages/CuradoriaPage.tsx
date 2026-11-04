@@ -574,7 +574,7 @@ export const CuradoriaPage: React.FC = () => {
             </div>
           </div>
           <p className="font-body-md text-body-md text-outline leading-relaxed">
-            Pesquisa diária automatizada em fontes confiáveis de Threat Intelligence (SigmaHQ, detection.fyi, Splunk Research e Elastic Rules), validação de compatibilidade com o catálogo de tecnologias do D.A.N.T.E., conversão para LogQL e teste real no Loki de todos os clientes.
+            Pesquisa diária automatizada em fontes confiáveis de Threat Intelligence (SigmaHQ, detection.fyi, Splunk Research e Elastic Rules), validação de compatibilidade com o catálogo de tecnologias do D.A.N.T.E., conversão para LogQL e teste real na telemetria de todos os clientes.
           </p>
         </div>
 
@@ -728,7 +728,7 @@ export const CuradoriaPage: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2 font-code-sm text-[10px] text-outline">
                   <span className="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
-                  Loki cluster sync: 200 OK
+                  Telemetry sync: 200 OK
                 </div>
               </div>
               <div className="bg-surface-container-lowest p-space-md font-code-sm text-code-sm text-on-surface-variant space-y-1.5 overflow-y-auto max-h-36 rounded-b-lg scroll-smooth">
@@ -1323,7 +1323,7 @@ export const CuradoriaPage: React.FC = () => {
                 <span className="material-symbols-outlined text-[20px] shrink-0 mt-0.5">block</span>
                 <div>
                   <strong className="block text-sm font-semibold mb-0.5">Regra Descartada pela Curadoria</strong>
-                  <p className="text-xs text-error/90 leading-relaxed">{detailRule.discard_reason || detailRule.classification_reason || "Esta regra não atingiu os critérios mínimos de compatibilidade ou telemetria no Loki."}</p>
+                  <p className="text-xs text-error/90 leading-relaxed">{detailRule.discard_reason || detailRule.classification_reason || "Esta regra não atingiu os critérios mínimos de compatibilidade ou telemetria dos clientes."}</p>
                 </div>
               </div>
             )}

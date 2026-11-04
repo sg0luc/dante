@@ -15,7 +15,7 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
-  config,
+  config: _config,
   alertCount,
   silenceCount,
   version = "v1.0.0",
@@ -253,12 +253,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Link
               to="/loki"
               className={navItemClass(isActive("/loki"))}
-              title="Logs Sintéticos"
+              title="Laboratório de Telemetria"
             >
               <div className="flex items-center gap-space-sm">
                 <span className="material-symbols-outlined text-[18px]">terminal</span>
                 {!collapsed && (
-                  <span className="font-body-sm text-body-sm">Logs Sintéticos</span>
+                  <span className="font-body-sm text-body-sm">Lab de Telemetria</span>
                 )}
               </div>
             </Link>
@@ -317,22 +317,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
             </Link>
 
-            {config?.grafana_public_url && (
-              <a
-                href={`${config.grafana_public_url}/datasources`}
-                target="_blank"
-                rel="noreferrer"
-                className={navItemClass(false)}
-                title="Data Sources no Grafana"
-              >
-                <div className="flex items-center gap-space-sm">
-                  <span className="material-symbols-outlined text-[18px]">database</span>
-                  {!collapsed && (
-                    <span className="font-body-sm text-body-sm">Data Sources ↗</span>
-                  )}
-                </div>
-              </a>
-            )}
+            
 
             <button
               type="button"

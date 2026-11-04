@@ -545,7 +545,7 @@ export const RuleImportModal: React.FC<RuleImportModalProps> = ({
         <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
           Importar Regras de Detecção
           <span className="text-[11px] font-mono font-medium px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-            Loki Ruler
+            Engine de Regras
           </span>
         </h2>
         <p className="text-xs text-slate-400">
@@ -587,7 +587,7 @@ export const RuleImportModal: React.FC<RuleImportModalProps> = ({
             {/* Seletor de Data Source Loki */}
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-2">
-                <span>Data Source Loki de Destino *</span>
+                <span>Data Source de Telemetria de Destino *</span>
                 {datasourcesLoading && (
                   <span className="text-[11px] text-slate-500 font-normal">
                     (carregando...)
@@ -608,7 +608,7 @@ export const RuleImportModal: React.FC<RuleImportModalProps> = ({
                 ))}
               </select>
               <p className="text-[11px] text-slate-400 mt-1">
-                Data source interno onde as expressões LogQL serão executadas no Grafana.
+                Data source interno onde as expressões LogQL serão executadas na engine.
               </p>
             </div>
 
@@ -636,7 +636,7 @@ export const RuleImportModal: React.FC<RuleImportModalProps> = ({
                 ))}
               </datalist>
               <p className="text-[11px] text-slate-400 mt-1">
-                Intervalo de avaliação no Grafana Alerting. Padrão canônico: <strong className="text-sky-300">5m</strong>.
+                Intervalo de avaliação da regra. Padrão canônico: <strong className="text-sky-300">5m</strong>.
               </p>
             </div>
           </div>
@@ -1121,7 +1121,7 @@ export const RuleImportModal: React.FC<RuleImportModalProps> = ({
                             {/* Bloco 2: Aderência de Campos e Schema Wazuh */}
                             <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3 space-y-2">
                               <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-                                Mapeamento e Aderência dos Campos (Schema Wazuh / Loki)
+                                Mapeamento e Aderência dos Campos (Schema Wazuh / Telemetria)
                               </span>
                               {item.mapped_fields && item.mapped_fields.length > 0 ? (
                                 <div className="flex flex-wrap gap-1.5">
@@ -1327,7 +1327,7 @@ export const RuleImportModal: React.FC<RuleImportModalProps> = ({
               onChange={(e) => setTechForm({ ...techForm, confirm_without_logs: e.target.checked })}
               className="rounded bg-slate-900 border-slate-700 text-sky-600 focus:ring-sky-500"
             />
-            Confirmar cadastro mesmo que ainda não existam logs no Loki para esta tecnologia
+            Confirmar cadastro mesmo que ainda não existam logs de telemetria para esta tecnologia
           </label>
 
           <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">

@@ -10,7 +10,7 @@ interface TopHeaderProps {
 }
 
 export const TopHeader: React.FC<TopHeaderProps> = ({
-  config,
+  config: _config,
   alertCount,
   sidebarCollapsed = false,
 }) => {
@@ -28,7 +28,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
     if (p.startsWith("/baseline-prefix")) return { section: "ADMIN", current: "PREFIXO BASELINE" };
     if (p.startsWith("/baseline") || p.startsWith("/global-rules")) return { section: "ENGENHARIA", current: "CONTROLE DE BASELINE" };
     if (p.startsWith("/technologies")) return { section: "TELEMETRIA", current: "TECNOLOGIAS" };
-    if (p.startsWith("/loki")) return { section: "TELEMETRIA", current: "LOGS SINTÉTICOS" };
+    if (p.startsWith("/loki") || p.startsWith("/telemetry-lab")) return { section: "TELEMETRIA", current: "LABORATÓRIO DE TELEMETRIA" };
     if (p.startsWith("/tenants")) return { section: "ADMIN", current: "TENANTS" };
     if (p.startsWith("/api-keys")) return { section: "ADMIN", current: "API KEYS" };
     if (p.startsWith("/users")) return { section: "ADMIN", current: "USUÁRIOS & PERMISSÕES" };
@@ -60,25 +60,14 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
             <span className="relative inline-flex rounded-full h-2 w-2 bg-tertiary"></span>
           </span>
           <span className="font-code-sm text-code-sm text-on-surface">
-            Loki &amp; Grafana Ruler Conectados
+            Engine de Alertas &amp; Telemetria Conectados
           </span>
         </div>
       </div>
 
       {/* Right: Actions, Alerts, User Profile */}
       <div className="flex items-center gap-space-md">
-        {config?.grafana_public_url && (
-          <a
-            className="hidden lg:flex items-center gap-1.5 px-space-sm py-1 rounded bg-surface-container-low text-on-surface hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-sm text-body-sm border border-outline-variant/20"
-            href={config.grafana_public_url}
-            rel="noreferrer"
-            target="_blank"
-            title="Abrir o console oficial do Grafana"
-          >
-            <span className="font-code-sm text-code-sm">Abrir Grafana</span>
-            <span className="material-symbols-outlined text-[16px]">north_east</span>
-          </a>
-        )}
+        
 
         <Link
           to="/alerts"

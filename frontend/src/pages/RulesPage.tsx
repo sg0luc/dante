@@ -817,14 +817,14 @@ export const RulesPage: React.FC = () => {
     }
   };
 
-  // Execução da query no Grafana com notificação de timeout
+  // Execução da query com notificação de timeout
   const handleExecuteQuery = async () => {
     if (!createRuleLogQL.trim()) {
       setCreateRuleError("Informe a query LogQL para execução.");
       return;
     }
     if (createRuleScope === "client" && !createRuleTargetClientUid) {
-      setCreateRuleError("Selecione um cliente (grafana_folder) de destino para consultar os logs.");
+      setCreateRuleError("Selecione um cliente (tenant) de destino para consultar os logs.");
       return;
     }
     setCreateRuleError(null);
@@ -895,7 +895,7 @@ export const RulesPage: React.FC = () => {
     }
 
     if (createRuleScope === "client" && !createRuleTargetClientUid) {
-      setCreateRuleError("Selecione um cliente (grafana_folder) de destino.");
+      setCreateRuleError("Selecione um cliente (tenant) de destino.");
       return;
     }
 
@@ -936,7 +936,7 @@ export const RulesPage: React.FC = () => {
               Regras de Detecção
               <span className="px-2 py-0.5 rounded-full font-code-sm text-code-sm bg-tertiary-container/30 text-tertiary font-semibold flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>
-                Loki Ruler Sync Ativo
+                Sincronização de Regras Ativa
               </span>
             </h1>
             <p className="font-body-md text-body-md text-outline">
@@ -1458,7 +1458,7 @@ export const RulesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal 1: Detalhes da Regra - Layout Amplo com Blocos Grafana (A, B, C) e Parecer da IA */}
+      {/* Modal 1: Detalhes da Regra - Layout Amplo com Blocos A, B, C e Parecer da IA */}
       <Modal
         isOpen={detailModalOpen}
         onClose={() => {
@@ -1491,14 +1491,14 @@ export const RulesPage: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            {/* Lado Esquerdo: Detalhes da Regra (Blocos A, B e C e Metadados Grafana) */}
+            {/* Lado Esquerdo: Detalhes da Regra (Blocos A, B e C e Metadados) */}
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2 pb-1.5 border-b border-slate-700/60">
                 <span className="material-symbols-outlined text-[18px] text-blue-400">
                   dashboard_customize
                 </span>
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 m-0">
-                  Estrutura da Regra no Grafana Alerting (Blocos A, B e C)
+                  Estrutura da Regra de Detecção (Blocos A, B e C)
                 </h3>
               </div>
               <RuleGrafanaBlocks rule={selectedRule} />
@@ -1542,7 +1542,7 @@ export const RulesPage: React.FC = () => {
               </div>
               <div>
                 <h4 className="font-headline-sm text-headline-sm font-semibold text-on-surface">
-                  Nova Regra no Grafana Loki
+                  Nova Regra de Detecção
                 </h4>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">
                   Provisionamento com linting LogQL, segregação de tecnologia por <code>rule_groups</code> e estágio dev.
@@ -1659,7 +1659,7 @@ export const RulesPage: React.FC = () => {
                 {createRuleScope === "client" && (
                   <div className="pt-1.5 space-y-1">
                     <label className="block text-[11px] font-semibold text-outline uppercase tracking-wider">
-                      Cliente (grafana_folder) de Destino:
+                      Cliente (Tenant) de Destino:
                     </label>
                     <select
                       className="w-full h-10 px-3 rounded-lg bg-surface-container-lowest border border-outline-variant/30 text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all cursor-pointer"
@@ -1786,7 +1786,7 @@ export const RulesPage: React.FC = () => {
                   value={createRuleEvaluationGroup}
                   onChange={(e) => setCreateRuleEvaluationGroup(e.target.value)}
                   placeholder="5m"
-                  title="Grupo de avaliação (evaluation group) no Grafana Alerting. Padrão: 5m."
+                  title="Grupo de avaliação (evaluation group). Padrão: 5m."
                 />
                 <datalist id="evaluation-groups-datalist">
                   {availableEvaluationGroups.map((g) => (
@@ -1806,7 +1806,7 @@ export const RulesPage: React.FC = () => {
                     Query em LogQL <span className="text-error font-bold ml-0.5">*</span>
                   </label>
                   <span className="text-xs text-outline">
-                    (Data source: <span className="text-primary font-medium">{createRuleScope === "baseline" ? "Loki" : (selectedClient ? `${selectedClient.title} e sandbox-${selectedClient.title}` : "Cliente e sandbox-<cliente>")}</span>)
+                    (Data source: <span className="text-primary font-medium">{createRuleScope === "baseline" ? "Telemetria Principal" : (selectedClient ? `${selectedClient.title} e sandbox-${selectedClient.title}` : "Cliente e sandbox-<cliente>")}</span>)
                   </span>
                 </div>
                 <LogQLActionButtons
@@ -1898,8 +1898,8 @@ export const RulesPage: React.FC = () => {
                   createRuleTechnology}
               </strong>
               . Ao clicar em <strong>Sim</strong>, a regra será criada no Baseline Global (data source{" "}
-              <code>Loki</code>) e replicada automaticamente para todos os clientes que possuem esta
-              tecnologia (apontando para o data source Loki de cada cliente, em estágio{" "}
+              <code>Telemetria</code>) e replicada automaticamente para todos os clientes que possuem esta
+              tecnologia (apontando para a telemetria dedicada de cada cliente, em estágio{" "}
               <code>dev</code>). Ao clicar em <strong>Não</strong>, a regra será criada apenas no
               Baseline Global.
             </p>
@@ -1956,11 +1956,11 @@ export const RulesPage: React.FC = () => {
             </p>
             {pendingBatchPause ? (
               <p style={{ margin: 0, fontSize: "0.8rem", opacity: 0.9 }}>
-                Durante o período em que as regras estiverem pausadas, nenhum novo incidente ou alerta de segurança será disparado por elas no Grafana.
+                Durante o período em que as regras estiverem pausadas, nenhum novo incidente ou alerta de segurança será disparado por elas.
               </p>
             ) : (
               <p style={{ margin: 0, fontSize: "0.8rem", opacity: 0.9 }}>
-                As regras voltarão a ser avaliadas periodicamente contra o datasource Loki.
+                As regras voltarão a ser avaliadas periodicamente contra a base de telemetria.
               </p>
             )}
           </div>
@@ -1984,7 +1984,7 @@ export const RulesPage: React.FC = () => {
         <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: 0, lineHeight: 1.5 }}>
           Cada tecnologia associa um nome de negócio a um recorte regex da label{" "}
           <code>rule_groups</code> (espelho de <code>rule.groups</code> do Wazuh). O tenant continua
-          sendo o <code>grafana_folder</code>. O seletor gerado é usado no radio box de criação de
+          sendo o <code>tenant_scope</code>. O seletor gerado é usado no radio box de criação de
           regras.
         </p>
 
@@ -2147,7 +2147,7 @@ export const RulesPage: React.FC = () => {
         </div>
       </Modal>
 
-      {/* Modal Importar Regras (Loki Ruler) */}
+      {/* Modal Importar Regras de Detecção */}
       <RuleImportModal
         isOpen={importModalOpen}
         onClose={() => setImportModalOpen(false)}
@@ -2201,7 +2201,7 @@ export const RulesPage: React.FC = () => {
               </ul>
             )}
             <p style={{ margin: 0, fontSize: "0.8rem", opacity: 0.9 }}>
-              A regra será atualizada diretamente no Grafana Alerting e reavaliada pelo pipeline de detecção.
+              A regra será atualizada diretamente na engine de alertas e reavaliada pelo pipeline de detecção.
             </p>
           </div>
         }
@@ -2227,7 +2227,7 @@ export const RulesPage: React.FC = () => {
             </p>
             <p style={{ margin: 0, fontSize: "0.8rem", opacity: 0.9 }}>
               A tecnologia deixa de estar disponível no radio box de criação de regras. Regras já
-              criadas no Grafana mantêm suas labels <code>technology</code> e continuam avaliando
+              criadas na plataforma mantêm suas labels <code>technology</code> e continuam avaliando
               normalmente.
             </p>
           </div>

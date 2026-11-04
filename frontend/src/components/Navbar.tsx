@@ -1,18 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { api } from "../api";
 import { DanteLogo } from "./DanteLogo";
 import { useAuth } from "../context/AuthContext";
-import { PortalConfig } from "../types";
+
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
-  const [config, setConfig] = useState<PortalConfig | null>(null);
+  // config removed for white-label
 
-  useEffect(() => {
-    api.getConfig().then(setConfig).catch(() => {});
-  }, []);
 
   return (
     <nav className="navbar">
@@ -93,7 +89,7 @@ export const Navbar: React.FC = () => {
               to="/loki"
               className={`nav-link ${location.pathname.startsWith("/loki") ? "active" : ""}`}
             >
-              Logs Sintéticos
+              Laboratório de Telemetria
             </Link>
           </li>
           <li>
@@ -116,17 +112,7 @@ export const Navbar: React.FC = () => {
       </div>
 
       <div className="navbar-actions">
-        {config?.grafana_public_url && (
-          <a
-            href={config.grafana_public_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-secondary btn-sm"
-            title="Abrir a interface oficial do Grafana"
-          >
-            Abrir Grafana ↗
-          </a>
-        )}
+        
 
         {user && (
           <div className="user-badge">

@@ -536,7 +536,7 @@ export const TechnologiesPage: React.FC = () => {
               <span>Distribuição de Tecnologias por Clientes</span>
             </h2>
             <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
-              Cliente possui a tecnologia quando há regra de detecção dela na pasta do Grafana ou integração declarada no escopo.
+              Cliente possui a tecnologia quando há regra de detecção dela no escopo do tenant ou integração declarada.
             </p>
           </div>
           <span className="font-code-sm text-code-sm px-2 py-1 rounded bg-surface-container-high text-outline self-start sm:self-auto">
@@ -985,7 +985,7 @@ export const TechnologiesPage: React.FC = () => {
 
           {logWarning && (
             <div className="p-space-sm rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs space-y-2">
-              <p>Nenhum log recente retornado pelo Loki para este recorte de <code>rule_groups</code>.</p>
+              <p>Nenhum log recente retornado pela telemetria para este recorte de <code>rule_groups</code>.</p>
               <button
                 type="button"
                 className="px-3 py-1 rounded bg-amber-500 text-black font-semibold text-xs"
@@ -1010,7 +1010,7 @@ export const TechnologiesPage: React.FC = () => {
               disabled={saving || checkingLogs}
               className="px-4 py-1.5 rounded bg-primary-container hover:bg-primary text-on-primary text-sm font-semibold disabled:opacity-50"
             >
-              {checkingLogs ? "Validando no Loki..." : saving ? "Salvando..." : "Salvar Tecnologia"}
+              {checkingLogs ? "Validando telemetria..." : saving ? "Salvando..." : "Salvar Tecnologia"}
             </button>
           </div>
         </form>
