@@ -1760,6 +1760,7 @@ class FieldDictionarySummaryOut(BaseModel):
 
     technology_slug: str
     total_unique_fields: int
+    max_unique_fields_per_client: int = 0
     client_count_with_telemetry: int
     last_updated_at: str | None = None
     is_scanning: bool = False

@@ -133,9 +133,16 @@ class FieldDictionaryStore:
                 unique_fields = item.get("total_unique_fields", 0)
                 clients = item.get("clients", {})
                 active_clients = sum(1 for c in clients.values() if int(c.get("total_fields", 0)) > 0)
+                client_totals = [
+                    int(c.get("total_fields", 0) or len(c.get("fields", [])))
+                    for c in clients.values()
+                    if isinstance(c, dict)
+                ]
+                max_fields = max(client_totals, default=0) if client_totals else unique_fields
                 summaries[slug] = FieldDictionarySummaryOut(
                     technology_slug=slug,
                     total_unique_fields=unique_fields,
+                    max_unique_fields_per_client=max_fields,
                     client_count_with_telemetry=active_clients,
                     last_updated_at=item.get("last_updated_at"),
                     is_scanning=bool(item.get("is_scanning", False)),

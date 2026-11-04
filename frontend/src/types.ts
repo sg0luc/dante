@@ -1339,6 +1339,7 @@ export interface FieldDictionaryDetailOut {
 export interface FieldDictionarySummaryOut {
   technology_slug: string;
   total_unique_fields: number;
+  max_unique_fields_per_client?: number;
   client_count_with_telemetry: number;
   last_updated_at?: string | null;
   is_scanning: boolean;
