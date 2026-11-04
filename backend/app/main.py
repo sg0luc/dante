@@ -35,6 +35,7 @@ from fastapi.responses import JSONResponse
 from . import __version__
 from .config import get_settings
 from .curation import curation_daily_scheduler_loop
+from .field_dictionary import get_field_dictionary_store, weekly_field_dictionary_scheduler_loop
 from .grafana_client import GrafanaClient, GrafanaError
 from .routers import ai, auth, curation, homologation, loki, monitoring, system, technologies
 from .security import LoginRateLimiter, SessionStore
@@ -73,7 +74,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.technologies = get_technology_store()
     app.state.curation = get_curation_store()
 
-    # Agendador periódico diário da Curadoria de Regras (todos os dias às 08h00).
+    # Agendador periódico diário da Curadoria de Regras (todos os dias no horário programado).
+    sys_settings_inst = get_system_settings_store()
     scheduler_task = asyncio.create_task(
         curation_daily_scheduler_loop(
             settings=settings,
@@ -81,11 +83,22 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             technology_store=app.state.technologies,
             footprint_store=get_tenant_technology_store(),
             scan_store=get_tenant_scan_store(),
-            sys_settings=get_system_settings_store(),
+            sys_settings=sys_settings_inst,
             curation_store=app.state.curation,
         )
     )
     app.state.curation_scheduler_task = scheduler_task
+
+    # Agendador periódico semanal do Dicionário de Campos.
+    field_dict_scheduler_task = asyncio.create_task(
+        weekly_field_dictionary_scheduler_loop(
+            grafana=app.state.grafana,
+            tech_store=app.state.technologies,
+            dict_store=get_field_dictionary_store(settings),
+            sys_settings=sys_settings_inst,
+        )
+    )
+    app.state.field_dict_scheduler_task = field_dict_scheduler_task
 
     logger.info("Grafana Hunter Portal %s iniciado (Grafana: %s)", __version__, settings.grafana_url)
     if not settings.cookie_secure:
@@ -94,8 +107,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         yield
     finally:
         scheduler_task.cancel()
+        field_dict_scheduler_task.cancel()
         with contextlib.suppress(asyncio.CancelledError):
             await scheduler_task
+        with contextlib.suppress(asyncio.CancelledError):
+            await field_dict_scheduler_task
         await app.state.grafana.aclose()
 
 

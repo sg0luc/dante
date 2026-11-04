@@ -1698,3 +1698,113 @@ class ApplyRuleAISuggestionsResponse(BaseModel):
     message: str
     rule_uid: str
     rule: RuleDetail
+
+
+# =============================================================================
+# Schemas de Dicionário de Campos, IA e Agendamentos Personalizados
+# =============================================================================
+class FieldDictionaryClientItem(BaseModel):
+    """Mapeamento de campos de um cliente específico para uma dada tecnologia."""
+
+    client_uid: str
+    client_name: str
+    total_fields: int
+    fields: list[str] = Field(default_factory=list)
+    sample_values: dict[str, list[str]] = Field(default_factory=dict)
+    last_scanned_at: str | None = None
+
+
+class FieldDictionaryDiscrepancyItem(BaseModel):
+    """Discrepância de campo identificado entre clientes."""
+
+    field: str
+    present_in_clients: list[str] = Field(default_factory=list)
+    missing_in_clients: list[str] = Field(default_factory=list)
+    category: str = "general"
+    impact: str = "low"
+    notes: str = ""
+
+
+class FieldDictionaryAIAnalysisOut(BaseModel):
+    """Resultado da análise de IA das discrepâncias de telemetria entre clientes."""
+
+    technology_slug: str
+    technology_name: str
+    analyzed_at: str
+    ai_model_used: str | None = None
+    summary: str
+    version_analysis: str = ""
+    format_and_schema_analysis: str = ""
+    language_and_localization: str = ""
+    recommendations: list[str] = Field(default_factory=list)
+    discrepancies: list[FieldDictionaryDiscrepancyItem] = Field(default_factory=list)
+
+
+class FieldDictionaryDetailOut(BaseModel):
+    """Detalhes completos do dicionário de campos de uma tecnologia."""
+
+    technology_slug: str
+    technology_name: str
+    rule_groups_regex: str
+    total_unique_fields: int
+    all_fields: list[str] = Field(default_factory=list)
+    client_count: int
+    clients: list[FieldDictionaryClientItem] = Field(default_factory=list)
+    last_updated_at: str | None = None
+    is_scanning: bool = False
+    ai_analysis: FieldDictionaryAIAnalysisOut | None = None
+
+
+class FieldDictionarySummaryOut(BaseModel):
+    """Resumo compacto do dicionário para a tabela de tecnologias."""
+
+    technology_slug: str
+    total_unique_fields: int
+    client_count_with_telemetry: int
+    last_updated_at: str | None = None
+    is_scanning: bool = False
+
+
+class FieldDictionaryScanResponse(BaseModel):
+    """Resposta do acionamento de escaneamento do dicionário de campos."""
+
+    status: str
+    message: str
+    technology_slug: str
+    queued: bool = True
+
+
+class FieldDictionaryScheduleSettings(BaseModel):
+    """Configurações de agendamento da coleta semanal de dicionário de campos."""
+
+    enabled: bool = True
+    day_of_week: int = Field(default=0, ge=0, le=6, description="0=Segunda, 6=Domingo")
+    hour: int = Field(default=3, ge=0, le=23)
+    minute: int = Field(default=0, ge=0, le=59)
+    timezone_offset_hours: int = Field(default=-3, ge=-12, le=14)
+
+
+class CurationScheduleSettings(BaseModel):
+    """Configurações de agendamento da curadoria diária de regras."""
+
+    enabled: bool = True
+    hour: int = Field(default=8, ge=0, le=23)
+    minute: int = Field(default=0, ge=0, le=59)
+    timezone_offset_hours: int = Field(default=-3, ge=-12, le=14)
+
+
+class ScheduleSettingsOut(BaseModel):
+    """Visão consolidada de agendamentos do sistema."""
+
+    field_dictionary: FieldDictionaryScheduleSettings
+    curation: CurationScheduleSettings
+    next_field_dictionary_run_at: str | None = None
+    next_curation_run_at: str | None = None
+
+
+class ScheduleSettingsUpdateRequest(BaseModel):
+    """Payload de atualização de agendamentos."""
+
+    field_dictionary: FieldDictionaryScheduleSettings | None = None
+    curation: CurationScheduleSettings | None = None
+

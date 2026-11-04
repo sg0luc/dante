@@ -2592,6 +2592,21 @@ async def evaluate_rule_across_clients(
             observed_in_client = [
                 f for f in compatible_fields_list if f in observed_fields or f.lower() in obs_lower_set
             ]
+            # Enriquecimento com o Dicionário de Campos do DANTE:
+            # Se a tecnologia possuir dicionário coletado para este cliente, incorpora os campos reais
+            try:
+                from .field_dictionary import get_field_dictionary_store
+                dict_store_instance = get_field_dictionary_store()
+                tech_dict_data = dict_store_instance.get_technology_data(technology.slug)
+                if tech_dict_data and "clients" in tech_dict_data:
+                    c_dict = tech_dict_data["clients"].get(c_uid)
+                    if c_dict and c_dict.get("fields"):
+                        dict_fields = set(c_dict["fields"])
+                        raw_observed_fields.update(dict_fields)
+                        known_client_fields.update(dict_fields)
+            except Exception:
+                pass
+
             missing_in_client = [
                 f for f in compatible_fields_list if f not in observed_fields and f.lower() not in obs_lower_set
             ]
@@ -3594,14 +3609,21 @@ class CurationStore:
 # =============================================================================
 # 4. Execução do Ciclo de Curadoria e Agendamento Diário às 08h00
 # =============================================================================
-def compute_next_08h00_run(settings: Settings | None = None) -> datetime:
-    """Calcula o próximo disparo diário às 08h00 no fuso horário configurado (padrão UTC-3)."""
+def compute_next_08h00_run(
+    settings: Settings | None = None,
+    schedule_settings: Any | None = None,
+) -> datetime:
+    """Calcula o próximo disparo diário no fuso horário configurado (padrão UTC-3)."""
     cfg = settings or get_settings()
-    tz = timezone(timedelta(hours=cfg.curation_timezone_offset_hours))
+    hour = schedule_settings.hour if schedule_settings is not None else cfg.curation_schedule_hour
+    minute = schedule_settings.minute if schedule_settings is not None else cfg.curation_schedule_minute
+    tz_offset = schedule_settings.timezone_offset_hours if schedule_settings is not None else cfg.curation_timezone_offset_hours
+
+    tz = timezone(timedelta(hours=tz_offset))
     now_local = datetime.now(tz)
     target = now_local.replace(
-        hour=cfg.curation_schedule_hour,
-        minute=cfg.curation_schedule_minute,
+        hour=hour,
+        minute=minute,
         second=0,
         microsecond=0,
     )
@@ -4739,20 +4761,28 @@ async def _run_curation_cycle_unlocked(
 def build_curation_overview(
     curation_store: CurationStore,
     settings: Settings | None = None,
+    sys_settings: SystemSettingsStore | None = None,
 ) -> CurationOverviewResponse:
     """Monta a resposta consolidada da página de Curadoria."""
     cfg = settings or get_settings()
     rules = curation_store.list_rules()
     meta = curation_store.get_metadata()
 
-    next_run = compute_next_08h00_run(cfg)
-    daily_time_str = f"{cfg.curation_schedule_hour:02d}:{cfg.curation_schedule_minute:02d}"
-    tz_sign = "+" if cfg.curation_timezone_offset_hours >= 0 else "-"
-    tz_abs = abs(cfg.curation_timezone_offset_hours)
+    c_sched = sys_settings.get_curation_schedule() if sys_settings is not None else None
+    next_run = compute_next_08h00_run(cfg, schedule_settings=c_sched)
+
+    sched_hour = c_sched.hour if c_sched is not None else cfg.curation_schedule_hour
+    sched_minute = c_sched.minute if c_sched is not None else cfg.curation_schedule_minute
+    sched_tz = c_sched.timezone_offset_hours if c_sched is not None else cfg.curation_timezone_offset_hours
+    sched_enabled = c_sched.enabled if c_sched is not None else True
+
+    daily_time_str = f"{sched_hour:02d}:{sched_minute:02d}"
+    tz_sign = "+" if sched_tz >= 0 else "-"
+    tz_abs = abs(sched_tz)
 
     schedule = CurationScheduleInfo(
-        enabled=True,
-        cron_expression=f"{cfg.curation_schedule_minute} {cfg.curation_schedule_hour} * * *",
+        enabled=sched_enabled,
+        cron_expression=f"{sched_minute} {sched_hour} * * *",
         daily_time=daily_time_str,
         timezone=f"America/Sao_Paulo (UTC{tz_sign}{tz_abs:02d}:00)",
         last_run_at=meta["last_run_at"],
@@ -5190,24 +5220,29 @@ async def curation_daily_scheduler_loop(
     pelo usuário via botão 'Iniciar', garantindo que um catálogo limpo permaneça em 0%.
     """
     while True:
-        next_run = compute_next_08h00_run(settings)
+        c_sched = sys_settings.get_curation_schedule()
+        if not c_sched.enabled:
+            await asyncio.sleep(60.0)
+            continue
+
+        next_run = compute_next_08h00_run(settings, schedule_settings=c_sched)
         now = datetime.now(next_run.tzinfo)
         wait_seconds = max((next_run - now).total_seconds(), 1.0)
         logger.info(
-            "Agendador de Curadoria: próxima execução diária programada para %s (em %.0fs)",
+            "Agendador de Curadoria: próxima execução programada para %s (em %.0fs)",
             next_run.isoformat(),
             wait_seconds,
         )
         try:
             await asyncio.sleep(wait_seconds)
-            # Sincronização diária do repositório SigmaHQ às 08h00
+            # Sincronização periódica do repositório SigmaHQ
             if getattr(settings, "sigma_auto_pull_on_schedule", True):
                 try:
-                    logger.info("Rotina 08h00: executando git pull no repositório SigmaHQ local...")
+                    logger.info("Rotina de Curadoria: executando git pull no repositório SigmaHQ local...")
                     pull_ok, pull_msg = await asyncio.to_thread(pull_sigma_repo, settings.sigma_repo_dir)
-                    logger.info("Rotina 08h00: resultado da sincronização do repositório Sigma: %s", pull_msg)
+                    logger.info("Rotina de Curadoria: resultado da sincronização do repositório Sigma: %s", pull_msg)
                 except Exception as pull_err:
-                    logger.warning("Rotina 08h00: falha ao sincronizar repositório Sigma: %s", pull_err)
+                    logger.warning("Rotina de Curadoria: falha ao sincronizar repositório Sigma: %s", pull_err)
 
             await run_curation_cycle(
                 grafana=grafana,
@@ -5219,8 +5254,8 @@ async def curation_daily_scheduler_loop(
                 trigger="scheduled_08h00",
             )
         except asyncio.CancelledError:
-            logger.info("Agendador diário de Curadoria encerrado.")
+            logger.info("Agendador de Curadoria encerrado.")
             raise
         except Exception as exc:
-            logger.error("Erro na execução agendada das 08h00 da Curadoria: %s", exc)
+            logger.error("Erro na execução agendada da Curadoria: %s", exc)
             await asyncio.sleep(60.0)
