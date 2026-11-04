@@ -223,7 +223,7 @@ async def _query_loki_lines_direct(
     expr: str,
     limit: int = 40,
     time_from: str = "now-24h",
-    timeout: float = 4.0,
+    timeout: float = 4.5,
 ) -> list[str]:
     """Consulta o Loki diretamente para amostragem de telemetria."""
     body = {
@@ -234,33 +234,37 @@ async def _query_loki_lines_direct(
                 "expr": expr,
                 "queryType": "range",
                 "lines": limit,
+                "maxLines": limit,
             }
         ],
         "from": time_from,
         "to": "now",
     }
     try:
-        data = await grafana.query_datasource_async(body, timeout=timeout)
-        frames = data.get("results", {}).get("A", {}).get("frames", [])
+        res = await asyncio.wait_for(
+            grafana._request("POST", "/api/ds/query", json=body),
+            timeout=timeout,
+        )
         lines: list[str] = []
+        results = (res or {}).get("results", {})
+        res_a = results.get("A") or {}
+        frames = res_a.get("frames", [])
         for frame in frames:
-            schema = frame.get("schema", {})
-            fields_meta = schema.get("fields", [])
-            line_idx = -1
-            for idx, f in enumerate(fields_meta):
-                name = str(f.get("name") or "").lower()
-                f_type = str(f.get("type") or "").lower()
-                if name in ("line", "raw_message", "message") or f_type == "string":
-                    line_idx = idx
-                    break
-            values_list = frame.get("data", {}).get("values", [])
-            if 0 <= line_idx < len(values_list):
-                col = values_list[line_idx]
-                if isinstance(col, list):
-                    for val in col:
-                        s_val = str(val or "").strip()
-                        if s_val:
-                            lines.append(s_val)
+            fields = (frame.get("schema") or {}).get("fields", [])
+            data_values = (frame.get("data") or {}).get("values", [])
+            line_idx = next(
+                (
+                    i
+                    for i, f in enumerate(fields)
+                    if str(f.get("name", "")).lower() in ("body", "line", "message", "value", "raw_message")
+                ),
+                -1,
+            )
+            if line_idx != -1 and len(data_values) > line_idx:
+                for item in data_values[line_idx]:
+                    val_str = str(item or "").strip()
+                    if val_str:
+                        lines.append(val_str)
         return lines
     except Exception as exc:
         logger.debug("Falha na consulta Loki para amostragem (ds: %s): %s", datasource_uid, exc)
@@ -280,8 +284,8 @@ async def scan_technology_fields_across_clients(
 
     try:
         baseline_uid = sys_settings.get_baseline_folder_uid()
-        folders = await grafana.list_folders_async()
-        datasources = await grafana.list_datasources_async()
+        folders = await grafana.list_folders()
+        datasources = await grafana.list_datasources()
         baseline_ds = resolve_baseline_loki_datasource(datasources)
 
         client_folders = sorted(
