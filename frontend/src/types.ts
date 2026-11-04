@@ -456,6 +456,30 @@ export interface RuleImportItemValidation {
   suggested_technology_slug?: string | null;
   suggested_technology_name?: string | null;
   suggested_rule_groups_regex?: string | null;
+  // Campos de Curadoria, Parecer Tecnico de IA e Compatibilidade de Campos
+  classification?: CurationCandidateQuality | null;
+  classification_reason?: string | null;
+  field_compatibility_pct?: number;
+  log_presence_score?: number;
+  threat_context_score?: number;
+  scenario_match_score?: number;
+  observed_field_compatibility_pct?: number;
+  total_matched_results?: number;
+  total_tech_logs_seen?: number;
+  has_query_results?: boolean;
+  matched_windows_summary?: string[];
+  observed_fields_in_logs?: string[];
+  missing_fields_in_logs?: string[];
+  sample_query_results?: string[];
+  mapped_fields?: CurationFieldMapping[];
+  qualification_factors?: CurationQualificationFactor[];
+  client_evaluations?: CurationClientEvaluation[];
+  excellent_clients_count?: number;
+  good_clients_count?: number;
+  ai_model?: string | null;
+  ai_rationale?: string | null;
+  curation_engine?: "ai" | "heuristic";
+  curated_at?: string | null;
 }
 
 export interface RuleImportPreviewResponse {
@@ -463,6 +487,9 @@ export interface RuleImportPreviewResponse {
   valid_count: number;
   invalid_count: number;
   missing_tech_count?: number;
+  qualified_count?: number;
+  high_compatibility_count?: number;
+  discarded_count?: number;
   items: RuleImportItemValidation[];
   general_error?: string | null;
   files_count?: number;

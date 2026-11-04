@@ -81,6 +81,7 @@ from ..schemas import (
     ToggleTenantPauseRequest,
 )
 from ..rule_importer import (
+    preview_rules_curated,
     build_baseline_grafana_payload,
     preview_rules_json,
     preview_rules_multiple,
@@ -451,6 +452,19 @@ async def get_global_rules_matrix(
     return matrix
 
 
+def get_rules_ai_service(
+    sys_settings: SystemSettingsStore = Depends(get_system_settings_store),
+    settings: Settings = Depends(get_app_settings),
+):
+    from ..ai.service import AIService
+    return AIService(
+        sys_settings=sys_settings,
+        cache_path=settings.curation_ai_cache_path,
+        settings=settings,
+        rules_cache_path=getattr(settings, "rule_evaluation_ai_cache_path", "/data/rules-ai-evaluation-cache.json"),
+    )
+
+
 @router.post(
     "/rules/import/preview",
     response_model=RuleImportPreviewResponse,
@@ -461,12 +475,14 @@ async def preview_rules_import(
     payload: RuleImportPreviewRequest,
     grafana: GrafanaClient = Depends(get_grafana),
     sys_settings: SystemSettingsStore = Depends(get_system_settings_store),
+    ai_service = Depends(get_rules_ai_service),
 ) -> RuleImportPreviewResponse:
-    """Valida um arquivo ou bloco YAML ou JSON de regras de detecÃ§Ã£o (Loki Ruler).
+    """Valida um arquivo ou bloco YAML ou JSON de regras de deteccao (Loki Ruler).
 
     Analisa a estrutura, executa linting LogQL, valida o seletor 'ss_groups' contra o
-    catÃ¡logo de tecnologias e verifica a presenÃ§a das labels de MITRE ATT&CK.
-    NÃ£o altera o estado do sistema.
+    catalogo de tecnologias, avalia compatibilidade de campos e telemetria no Loki dos clientes,
+    e gera parecer tecnico de IA e curadoria completa.
+    Nao altera o estado do sistema.
     """
     tech_store = get_technology_store()
     existing_rules = detection_rules(await grafana.list_alert_rules())
@@ -476,17 +492,14 @@ async def preview_rules_import(
         for r in existing_rules
         if str(r.get("folderUID") or "").lower() == baseline_uid.lower()
     }
-    if payload.files:
-        return preview_rules_multiple(payload.files, tech_store, existing_titles)
-    if payload.content:
-        return preview_rules_json(payload.content, tech_store, existing_titles)
-    return RuleImportPreviewResponse(
-        total_rules=0,
-        valid_count=0,
-        invalid_count=0,
-        items=[],
-        general_error="Nenhum arquivo ou conteÃºdo fornecido para importaÃ§Ã£o.",
-        files_count=0,
+    return await preview_rules_curated(
+        content=payload.content,
+        files=payload.files if payload.files else None,
+        technology_store=tech_store,
+        existing_baseline_titles=existing_titles,
+        grafana=grafana,
+        sys_settings=sys_settings,
+        ai_service=ai_service,
     )
 
 
@@ -657,17 +670,6 @@ async def get_rule(
     return build_rule_detail(rule, groups, folder_titles(folders), stage_mapping=stage_mapping)
 
 
-def get_rules_ai_service(
-    sys_settings: SystemSettingsStore = Depends(get_system_settings_store),
-    settings: Settings = Depends(get_app_settings),
-):
-    from ..ai.service import AIService
-    return AIService(
-        sys_settings=sys_settings,
-        cache_path=settings.curation_ai_cache_path,
-        settings=settings,
-        rules_cache_path=getattr(settings, "rule_evaluation_ai_cache_path", "/data/rules-ai-evaluation-cache.json"),
-    )
 
 
 @router.get("/rules/{uid}/ai-evaluation", response_model=RuleImprovementEvaluation, tags=["rules"])

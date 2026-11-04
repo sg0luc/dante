@@ -643,6 +643,64 @@ class CreateRuleResponse(BaseModel):
     replicated_rules: list[ImplementedRuleResult] = Field(default_factory=list)
 
 
+# =============================================================================
+# Curadoria / Avaliacao de Regras de Deteccao
+# =============================================================================
+CurationCandidateQuality = Literal["excellent", "good", "bad"]
+CurationSourceId = Literal["sigmahq", "detection_fyi", "splunk_research", "elastic_rules"]
+
+
+class CurationFieldMapping(BaseModel):
+    """Mapeamento de campo da regra original para o formato LogQL/Wazuh do D.A.N.T.E."""
+
+    original_field: str
+    logql_field: str
+    compatible: bool = True
+    observed_in_logs: bool = False
+    sample_values: list[str] = Field(default_factory=list)
+
+
+class CurationQualificationFactor(BaseModel):
+    """Fator determinante para qualificar a regra como excelente, boa ou ma candidata."""
+
+    criterion: str
+    status: Literal["met", "partial", "not_met"] = "met"
+    impact: Literal["excellent", "good", "bad"] = "good"
+    summary: str
+
+
+class CurationClientEvaluation(BaseModel):
+    """Resultado da avaliacao da regra LogQL convertida no Loki de um cliente."""
+
+    client_uid: str
+    client_name: str
+    datasource_uid: str | None = None
+    datasource_name: str | None = None
+    classification: CurationCandidateQuality
+    matched_lines_count: int = 0
+    tech_logs_count: int = 0
+    field_compatibility_pct: float = 100.0
+    log_presence_score: float = 0.0
+    threat_context_score: float = 0.0
+    scenario_match_score: float = 0.0
+    matched_fields: list[str] = Field(default_factory=list)
+    observed_fields_in_logs: list[str] = Field(default_factory=list)
+    missing_fields_in_logs: list[str] = Field(default_factory=list)
+    total_observed_log_fields: list[str] = Field(default_factory=list)
+    observed_field_compatibility_pct: float = 0.0
+    has_query_results: bool = False
+    matched_window: str | None = None
+    windows_evaluated: list[str] = Field(default_factory=list)
+    timed_out: bool = False
+    timeout_detail: str | None = None
+    query_executed: str = ""
+    sample_matched_logs: list[str] = Field(default_factory=list)
+    sample_tech_logs: list[str] = Field(default_factory=list)
+    qualification_factors: list[CurationQualificationFactor] = Field(default_factory=list)
+    reason: str
+    already_implemented: bool = False
+
+
 # --- ImportaÃ§Ã£o de Regras de DetecÃ§Ã£o (Loki Ruler) ----------------------------
 class RuleImportFileInput(BaseModel):
     filename: str = Field(description="Nome do arquivo importado")
@@ -684,6 +742,31 @@ class RuleImportItemValidation(BaseModel):
     suggested_rule_groups_regex: str | None = None
     suggested_ss_groups_regex: str | None = None
 
+    # Campos de Curadoria, Parecer Tecnico de IA e Compatibilidade de Campos
+    classification: CurationCandidateQuality | None = None
+    classification_reason: str | None = None
+    field_compatibility_pct: float = 100.0
+    log_presence_score: float = 0.0
+    threat_context_score: float = 0.0
+    scenario_match_score: float = 0.0
+    observed_field_compatibility_pct: float = 0.0
+    total_matched_results: int = 0
+    total_tech_logs_seen: int = 0
+    has_query_results: bool = False
+    matched_windows_summary: list[str] = Field(default_factory=list)
+    observed_fields_in_logs: list[str] = Field(default_factory=list)
+    missing_fields_in_logs: list[str] = Field(default_factory=list)
+    sample_query_results: list[str] = Field(default_factory=list)
+    mapped_fields: list[CurationFieldMapping] = Field(default_factory=list)
+    qualification_factors: list[CurationQualificationFactor] = Field(default_factory=list)
+    client_evaluations: list[CurationClientEvaluation] = Field(default_factory=list)
+    excellent_clients_count: int = 0
+    good_clients_count: int = 0
+    ai_model: str | None = None
+    ai_rationale: str | None = None
+    curation_engine: Literal["ai", "heuristic"] = "heuristic"
+    curated_at: str | None = None
+
     @model_validator(mode="before")
     @classmethod
     def _sync_suggested_groups(cls, data: Any) -> Any:
@@ -700,6 +783,9 @@ class RuleImportPreviewResponse(BaseModel):
     valid_count: int
     invalid_count: int
     missing_tech_count: int = 0
+    qualified_count: int = 0
+    high_compatibility_count: int = 0
+    discarded_count: int = 0
     items: list[RuleImportItemValidation]
     general_error: str | None = None
     files_count: int = 0
@@ -1185,57 +1271,6 @@ class CurationSourceInfo(BaseModel):
     curated_count: int = 0
     canonical_rules_count: int = 0
     status: str = "verified"
-
-
-class CurationFieldMapping(BaseModel):
-    """Mapeamento de campo da regra original para o formato LogQL/Wazuh do D.A.N.T.E."""
-
-    original_field: str
-    logql_field: str
-    compatible: bool = True
-    observed_in_logs: bool = False
-    sample_values: list[str] = Field(default_factory=list)
-
-
-class CurationQualificationFactor(BaseModel):
-    """Fator determinante para qualificar a regra como excelente, boa ou má candidata."""
-
-    criterion: str
-    status: Literal["met", "partial", "not_met"] = "met"
-    impact: Literal["excellent", "good", "bad"] = "good"
-    summary: str
-
-
-class CurationClientEvaluation(BaseModel):
-    """Resultado da avaliação da regra LogQL convertida no Loki de um cliente."""
-
-    client_uid: str
-    client_name: str
-    datasource_uid: str | None = None
-    datasource_name: str | None = None
-    classification: CurationCandidateQuality
-    matched_lines_count: int = 0
-    tech_logs_count: int = 0
-    field_compatibility_pct: float = 100.0
-    log_presence_score: float = 0.0
-    threat_context_score: float = 0.0
-    scenario_match_score: float = 0.0
-    matched_fields: list[str] = Field(default_factory=list)
-    observed_fields_in_logs: list[str] = Field(default_factory=list)
-    missing_fields_in_logs: list[str] = Field(default_factory=list)
-    total_observed_log_fields: list[str] = Field(default_factory=list)
-    observed_field_compatibility_pct: float = 0.0
-    has_query_results: bool = False
-    matched_window: str | None = None
-    windows_evaluated: list[str] = Field(default_factory=list)
-    timed_out: bool = False
-    timeout_detail: str | None = None
-    query_executed: str = ""
-    sample_matched_logs: list[str] = Field(default_factory=list)
-    sample_tech_logs: list[str] = Field(default_factory=list)
-    qualification_factors: list[CurationQualificationFactor] = Field(default_factory=list)
-    reason: str
-    already_implemented: bool = False
 
 
 class CuratedRuleItem(BaseModel):

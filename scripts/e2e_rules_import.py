@@ -679,6 +679,73 @@ groups:
             )
             record(custom_group_ok, f"30. Regra importada no Grafana possui ruleGroup='{custom_eval_group}'")
 
+        # 31. Validação de Análise, Curadoria e Parecer Técnico por IA no Preview
+        curation_rule_json = json.dumps({
+            "groups": [
+                {
+                    "name": "e2e_curation_group",
+                    "rules": [
+                        {
+                            "alert": f"E2E AI Curation Rule {run_id}",
+                            "expr": 'sum(count_over_time({job="wazuh", ss_groups=~".*windows.*"} | json | win_system_eventID=~"4728" | win_eventdata_targetUserName!="" [5m])) > 0',
+                            "for": "0s",
+                            "labels": {
+                                "severity": "high",
+                                "mitre_tactic": "persistence",
+                                "mitre_technique": "T1098"
+                            },
+                            "annotations": {
+                                "summary": "Teste de Curadoria com Parecer Técnico por IA E2E",
+                                "description": "Valida parecer de IA e compatibilidade de campos na importação"
+                            }
+                        }
+                    ]
+                }
+            ]
+        })
+        status_cur, res_cur = call("POST", "/api/rules/import/preview", {"content": curation_rule_json}, csrf=True)
+        cur_preview_ok = status_cur == 200 and res_cur.get("total_rules") == 1 and res_cur.get("valid_count") == 1
+        if cur_preview_ok:
+            cur_item = res_cur["items"][0]
+            has_curation = (
+                cur_item.get("classification") in ["excellent", "good", "neutral", "bad"]
+                and isinstance(cur_item.get("field_compatibility_pct"), (int, float))
+                and cur_item.get("field_compatibility_pct") > 0
+                and isinstance(cur_item.get("mapped_fields"), list)
+                and len(cur_item.get("mapped_fields")) > 0
+                and bool(cur_item.get("ai_rationale"))
+                and isinstance(cur_item.get("qualification_factors"), list)
+                and res_cur.get("qualified_count", 0) >= 0
+            )
+            record(
+                has_curation,
+                "31. Preview de importação enriquece regra com curadoria, compatibilidade de campos e Parecer Técnico por IA",
+            )
+        else:
+            record(False, "31. Falha no preview de regra para validação de curadoria IA")
+
+        # 32. Validação da persistência de metadados de curadoria/IA ao importar regra no Grafana
+        if cur_preview_ok:
+            status_import_cur, exec_cur_res = call("POST", "/api/rules/import", {"rules": [cur_item]}, csrf=True)
+            import_cur_ok = status_import_cur == 200 and exec_cur_res.get("imported_count") == 1
+            record(import_cur_ok, "32. Importação de regra curada com parecer de IA executada com sucesso")
+            if import_cur_ok:
+                cur_uid = exec_cur_res["imported_uids"][0]
+                created_uids.append(cur_uid)
+                g_st_cur, g_cur_rule = grafana_get(f"/api/v1/provisioning/alert-rules/{cur_uid}")
+                annot = g_cur_rule.get("annotations") or {}
+                labels = g_cur_rule.get("labels") or {}
+                cur_persisted_ok = (
+                    g_st_cur == 200
+                    and "ai_rationale" in annot
+                    and "field_compatibility_pct" in annot
+                    and "field_compatibility" in labels
+                )
+                record(
+                    cur_persisted_ok,
+                    "33. Regra gravada no Grafana preserva parecer técnico da IA e percentual de compatibilidade",
+                )
+
     finally:
         # Teardown de limpeza
         print("Executando limpeza (teardown)...")
