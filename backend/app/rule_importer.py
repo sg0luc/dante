@@ -1194,8 +1194,11 @@ async def preview_rules_curated(
     client_field_presence_cache: dict[tuple[str, str], set[str]] = {}
     dead_datasources: set[str] = set()
 
-    # 3. Itera sobre cada regra analisada
-    for idx, item in enumerate(base_preview.items):
+    # 3. Execução concorrente com semáforo para paralelizar a avaliação de regras
+    # mantendo conformidade, limites operacionais e compartilhamento seguro de cache em memória
+    sem = asyncio.Semaphore(4)
+
+    async def _evaluate_single_item(idx: int, item: RuleImportItemValidation) -> None:
         raw_dict = raw_list[idx] if idx < len(raw_list) else {}
         tech_obj: Technology | None = None
         if item.technology:
@@ -1211,28 +1214,29 @@ async def preview_rules_curated(
         # Se a regra for válida, tecnologia confirmada e há clientes no Grafana, avalia telemetria real
         if item.valid and tech_obj and client_folders and grafana:
             try:
-                classification, reason, compat_pct, client_evals = await evaluate_rule_across_clients(
-                    grafana=grafana,
-                    technology=tech_obj,
-                    logql_query=item.query,
-                    mapped_fields=mapped_fields,
-                    rule_title=item.title,
-                    client_folders=client_folders,
-                    datasources=raw_datasources,
-                    all_rules=all_rules,
-                    declared_map=declared_map,
-                    scan_store=scan_store,
-                    tech_logs_cache=tech_logs_cache,
-                    client_field_presence_cache=client_field_presence_cache,
-                    dead_datasources=dead_datasources,
-                    rule_source="Importação Loki Ruler",
-                    rule_index=idx + 1,
-                    total_rules=len(base_preview.items),
-                    severity=str(item.severity),
-                    mitre_tactic=item.mitre_tactic or "",
-                    mitre_technique=item.mitre_technique or "",
-                    raw_rule=raw_dict,
-                )
+                async with sem:
+                    classification, reason, compat_pct, client_evals = await evaluate_rule_across_clients(
+                        grafana=grafana,
+                        technology=tech_obj,
+                        logql_query=item.query,
+                        mapped_fields=mapped_fields,
+                        rule_title=item.title,
+                        client_folders=client_folders,
+                        datasources=raw_datasources,
+                        all_rules=all_rules,
+                        declared_map=declared_map,
+                        scan_store=scan_store,
+                        tech_logs_cache=tech_logs_cache,
+                        client_field_presence_cache=client_field_presence_cache,
+                        dead_datasources=dead_datasources,
+                        rule_source="Importação Loki Ruler",
+                        rule_index=idx + 1,
+                        total_rules=len(base_preview.items),
+                        severity=str(item.severity),
+                        mitre_tactic=item.mitre_tactic or "",
+                        mitre_technique=item.mitre_technique or "",
+                        raw_rule=raw_dict,
+                    )
                 item.client_evaluations = client_evals
                 item.classification = classification
                 item.classification_reason = reason
@@ -1247,6 +1251,8 @@ async def preview_rules_curated(
         item.ai_rationale = None
         item.ai_model = None
         item.curation_engine = "heuristic"
+
+    await asyncio.gather(*[_evaluate_single_item(idx, item) for idx, item in enumerate(base_preview.items)])
 
     q_count, h_count, d_count = _compute_summary_metrics(base_preview.items)
     base_preview.qualified_count = q_count
