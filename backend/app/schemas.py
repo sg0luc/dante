@@ -1284,7 +1284,7 @@ class BaselinePrefixSettings(BaseModel):
     )
     template: str = Field(
         default="Baseline - ",
-        description="Template do prefixo (ex: 'Baseline - ', '[{{tenant}}] [{{technology}}] - ').",
+        description="Template do prefixo (ex: 'Baseline - ', '[{{tenant}}] [{{technology_name}}] - ').",
     )
 
 
@@ -1297,7 +1297,10 @@ class BaselinePrefixPreviewRequest(BaseModel):
         description="Título base de exemplo.",
     )
     technology: str | None = Field(default="ad_windows", description="Tecnologia de exemplo.")
-    technology_name: str | None = Field(default=None, description="Nome da tecnologia de exemplo.")
+    technology_name: str | None = Field(
+        default="AD/Windows",
+        description="Nome da tecnologia de exemplo (herdado da label sistêmica 'technology_name').",
+    )
     tactic: str | None = Field(default="credential_access", description="Tática MITRE de exemplo.")
     severity: str | None = Field(default="high", description="Severidade de exemplo.")
     tenant: str | None = Field(

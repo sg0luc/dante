@@ -2,10 +2,11 @@
 
 Permite configurar prefixos para o Baseline Global e regras replicadas em clientes,
 suportando variáveis dinâmicas:
-  - {{technology}}: Tecnologia associada à regra (ex: 'Ad_windows', 'Fortigate').
+  - {{technology_name}}: Nome da tecnologia associada à regra (ex: 'AD/Windows', 'Fortigate Firewall', 'Linux').
+    Herda da label sistêmica 'technology_name' das regras com escrita limpa sem '_' ou '-'.
   - {{tenant}}: Nome do tenant onde a regra está implementada.
     No Baseline Global, o valor é SEMPRE 'Baseline'.
-  - {{tactic}}: Tática MITRE ATT&CK (ex: 'Persistence', 'Initial_access').
+  - {{tactic}}: Tática MITRE ATT&CK (ex: 'Persistence', 'Credential Access').
   - {{severity}}: Severidade do alerta (ex: 'Critical', 'High', 'Medium', 'Low').
 
 Sempre garante o padrão de primeira letra maiúscula (capitalizada).
@@ -40,6 +41,46 @@ def capitalize_first(val: Any, default: str = "") -> str:
     return s[:1].upper() + s[1:]
 
 
+def resolve_clean_technology_name(
+    technology_name: str | None = None,
+    technology: str | None = None,
+) -> str:
+    """Resolve e retorna o nome limpo da tecnologia sem '_' ou '-'.
+
+    Herda primariamente da label sistêmica 'technology_name' da regra de detecção.
+    Caso não informada, tenta resolver via TechnologyStore ou limpa o slug 'technology'.
+    """
+    raw = (technology_name or "").strip()
+    if not raw and technology:
+        try:
+            from .technologies import get_technology_store
+
+            tech_obj = get_technology_store().get(technology.strip())
+            if tech_obj and tech_obj.name:
+                raw = tech_obj.name.strip()
+        except Exception:
+            pass
+        if not raw:
+            raw = str(technology).strip().replace("_", " ").replace("-", " ")
+
+    if not raw:
+        return "Geral"
+
+    # Se contiver '_' ou '-', substitui por espaço mantendo escrita limpa
+    if "_" in raw or "-" in raw:
+        raw = raw.replace("_", " ").replace("-", " ")
+        parts = raw.split()
+        cleaned_parts = []
+        for p in parts:
+            if p.lower() in ("ad", "rdp", "ssh", "iam", "vpn", "ids", "ips", "waf", "soc"):
+                cleaned_parts.append(p.upper())
+            else:
+                cleaned_parts.append(capitalize_first(p))
+        return " ".join(cleaned_parts)
+
+    return capitalize_first(raw)
+
+
 def evaluate_prefix_template(
     template: str,
     *,
@@ -60,19 +101,22 @@ def evaluate_prefix_template(
     else:
         tenant_val = capitalize_first(tenant_name)
 
-    # Determina o valor de {{technology}}
-    tech_val = capitalize_first(technology_name or technology or "Geral")
+    # Determina o valor de {{technology_name}} (e {{technology}})
+    tech_name_val = resolve_clean_technology_name(technology_name, technology)
 
     # Determina o valor de {{tactic}}
-    tactic_val = capitalize_first(tactic or "Detecção")
+    clean_tactic = (tactic or "Detecção").replace("_", " ").replace("-", " ")
+    tactic_val = " ".join(capitalize_first(part) for part in clean_tactic.split())
 
     # Determina o valor de {{severity}}
     severity_val = capitalize_first(severity or "Média")
 
     var_map = {
         "tenant": tenant_val,
-        "technology": tech_val,
-        "tech": tech_val,
+        "technology_name": tech_name_val,
+        "technology": tech_name_val,
+        "tech_name": tech_name_val,
+        "tech": tech_name_val,
         "tactic": tactic_val,
         "mitre_tactic": tactic_val,
         "severity": severity_val,

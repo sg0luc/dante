@@ -16,7 +16,7 @@ export const BaselinePrefixPage: React.FC = () => {
   const [sampleTitle, setSampleTitle] = useState<string>(
     "Tentativa de Força Bruta contra RDP"
   );
-  const [sampleTech, setSampleTech] = useState<string>("ad_windows");
+  const [sampleTechName, setSampleTechName] = useState<string>("AD/Windows");
   const [sampleTactic, setSampleTactic] = useState<string>("credential_access");
   const [sampleSeverity, setSampleSeverity] = useState<string>("high");
   const [sampleTenant, setSampleTenant] = useState<string>("Financeiro");
@@ -65,7 +65,8 @@ export const BaselinePrefixPage: React.FC = () => {
       .previewBaselinePrefix({
         template,
         title: sampleTitle,
-        technology: sampleTech,
+        technology: sampleTechName,
+        technology_name: sampleTechName,
         tactic: sampleTactic,
         severity: sampleSeverity,
         tenant: null, // Global Baseline
@@ -81,7 +82,8 @@ export const BaselinePrefixPage: React.FC = () => {
         .previewBaselinePrefix({
           template,
           title: sampleTitle,
-          technology: sampleTech,
+          technology: sampleTechName,
+          technology_name: sampleTechName,
           tactic: sampleTactic,
           severity: sampleSeverity,
           tenant: sampleTenant,
@@ -91,7 +93,7 @@ export const BaselinePrefixPage: React.FC = () => {
     } else {
       setPreviewClient(sampleTitle);
     }
-  }, [settings, sampleTitle, sampleTech, sampleTactic, sampleSeverity, sampleTenant]);
+  }, [settings, sampleTitle, sampleTechName, sampleTactic, sampleSeverity, sampleTenant]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -257,7 +259,7 @@ export const BaselinePrefixPage: React.FC = () => {
                   onChange={(e) =>
                     setSettings((prev) => ({ ...prev, template: e.target.value }))
                   }
-                  placeholder="Ex: Baseline -  ou [{{tenant}}] [{{technology}}] - "
+                  placeholder="Ex: Baseline -  ou [{{tenant}}] [{{technology_name}}] - "
                   className="w-full px-4 py-3 bg-surface-container-highest/60 border border-outline-variant/40 rounded-xl font-mono text-code-md text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/40 disabled:opacity-50 transition-all"
                 />
               </div>
@@ -274,7 +276,7 @@ export const BaselinePrefixPage: React.FC = () => {
               <div className="flex flex-wrap gap-2">
                 {[
                   { tag: "{{tenant}}", label: "Nome do Tenant / Baseline", icon: "domain" },
-                  { tag: "{{technology}}", label: "Tecnologia", icon: "memory" },
+                  { tag: "{{technology_name}}", label: "Nome da Tecnologia", icon: "memory" },
                   { tag: "{{tactic}}", label: "Tática MITRE", icon: "radar" },
                   { tag: "{{severity}}", label: "Severidade", icon: "warning" },
                 ].map(({ tag, label, icon }) => (
@@ -310,7 +312,7 @@ export const BaselinePrefixPage: React.FC = () => {
                   },
                   {
                     name: "Contexto Completo",
-                    preset: "[{{tenant}}] [{{technology}}] - ",
+                    preset: "[{{tenant}}] [{{technology_name}}] - ",
                     desc: "Tenant e Tecnologia destacados",
                   },
                   {
@@ -325,7 +327,7 @@ export const BaselinePrefixPage: React.FC = () => {
                   },
                   {
                     name: "Tecnológico",
-                    preset: "[{{technology}}] ",
+                    preset: "[{{technology_name}}] ",
                     desc: "Foco no produto/tecnologia",
                   },
                   {
@@ -398,12 +400,12 @@ export const BaselinePrefixPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <label className="block text-[11px] font-medium text-on-surface-variant uppercase mb-1">
-                    Tecnologia
+                    Nome da Tecnologia (technology_name)
                   </label>
                   <input
                     type="text"
-                    value={sampleTech}
-                    onChange={(e) => setSampleTech(e.target.value)}
+                    value={sampleTechName}
+                    onChange={(e) => setSampleTechName(e.target.value)}
                     className="w-full px-3 py-1.5 bg-surface-container-highest/50 border border-outline-variant/30 rounded-lg font-mono text-code-xs text-on-surface focus:outline-none focus:border-primary/50"
                   />
                 </div>

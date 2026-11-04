@@ -143,25 +143,36 @@ def main() -> int:
 
         # 2. Preview de Prefixo com variáveis dinâmicas e capitalização
         preview_payload = {
-            "template": "[{{tenant}}] [{{technology}}] [{{tactic}}] [{{severity}}] - ",
+            "template": "[{{tenant}}] [{{technology_name}}] [{{tactic}}] [{{severity}}] - ",
             "title": "Ataque RDP Brute Force",
             "technology": "ad_windows",
+            "technology_name": "AD/Windows",
             "tactic": "credential_access",
             "severity": "high",
             "tenant": None,  # Baseline Global
         }
         status_prev, res_prev = call("POST", "/api/system/baseline/prefix/preview", preview_payload, csrf=True)
-        expected_base = "[Baseline] [Ad_windows] [Credential_access] [High] - Ataque RDP Brute Force"
+        expected_base = "[Baseline] [AD/Windows] [Credential Access] [High] - Ataque RDP Brute Force"
         record(
             status_prev == 200 and res_prev.get("preview_title") == expected_base,
-            f"2. Preview no Baseline substitui {{tenant}} por 'Baseline' e capitaliza variáveis: {res_prev.get('preview_title')}",
+            f"2. Preview no Baseline substitui {{technology_name}} pelo nome limpo da tecnologia sem '_' ou '-': {res_prev.get('preview_title')}",
         )
+
+        # 2.1. Compatibilidade com {{technology}} legada resolvendo nome limpo
+        prev_legacy = {
+            "template": "[{{technology}}] - ",
+            "title": "Regra Legada",
+            "technology": "ad_windows",
+        }
+        st_leg, res_leg = call("POST", "/api/system/baseline/prefix/preview", prev_legacy, csrf=True)
+        legacy_ok = st_leg == 200 and res_leg.get("preview_title") == "[AD/Windows] - Regra Legada"
+        record(legacy_ok, "2.1. Coringa {{technology}} resolve para o nome limpo da tecnologia ('AD/Windows') sem '_' ou '-'")
 
         # 3. Preview para tenant de cliente
         preview_client_payload = dict(preview_payload)
         preview_client_payload["tenant"] = "hospital_santa_clara"
         status_prev_c, res_prev_c = call("POST", "/api/system/baseline/prefix/preview", preview_client_payload, csrf=True)
-        expected_client = "[Hospital_santa_clara] [Ad_windows] [Credential_access] [High] - Ataque RDP Brute Force"
+        expected_client = "[Hospital_santa_clara] [AD/Windows] [Credential Access] [High] - Ataque RDP Brute Force"
         record(
             status_prev_c == 200 and res_prev_c.get("preview_title") == expected_client,
             f"3. Preview no Cliente substitui {{tenant}} pelo nome capitalizado do cliente: {res_prev_c.get('preview_title')}",
