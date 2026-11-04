@@ -38,7 +38,9 @@ from .curation import (
 )
 from .grafana_client import GrafanaClient, GrafanaError
 from .logql_validator import lint_logql
+from .rule_prefix import format_rule_title
 from .schemas import (
+    BaselinePrefixSettings,
     CurationCandidateQuality,
     CurationClientEvaluation,
     CurationFieldMapping,
@@ -1249,6 +1251,7 @@ def build_baseline_grafana_payload(
     loki_ds_uid: str,
     contact_point: str = "stg",
     evaluation_group: str | None = None,
+    prefix_settings: BaselinePrefixSettings | None = None,
 ) -> dict[str, Any]:
     """Compila uma regra validada no payload do Grafana Alerting Provisioning.
 
@@ -1258,10 +1261,19 @@ def build_baseline_grafana_payload(
     - Data source SEMPRE loki_ds_uid ('loki' ou selecionado);
     - Contact Point SEMPRE contact_point ('stg' -> Homologação);
     - Labels de escopo SEMPRE 'baseline' e cliente 'global';
-    - Preserva o parecer técnico de IA e compatibilidade nos metadados da regra.
+    - Preserva o parecer técnico de IA e compatibilidade nos metadados da regra;
+    - Formata o título com o prefixo do baseline configurado quando ativo.
     """
     new_uid = f"ghp-{uuid.uuid4().hex[:10]}"
-    rule_title = item.title.strip()
+    rule_title = format_rule_title(
+        item.title.strip(),
+        prefix_settings,
+        is_baseline=True,
+        technology=item.technology,
+        technology_name=item.technology_name,
+        tactic=item.mitre_tactic,
+        severity=item.severity,
+    )
     target_rule_group = (
         evaluation_group.strip()
         if evaluation_group and evaluation_group.strip()

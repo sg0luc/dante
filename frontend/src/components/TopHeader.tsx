@@ -25,6 +25,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
     if (p.startsWith("/rules")) return { section: "ENGENHARIA", current: "REGRAS DE DETECÇÃO" };
     if (p.startsWith("/curadoria")) return { section: "ENGENHARIA", current: "CURADORIA DE REGRAS" };
     if (p.startsWith("/homologacao")) return { section: "ENGENHARIA", current: "HOMOLOGAÇÃO" };
+    if (p.startsWith("/baseline-prefix")) return { section: "ADMIN", current: "PREFIXO BASELINE" };
     if (p.startsWith("/baseline") || p.startsWith("/global-rules")) return { section: "ENGENHARIA", current: "CONTROLE DE BASELINE" };
     if (p.startsWith("/technologies")) return { section: "TELEMETRIA", current: "TECNOLOGIAS" };
     if (p.startsWith("/loki")) return { section: "TELEMETRIA", current: "LOGS SINTÉTICOS" };

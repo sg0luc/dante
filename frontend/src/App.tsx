@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import { api } from "./api";
 import { AlertsPage } from "./pages/AlertsPage";
 import { ApiKeysPage } from "./pages/ApiKeysPage";
+import { BaselinePrefixPage } from "./pages/BaselinePrefixPage";
 import { CuradoriaPage } from "./pages/CuradoriaPage";
 import { GlobalMatrixPage } from "./pages/GlobalMatrixPage";
 import { HomologationPage } from "./pages/HomologationPage";
@@ -222,6 +223,14 @@ export const App: React.FC = () => {
             element={
               <ProtectedLayout>
                 <ApiKeysPage />
+              </ProtectedLayout>
+            }
+          />
+          <Route
+            path="/baseline-prefix"
+            element={
+              <ProtectedLayout>
+                <BaselinePrefixPage />
               </ProtectedLayout>
             }
           />

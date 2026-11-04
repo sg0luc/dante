@@ -1,7 +1,10 @@
-﻿import {
+import {
   AlertHistoryResponse,
   AlertInstance,
   AppVersionInfo,
+  BaselinePrefixPreviewRequest,
+  BaselinePrefixPreviewResponse,
+  BaselinePrefixSettings,
   UpgradeTriggerResponse,
   UpgradeStatusResponse,
   BatchToggleRulesResponse,
@@ -687,4 +690,23 @@ export const api = {
         body: JSON.stringify(payload || {}),
       }
     ),
+  // Prefixo Baseline
+  getBaselinePrefixSettings: (): Promise<BaselinePrefixSettings> =>
+    request<BaselinePrefixSettings>("/api/system/baseline/prefix"),
+
+  setBaselinePrefixSettings: (
+    data: BaselinePrefixSettings
+  ): Promise<BaselinePrefixSettings> =>
+    request<BaselinePrefixSettings>("/api/system/baseline/prefix", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  previewBaselinePrefix: (
+    data: BaselinePrefixPreviewRequest
+  ): Promise<BaselinePrefixPreviewResponse> =>
+    request<BaselinePrefixPreviewResponse>("/api/system/baseline/prefix/preview", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 };

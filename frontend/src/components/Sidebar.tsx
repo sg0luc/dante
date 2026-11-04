@@ -296,6 +296,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </Link>
 
             <Link
+              to="/baseline-prefix"
+              className={navItemClass(isActive("/baseline-prefix"))}
+              title="Prefixo Baseline"
+            >
+              <div className="flex items-center gap-space-sm">
+                <span className="material-symbols-outlined text-[18px]">title</span>
+                {!collapsed && <span className="font-body-sm text-body-sm">Prefixo Baseline</span>}
+              </div>
+            </Link>
+
+            <Link
               to="/users"
               className={navItemClass(isActive("/users"))}
               title="Usuários & Permissões"

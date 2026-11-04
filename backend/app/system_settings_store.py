@@ -4,7 +4,8 @@ Permite que operadores ajustem em runtime:
   - Mapeamento dos estágios de homologação (stg, dev, prod) para Contact Points
     reais existentes no Grafana;
   - Pasta arbitrária do Grafana que atua como baseline 'global' (UID e título);
-  - Configurações e credenciais de Inteligência Artificial para a Curadoria.
+  - Configurações e credenciais de Inteligência Artificial para a Curadoria;
+  - Padrão de prefixo para títulos de regras no Baseline Global e clientes.
 """
 
 from __future__ import annotations
@@ -19,7 +20,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from .schemas import AISettingsData
+from .schemas import AISettingsData, BaselinePrefixSettings
 
 logger = logging.getLogger("hunter_portal.system_settings")
 
@@ -46,6 +47,10 @@ class SystemSettingsData(BaseModel):
     ai_settings: AISettingsData = Field(
         default_factory=AISettingsData,
         description="Configurações e credenciais de Inteligência Artificial para Curadoria.",
+    )
+    baseline_prefix: BaselinePrefixSettings = Field(
+        default_factory=BaselinePrefixSettings,
+        description="Configurações de prefixo para títulos de regras no Baseline Global e clientes.",
     )
 
 
@@ -91,10 +96,20 @@ class SystemSettingsStore:
                 else:
                     ai_data = AISettingsData()
 
+                prefix_raw = raw.get("baseline_prefix")
+                if isinstance(prefix_raw, dict):
+                    try:
+                        prefix_data = BaselinePrefixSettings(**prefix_raw)
+                    except Exception:
+                        prefix_data = BaselinePrefixSettings()
+                else:
+                    prefix_data = BaselinePrefixSettings()
+
                 self._data = SystemSettingsData(
                     stage_contact_points=cleaned_cps,
                     baseline_folder_uid=folder_uid,
                     ai_settings=ai_data,
+                    baseline_prefix=prefix_data,
                 )
             else:
                 self._data = SystemSettingsData()
@@ -177,3 +192,15 @@ class SystemSettingsStore:
             self._data.ai_settings = new_settings.model_copy(deep=True)
             self._persist_locked()
             return self._data.ai_settings.model_copy(deep=True)
+
+    def get_baseline_prefix(self) -> BaselinePrefixSettings:
+        with self._lock:
+            self._load_locked()
+            return self._data.baseline_prefix.model_copy(deep=True)
+
+    def set_baseline_prefix(self, settings: BaselinePrefixSettings) -> BaselinePrefixSettings:
+        with self._lock:
+            self._load_locked()
+            self._data.baseline_prefix = settings.model_copy(deep=True)
+            self._persist_locked()
+            return self._data.baseline_prefix.model_copy(deep=True)

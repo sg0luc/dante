@@ -1,4 +1,4 @@
-﻿export type RuleState =
+export type RuleState =
   | "firing"
   | "pending"
   | "recovering"
@@ -503,6 +503,26 @@ export interface RuleImportExecuteResponse {
   imported_uids: string[];
   imported_titles: string[];
   failed: Array<{ title: string; error: string }>;
+}
+
+export interface BaselinePrefixSettings {
+  enabled: boolean;
+  template: string;
+}
+
+export interface BaselinePrefixPreviewRequest {
+  template: string;
+  title?: string;
+  technology?: string | null;
+  technology_name?: string | null;
+  tactic?: string | null;
+  severity?: string | null;
+  tenant?: string | null;
+}
+
+export interface BaselinePrefixPreviewResponse {
+  preview_title: string;
+  evaluated_prefix: string;
 }
 
 export interface LintIssue {

@@ -71,6 +71,7 @@ from ..technology_store import (
     get_technology_store,
     get_tenant_technology_store,
 )
+from ..rule_prefix import format_rule_title
 from ..system_settings_store import SystemSettingsStore
 from ..tenant_technologies import TenantTechnologyStore, TenantTechnologyStoreError
 from ..tenants import (
@@ -573,6 +574,7 @@ async def implement_technology_baseline(
     )
 
     results: list[ImplementedRuleResult] = []
+    prefix_settings = sys_settings.get_baseline_prefix()
 
     for source_rule in baseline:
         source_uid = str(source_rule.get("uid") or "")
@@ -592,7 +594,19 @@ async def implement_technology_baseline(
             continue
 
         new_title = (
-            f"[{client_name}] {base_title}" if base_title else source_title
+            (
+                format_rule_title(
+                    base_title or source_title,
+                    prefix_settings,
+                    tenant_name=client_name,
+                    technology=tech.slug,
+                    technology_name=tech.name,
+                    tactic=dict(source_rule.get("labels") or {}).get("mitre_tactic"),
+                    severity=dict(source_rule.get("labels") or {}).get("severity"),
+                )
+                if (prefix_settings and prefix_settings.enabled and "{{tenant}}" in (prefix_settings.template or "").lower())
+                else (base_title if base_title else source_title)
+            )
         )
         new_uid = f"ghp-{uuid.uuid4().hex[:10]}"
         rule_copy = copy.deepcopy(source_rule)

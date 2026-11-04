@@ -9,6 +9,9 @@ from ..grafana_client import GrafanaClient, GrafanaError
 from ..schemas import (
     AppVersionInfo,
     BaselineFolderConfig,
+    BaselinePrefixPreviewRequest,
+    BaselinePrefixPreviewResponse,
+    BaselinePrefixSettings,
     HealthStatus,
     PortalConfig,
     ReadinessStatus,
@@ -179,4 +182,76 @@ async def set_baseline_folder_config(
     return BaselineFolderConfig(
         baseline_folder_uid=target_uid,
         baseline_folder_title=folder_title,
+    )
+
+
+@router.get("/baseline/prefix", response_model=BaselinePrefixSettings)
+@router.get("/system/baseline/prefix", response_model=BaselinePrefixSettings)
+async def get_baseline_prefix_config(
+    sys_settings: SystemSettingsStore = Depends(get_system_settings_store),
+    _user: Session = Depends(get_current_user),
+) -> BaselinePrefixSettings:
+    """Retorna as configurações do prefixo utilizado no Baseline Global e clientes."""
+    return sys_settings.get_baseline_prefix()
+
+
+@router.put(
+    "/baseline/prefix",
+    response_model=BaselinePrefixSettings,
+    dependencies=[Depends(require_csrf_header)],
+)
+@router.put(
+    "/system/baseline/prefix",
+    response_model=BaselinePrefixSettings,
+    dependencies=[Depends(require_csrf_header)],
+)
+async def set_baseline_prefix_config(
+    payload: BaselinePrefixSettings,
+    sys_settings: SystemSettingsStore = Depends(get_system_settings_store),
+    _user: Session = Depends(get_current_user),
+) -> BaselinePrefixSettings:
+    """Atualiza as configurações do prefixo do Baseline Global e clientes."""
+    return sys_settings.set_baseline_prefix(payload)
+
+
+@router.post(
+    "/baseline/prefix/preview",
+    response_model=BaselinePrefixPreviewResponse,
+)
+@router.post(
+    "/system/baseline/prefix/preview",
+    response_model=BaselinePrefixPreviewResponse,
+)
+async def preview_baseline_prefix_endpoint(
+    payload: BaselinePrefixPreviewRequest,
+    _user: Session = Depends(get_current_user),
+) -> BaselinePrefixPreviewResponse:
+    """Simula a renderização de um título aplicando o template de prefixo."""
+    from ..rule_prefix import evaluate_prefix_template, format_rule_title
+
+    settings = BaselinePrefixSettings(enabled=True, template=payload.template)
+    is_base = payload.tenant is None or payload.tenant.strip().lower() in ("global", "baseline", "")
+
+    evaluated = evaluate_prefix_template(
+        payload.template,
+        tenant_name=payload.tenant,
+        is_baseline=is_base,
+        technology=payload.technology,
+        technology_name=payload.technology_name,
+        tactic=payload.tactic,
+        severity=payload.severity,
+    )
+    formatted = format_rule_title(
+        payload.title,
+        settings,
+        tenant_name=payload.tenant,
+        is_baseline=is_base,
+        technology=payload.technology,
+        technology_name=payload.technology_name,
+        tactic=payload.tactic,
+        severity=payload.severity,
+    )
+    return BaselinePrefixPreviewResponse(
+        preview_title=formatted,
+        evaluated_prefix=evaluated,
     )

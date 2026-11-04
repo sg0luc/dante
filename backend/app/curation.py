@@ -87,6 +87,7 @@ from .technology_insights import (
     is_client_folder,
     strip_scope_prefix,
 )
+from .rule_prefix import format_rule_title
 from .tenant_scan import TenantScanStore, TenantScanStoreError
 from .tenant_technologies import TenantTechnologyStore, TenantTechnologyStoreError
 from .tenants import (
@@ -4909,6 +4910,16 @@ async def implement_curated_rule(
         "curation_source_name": rule.source_name,
     }
 
+    prefix_settings = sys_settings.get_baseline_prefix()
+    formatted_baseline_title = format_rule_title(
+        rule.title,
+        prefix_settings,
+        is_baseline=True,
+        technology=rule.technology,
+        technology_name=rule.technology_name,
+        severity=rule.severity,
+    )
+
     if existing_baseline is not None:
         baseline_rule_uid = str(existing_baseline.get("uid") or "")
         baseline_payload = copy.deepcopy(existing_baseline)
@@ -4916,7 +4927,7 @@ async def implement_curated_rule(
         baseline_rule_uid = f"ghp-{uuid.uuid4().hex[:10]}"
         baseline_payload = {
             "uid": baseline_rule_uid,
-            "title": rule.title,
+            "title": formatted_baseline_title,
             "folderUID": baseline_folder_uid,
             "ruleGroup": BASELINE_RULE_GROUP,
             "condition": "C",
@@ -5017,7 +5028,7 @@ async def implement_curated_rule(
             client_results.append(
                 ImplementedRuleResult(
                     uid=c_uid,
-                    title=f"[{c_uid}] {rule.title}",
+                    title=rule.title,
                     status="failed",
                     detail=f"Pasta do cliente '{c_uid}' não encontrada no Grafana.",
                 )
@@ -5027,14 +5038,27 @@ async def implement_curated_rule(
         c_name = str(target_folder.get("title") or c_uid).strip()
         c_rules = [r for r in all_rules if str(r.get("folderUID") or "") == c_uid]
 
+        # Regra no cliente salva exatamente como ela está (sem prefixo '[nomedocliente]')
+        if prefix_settings and prefix_settings.enabled and "{{tenant}}" in (prefix_settings.template or "").lower():
+            clone_title = format_rule_title(
+                rule.title,
+                prefix_settings,
+                tenant_name=c_name,
+                technology=rule.technology,
+                technology_name=rule.technology_name,
+                severity=rule.severity,
+            )
+        else:
+            clone_title = rule.title
+
         existing_in_client = find_implemented_rule(
-            {"uid": baseline_rule_uid, "title": rule.title}, c_rules
+            {"uid": baseline_rule_uid, "title": clone_title}, c_rules
         )
         if existing_in_client is not None:
             client_results.append(
                 ImplementedRuleResult(
                     uid=str(existing_in_client.get("uid") or baseline_rule_uid),
-                    title=str(existing_in_client.get("title") or f"[{c_name}] {rule.title}"),
+                    title=str(existing_in_client.get("title") or clone_title),
                     status="skipped",
                     detail=f"Regra já implementada no cliente '{c_name}'.",
                 )
@@ -5043,7 +5067,6 @@ async def implement_curated_rule(
             continue
 
         clone_uid = f"ghp-{uuid.uuid4().hex[:10]}"
-        clone_title = f"[{c_name}] {rule.title}"
         target_group = (
             payload.evaluation_group.strip()
             if payload.evaluation_group and payload.evaluation_group.strip()

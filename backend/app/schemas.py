@@ -1,4 +1,4 @@
-﻿"""Modelos (Pydantic) de entrada e saÃ­da da API do portal.
+"""Modelos (Pydantic) de entrada e saÃ­da da API do portal.
 
 O frontend depende APENAS destes modelos, nunca do formato bruto do Grafana.
 Isso isola o portal de mudanÃ§as entre versÃµes da API do Grafana.
@@ -1251,6 +1251,45 @@ class SetBaselineFolderRequest(BaseModel):
     """Define a pasta do Grafana que representarÃ¡ o Baseline Global."""
 
     baseline_folder_uid: str = Field(min_length=1, max_length=40)
+
+
+# --- Baseline Rule Prefix Settings ------------------------------------------
+class BaselinePrefixSettings(BaseModel):
+    """Configurações de prefixo para títulos de regras de detecção."""
+
+    enabled: bool = Field(
+        default=True,
+        description="Habilita ou desabilita a aplicação do prefixo no baseline e clientes.",
+    )
+    template: str = Field(
+        default="Baseline - ",
+        description="Template do prefixo (ex: 'Baseline - ', '[{{tenant}}] [{{technology}}] - ').",
+    )
+
+
+class BaselinePrefixPreviewRequest(BaseModel):
+    """Solicitação de renderização imediata de prefixo para teste/preview."""
+
+    template: str = Field(..., description="Template do prefixo a ser testado.")
+    title: str = Field(
+        default="Detecção de Força Bruta contra RDP",
+        description="Título base de exemplo.",
+    )
+    technology: str | None = Field(default="ad_windows", description="Tecnologia de exemplo.")
+    technology_name: str | None = Field(default=None, description="Nome da tecnologia de exemplo.")
+    tactic: str | None = Field(default="credential_access", description="Tática MITRE de exemplo.")
+    severity: str | None = Field(default="high", description="Severidade de exemplo.")
+    tenant: str | None = Field(
+        default=None,
+        description="Nome do tenant ou None/vazio para simular o Baseline Global.",
+    )
+
+
+class BaselinePrefixPreviewResponse(BaseModel):
+    """Resultado do preview imediato do prefixo."""
+
+    preview_title: str
+    evaluated_prefix: str
 
 
 # =============================================================================

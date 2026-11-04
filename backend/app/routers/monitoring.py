@@ -1,4 +1,4 @@
-﻿"""Consulta de regras de detecÃ§Ã£o, alertas e silences (somente leitura nesta etapa)."""
+"""Consulta de regras de detecÃ§Ã£o, alertas e silences (somente leitura nesta etapa)."""
 
 from __future__ import annotations
 
@@ -86,6 +86,7 @@ from ..rule_importer import (
     preview_rules_json,
     preview_rules_multiple,
 )
+from ..rule_prefix import format_rule_title
 from ..security import Session, get_current_user, require_csrf_header
 from ..technologies import (
     Technology,
@@ -590,6 +591,8 @@ async def execute_rules_import(
         else None
     )
 
+    prefix_settings = sys_settings.get_baseline_prefix()
+
     for item in valid_items:
         rule_payload = build_baseline_grafana_payload(
             item=item,
@@ -597,6 +600,7 @@ async def execute_rules_import(
             loki_ds_uid=loki_ds_uid,
             contact_point=stg_contact_point,
             evaluation_group=target_evaluation_group,
+            prefix_settings=prefix_settings,
         )
         try:
             res = await grafana.create_alert_rule(rule_payload)
@@ -3181,7 +3185,16 @@ async def create_detection_rule(
     if payload.scope == "baseline":
         folder_uid = sys_settings.get_baseline_folder_uid()
         folder_title = folder_map.get(folder_uid, "Global Baseline")
-        rule_title = payload.name.strip()
+        prefix_settings = sys_settings.get_baseline_prefix()
+        rule_title = format_rule_title(
+            payload.name.strip(),
+            prefix_settings,
+            is_baseline=True,
+            technology=technology.slug,
+            technology_name=technology.name,
+            tactic=payload.mitre_tactic,
+            severity=payload.severity,
+        )
         rule_group = payload.evaluation_group.strip() if payload.evaluation_group and payload.evaluation_group.strip() else BASELINE_RULE_GROUP
         client_label_val = "global"
         siem_tier = "global"
@@ -3385,7 +3398,19 @@ async def create_detection_rule(
                 continue
 
             clone_uid = f"ghp-{uuid.uuid4().hex[:10]}"
-            clone_title = f"[{c_name}] {rule_title}"
+            # Regra no cliente salva exatamente como ela está (sem prefixo '[nomedocliente]')
+            if prefix_settings and prefix_settings.enabled and "{{tenant}}" in (prefix_settings.template or "").lower():
+                clone_title = format_rule_title(
+                    payload.name.strip(),
+                    prefix_settings,
+                    tenant_name=c_name,
+                    technology=technology.slug,
+                    technology_name=technology.name,
+                    tactic=payload.mitre_tactic,
+                    severity=payload.severity,
+                )
+            else:
+                clone_title = payload.name.strip()
             rule_copy = copy.deepcopy(rule_payload)
             for k in ("id", "updated", "provenance", "readOnly", "orgID"):
                 rule_copy.pop(k, None)
