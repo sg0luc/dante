@@ -13,7 +13,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Response, status
 
 from ..config import Settings
-from ..contact_points import DEFAULT_CONTACT_POINT, apply_contact_point, resolve_stage_receiver
+from ..contact_points import DEFAULT_CONTACT_POINT, apply_contact_point, extract_contact_point, resolve_stage_receiver
 from ..grafana_client import GrafanaClient, GrafanaError
 from ..logql_validator import (
     LogQLLintResult,

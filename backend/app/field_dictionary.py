@@ -24,7 +24,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from .ai import AIService
+from .ai import AIService, AIUniversalClient
 from .config import Settings, get_settings
 from .grafana_client import GrafanaClient
 from .schemas import (
@@ -146,6 +146,7 @@ class FieldDictionaryStore:
                     client_count_with_telemetry=active_clients,
                     last_updated_at=item.get("last_updated_at"),
                     is_scanning=bool(item.get("is_scanning", False)),
+                    last_error=item.get("last_error"),
                 )
             return summaries
 
@@ -157,6 +158,7 @@ class FieldDictionaryStore:
         rule_groups_regex: str,
         client_data: list[dict[str, Any]],
         ai_analysis: dict[str, Any] | None = None,
+        last_error: str | None = None,
     ) -> None:
         slug_clean = slug.strip().lower()
         unique_all: set[str] = set()
@@ -189,6 +191,7 @@ class FieldDictionaryStore:
                 "clients": clients_dict,
                 "last_updated_at": datetime.now(timezone.utc).isoformat(),
                 "is_scanning": False,
+                "last_error": last_error,
                 "ai_analysis": saved_ai,
             }
             self._persist_locked()
@@ -199,6 +202,29 @@ class FieldDictionaryStore:
             self._load_locked()
             if slug_clean in self._data:
                 self._data[slug_clean]["is_scanning"] = is_scanning
+                self._persist_locked()
+
+    def set_error(self, slug: str, error_msg: str) -> None:
+        slug_clean = slug.strip().lower()
+        with self._lock:
+            self._load_locked()
+            if slug_clean in self._data:
+                self._data[slug_clean]["is_scanning"] = False
+                self._data[slug_clean]["last_error"] = error_msg
+                self._persist_locked()
+            else:
+                self._data[slug_clean] = {
+                    "technology_slug": slug_clean,
+                    "technology_name": slug_clean,
+                    "rule_groups_regex": "",
+                    "total_unique_fields": 0,
+                    "all_fields": [],
+                    "clients": {},
+                    "last_updated_at": datetime.now(timezone.utc).isoformat(),
+                    "is_scanning": False,
+                    "last_error": error_msg,
+                    "ai_analysis": None,
+                }
                 self._persist_locked()
 
     def save_ai_analysis(self, slug: str, analysis: dict[str, Any]) -> None:
@@ -374,6 +400,12 @@ async def scan_technology_fields_across_clients(
 
         raw_data = store.get_technology_data(slug) or {}
         return _build_detail_out_from_dict(raw_data, technology)
+    except Exception as exc:
+        err_msg = f"Falha na varredura de telemetria da tecnologia '{technology.name}': {exc}"
+        logger.error(err_msg, exc_info=True)
+        store.set_error(slug, str(exc))
+        raw_data = store.get_technology_data(slug) or {}
+        return _build_detail_out_from_dict(raw_data, technology)
     finally:
         store.set_scanning(slug, False)
 
@@ -407,6 +439,7 @@ def _build_detail_out_from_dict(raw: dict[str, Any], technology: Technology) -> 
         clients=client_items,
         last_updated_at=raw.get("last_updated_at"),
         is_scanning=bool(raw.get("is_scanning", False)),
+        last_error=raw.get("last_error"),
         ai_analysis=ai_analysis_obj,
     )
 
@@ -473,12 +506,20 @@ Forneça um parecer técnico estruturado em JSON com as chaves:
     sys_prompt = "Você é um especialista em telemetria Wazuh, Grafana Loki, Windows Event Logs, Sysmon, Firewalls e WAFs. Responda estritamente em JSON válido."
 
     try:
-        raw_resp = await ai_service.client.generate_json(
+        cfg = ai_service.get_raw_settings()
+        client = AIUniversalClient(
+            provider=cfg.provider,
+            model=cfg.model,
+            api_key=cfg.api_key,
+            api_base_url=cfg.api_base_url,
+            timeout_seconds=ai_service.app_settings.ai_timeout_seconds,
+            temperature=cfg.temperature,
+        )
+        raw_resp = await client.generate_json(
             system_prompt=sys_prompt,
             user_prompt=prompt_content,
-            temperature=0.1,
         )
-        model_name = getattr(ai_service.client, "model", "DeepSeek")
+        model_name = getattr(client, "model", "DeepSeek")
         return FieldDictionaryAIAnalysisOut(
             technology_slug=technology.slug,
             technology_name=technology.name,

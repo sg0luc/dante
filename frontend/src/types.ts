@@ -1333,6 +1333,7 @@ export interface FieldDictionaryDetailOut {
   clients: FieldDictionaryClientItem[];
   last_updated_at?: string | null;
   is_scanning: boolean;
+  last_error?: string | null;
   ai_analysis?: FieldDictionaryAIAnalysisOut | null;
 }
 
@@ -1343,6 +1344,7 @@ export interface FieldDictionarySummaryOut {
   client_count_with_telemetry: number;
   last_updated_at?: string | null;
   is_scanning: boolean;
+  last_error?: string | null;
 }
 
 export interface FieldDictionaryScanResponse {

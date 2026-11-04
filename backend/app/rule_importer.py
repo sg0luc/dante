@@ -262,11 +262,29 @@ def extract_rule_fields_and_mappings(
             **PERIMETER_FIELD_TRANSLATION_MAP.get(technology.perimeter, {}),
             **FIELD_TRANSLATION_MAP.get(technology.slug, {}),
         }
+        # 1. Base estática do perímetro e tecnologia
         supported_fields = set(
             SUPPORTED_WAZUH_LOKI_FIELDS.get(technology.slug)
             or PERIMETER_DEFAULT_FIELDS.get(technology.perimeter)
             or {"rule_id", "full_log"}
         )
+
+        # 2. Leitura prioritária do Dicionário de Campos (telemetria real mapeada nos clientes)
+        try:
+            from .field_dictionary import get_field_dictionary_store
+            dict_store = get_field_dictionary_store()
+            dict_data = dict_store.get_technology_data(technology.slug)
+            if dict_data and dict_data.get("all_fields"):
+                for df in dict_data["all_fields"]:
+                    df_clean = str(df).strip()
+                    if df_clean:
+                        supported_fields.add(df_clean)
+                        if df_clean.startswith("data_"):
+                            supported_fields.add(df_clean[5:])
+                        else:
+                            supported_fields.add(f"data_{df_clean}")
+        except Exception as dict_err:
+            logger.debug("Dicionário de campos indisponível para %s: %s", technology.slug, dict_err)
 
     # 1. Se a regra for Sigma YAML ou contiver árvore detection/AST
     if (

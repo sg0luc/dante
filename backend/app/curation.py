@@ -2589,11 +2589,9 @@ async def evaluate_rule_across_clients(
             has_results = matched_count > 0
 
             # Critério 1: Compatibilidade dos campos necessários da regra com os logs do cliente
-            observed_in_client = [
-                f for f in compatible_fields_list if f in observed_fields or f.lower() in obs_lower_set
-            ]
-            # Enriquecimento com o Dicionário de Campos do DANTE:
+            # Enriquecimento prévio com o Dicionário de Campos do DANTE:
             # Se a tecnologia possuir dicionário coletado para este cliente, incorpora os campos reais
+            # antes mesmo de calcular observed_in_client e missing_in_client para evitar queries lentas desnecessárias
             try:
                 from .field_dictionary import get_field_dictionary_store
                 dict_store_instance = get_field_dictionary_store()
@@ -2603,9 +2601,22 @@ async def evaluate_rule_across_clients(
                     if c_dict and c_dict.get("fields"):
                         dict_fields = set(c_dict["fields"])
                         raw_observed_fields.update(dict_fields)
+                        known_client_fields = (
+                            client_field_presence_cache.setdefault((ds_uid, technology.slug), set())
+                            if client_field_presence_cache is not None
+                            else set()
+                        )
                         known_client_fields.update(dict_fields)
             except Exception:
                 pass
+
+            observed_fields = _expand_observed_field_aliases(raw_observed_fields)
+            global_observed_fields.update(observed_fields)
+            obs_lower_set = {f.lower() for f in observed_fields}
+
+            observed_in_client = [
+                f for f in compatible_fields_list if f in observed_fields or f.lower() in obs_lower_set
+            ]
 
             missing_in_client = [
                 f for f in compatible_fields_list if f not in observed_fields and f.lower() not in obs_lower_set
