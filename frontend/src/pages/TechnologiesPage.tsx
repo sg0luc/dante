@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api";
 import { Modal } from "../components/Modal";
 import { ConfirmModal } from "../components/ConfirmModal";
@@ -140,11 +140,21 @@ export const TechnologiesPage: React.FC = () => {
   const [schedulesData, setSchedulesData] = useState<ScheduleSettingsOut | null>(null);
   const [schedulesSaving, setSchedulesSaving] = useState(false);
   const [schedulesSuccess, setSchedulesSuccess] = useState<string | null>(null);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const loadFieldSummaries = useCallback(async () => {
     try {
       const summaries = await api.getFieldDictionarySummaries();
-      setFieldSummaries(summaries);
+      if (isMountedRef.current) {
+        setFieldSummaries(summaries);
+      }
     } catch {
       // Ignora erro silencioso de resumo
     }
@@ -273,6 +283,16 @@ export const TechnologiesPage: React.FC = () => {
   useEffect(() => {
     loadOverview();
   }, [loadOverview]);
+
+  // Polling em tempo real do dicionário de campos a cada 3 segundos
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      loadFieldSummaries();
+    }, 3000);
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [loadFieldSummaries]);
 
   const technologies = useMemo(() => overview?.technologies ?? [], [overview]);
 
@@ -731,22 +751,23 @@ export const TechnologiesPage: React.FC = () => {
                     <td className="py-3 px-space-md text-center">
                       {(() => {
                         const dictSum = fieldSummaries[tech.slug.toLowerCase()];
-                        const count = dictSum?.total_unique_fields ?? 0;
+                        const maxCount = dictSum?.max_unique_fields_per_client ?? dictSum?.total_unique_fields ?? 0;
                         const isScanning = Boolean(dictSum?.is_scanning);
                         const hasError = Boolean(dictSum?.last_error);
 
                         return (
                           <button
                             type="button"
-                            onClick={() => openDictionaryModal(tech)}
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded border text-on-surface transition-all font-code-sm text-code-sm cursor-pointer shadow-sm active:scale-95 group ${
-                              hasError
-                                ? "bg-error-container/20 border-error/50 hover:bg-error-container/30 text-error"
-                                : "bg-surface-container hover:bg-surface-container-high border border-outline/20 hover:border-primary/40 hover:text-primary"
+                            onClick={() => !isScanning && openDictionaryModal(tech)}
+                            disabled={isScanning}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded border transition-all font-code-sm text-code-sm shadow-sm ${
+                              isScanning
+                                ? "bg-surface-container-high/60 border-tertiary/40 text-tertiary cursor-not-allowed opacity-90"
+                                : "bg-surface-container hover:bg-surface-container-high border-outline/20 hover:border-primary/40 text-on-surface hover:text-primary cursor-pointer active:scale-95 group"
                             }`}
                             title={
-                              hasError
-                                ? `Erro na última varredura: ${dictSum?.last_error} (Clique para detalhes)`
+                              isScanning
+                                ? "Varredura do dicionário de campos em andamento no Loki de todos os clientes..."
                                 : "Clique para ver o dicionário de campos por cliente e análise de IA"
                             }
                           >
@@ -762,7 +783,7 @@ export const TechnologiesPage: React.FC = () => {
                               {isScanning ? "sync" : hasError ? "error" : "menu_book"}
                             </span>
                             <span className="font-semibold">
-                              {count > 0 ? `${count} campos` : "0 campos"}
+                              {isScanning ? "Varrendo..." : (maxCount > 0 ? `${maxCount} campos` : "0 campos")}
                             </span>
                             {hasError && (
                               <span className="w-1.5 h-1.5 rounded-full bg-error animate-ping"></span>

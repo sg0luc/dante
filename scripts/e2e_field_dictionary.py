@@ -76,7 +76,17 @@ def run_e2e() -> None:
 
     # 2. Resumos do dicionário
     code, summaries = call("GET", "/api/technologies/fields/summaries")
-    record(code == 200 and isinstance(summaries, dict), "2. GET /api/technologies/fields/summaries", f"status={code}")
+    has_max = False
+    if code == 200 and isinstance(summaries, dict):
+        # Verifica se max_unique_fields_per_client está presente nos resumos
+        ad_sum = summaries.get("ad_windows")
+        if ad_sum and "max_unique_fields_per_client" in ad_sum:
+            has_max = True
+    record(
+        code == 200 and isinstance(summaries, dict) and has_max,
+        "2. GET /api/technologies/fields/summaries (com max_unique_fields_per_client)",
+        f"status={code}, has_max={has_max}",
+    )
 
     # 3. Detalhes do dicionário para 'ad_windows'
     code, dict_detail = call("GET", "/api/technologies/ad_windows/fields")

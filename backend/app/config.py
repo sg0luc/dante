@@ -140,7 +140,7 @@ class Settings(BaseSettings):
     @field_validator("app_version", mode="before")
     @classmethod
     def _resolve_app_version(cls, v: Any) -> str:
-        if not v or str(v).strip() in {"", "1.1.0"}:
+        if not v or str(v).strip() in {"", "1.1.0", "1.1.1", "1.2.0"}:
             return __version__
         return str(v).strip()
 
