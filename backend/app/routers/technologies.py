@@ -861,6 +861,7 @@ async def get_technology_field_dictionary(
             clients=[],
             last_updated_at=None,
             is_scanning=False,
+            last_error=None,
             ai_analysis=None,
         )
     return _build_detail_out_from_dict(raw, tech)
