@@ -20,7 +20,12 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from .schemas import AISettingsData, BaselinePrefixSettings
+from .schemas import (
+    AISettingsData,
+    BaselinePrefixSettings,
+    CurationScheduleSettings,
+    FieldDictionaryScheduleSettings,
+)
 
 logger = logging.getLogger("hunter_portal.system_settings")
 
@@ -51,6 +56,14 @@ class SystemSettingsData(BaseModel):
     baseline_prefix: BaselinePrefixSettings = Field(
         default_factory=BaselinePrefixSettings,
         description="Configurações de prefixo para títulos de regras no Baseline Global e clientes.",
+    )
+    field_dictionary_schedule: FieldDictionaryScheduleSettings = Field(
+        default_factory=FieldDictionaryScheduleSettings,
+        description="Configurações de agendamento da coleta semanal de dicionário de campos.",
+    )
+    curation_schedule: CurationScheduleSettings = Field(
+        default_factory=CurationScheduleSettings,
+        description="Configurações de agendamento da curadoria diária de regras.",
     )
 
 
@@ -105,11 +118,31 @@ class SystemSettingsStore:
                 else:
                     prefix_data = BaselinePrefixSettings()
 
+                f_sched_raw = raw.get("field_dictionary_schedule")
+                if isinstance(f_sched_raw, dict):
+                    try:
+                        f_sched_data = FieldDictionaryScheduleSettings(**f_sched_raw)
+                    except Exception:
+                        f_sched_data = FieldDictionaryScheduleSettings()
+                else:
+                    f_sched_data = FieldDictionaryScheduleSettings()
+
+                c_sched_raw = raw.get("curation_schedule")
+                if isinstance(c_sched_raw, dict):
+                    try:
+                        c_sched_data = CurationScheduleSettings(**c_sched_raw)
+                    except Exception:
+                        c_sched_data = CurationScheduleSettings()
+                else:
+                    c_sched_data = CurationScheduleSettings()
+
                 self._data = SystemSettingsData(
                     stage_contact_points=cleaned_cps,
                     baseline_folder_uid=folder_uid,
                     ai_settings=ai_data,
                     baseline_prefix=prefix_data,
+                    field_dictionary_schedule=f_sched_data,
+                    curation_schedule=c_sched_data,
                 )
             else:
                 self._data = SystemSettingsData()
@@ -204,3 +237,31 @@ class SystemSettingsStore:
             self._data.baseline_prefix = settings.model_copy(deep=True)
             self._persist_locked()
             return self._data.baseline_prefix.model_copy(deep=True)
+
+    def get_field_dictionary_schedule(self) -> FieldDictionaryScheduleSettings:
+        with self._lock:
+            self._load_locked()
+            return self._data.field_dictionary_schedule.model_copy(deep=True)
+
+    def set_field_dictionary_schedule(
+        self, schedule: FieldDictionaryScheduleSettings
+    ) -> FieldDictionaryScheduleSettings:
+        with self._lock:
+            self._load_locked()
+            self._data.field_dictionary_schedule = schedule.model_copy(deep=True)
+            self._persist_locked()
+            return self._data.field_dictionary_schedule.model_copy(deep=True)
+
+    def get_curation_schedule(self) -> CurationScheduleSettings:
+        with self._lock:
+            self._load_locked()
+            return self._data.curation_schedule.model_copy(deep=True)
+
+    def set_curation_schedule(
+        self, schedule: CurationScheduleSettings
+    ) -> CurationScheduleSettings:
+        with self._lock:
+            self._load_locked()
+            self._data.curation_schedule = schedule.model_copy(deep=True)
+            self._persist_locked()
+            return self._data.curation_schedule.model_copy(deep=True)

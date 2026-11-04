@@ -63,9 +63,10 @@ async def get_curation_progress_endpoint() -> CurationProgressState:
 async def get_curation_overview(
     settings: Settings = Depends(get_app_settings),
     curation_store: CurationStore = Depends(get_curation_store),
+    sys_settings: SystemSettingsStore = Depends(get_system_settings_store),
 ) -> CurationOverviewResponse:
-    """Retorna o estado da curadoria, agendamento diário das 08h00 e regras candidatas (excelentes e boas)."""
-    return build_curation_overview(curation_store, settings)
+    """Retorna o estado da curadoria, agendamento diário e regras candidatas (excelentes e boas)."""
+    return build_curation_overview(curation_store, settings, sys_settings=sys_settings)
 
 
 @router.post(

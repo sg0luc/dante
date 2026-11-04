@@ -67,6 +67,12 @@ import {
   TenantTechnologyScanResult,
   TenantSummary,
   UserInfo,
+  FieldDictionaryDetailOut,
+  FieldDictionarySummaryOut,
+  FieldDictionaryScanResponse,
+  FieldDictionaryAIAnalysisOut,
+  ScheduleSettingsOut,
+  ScheduleSettingsUpdateRequest,
 } from "./types";
 
 const CSRF_HEADER = "X-Requested-With";
@@ -333,6 +339,41 @@ export const api = {
         body: JSON.stringify(payload),
       }
     ),
+
+  // Dicionário de Campos de Tecnologias
+  getFieldDictionary: (slug: string): Promise<FieldDictionaryDetailOut> =>
+    request<FieldDictionaryDetailOut>(
+      `/api/technologies/${encodeURIComponent(slug)}/fields`
+    ),
+
+  rescanFieldDictionary: (slug: string): Promise<FieldDictionaryScanResponse> =>
+    request<FieldDictionaryScanResponse>(
+      `/api/technologies/${encodeURIComponent(slug)}/fields/rescan`,
+      { method: "POST" }
+    ),
+
+  analyzeFieldDictionaryAI: (slug: string): Promise<FieldDictionaryAIAnalysisOut> =>
+    request<FieldDictionaryAIAnalysisOut>(
+      `/api/technologies/${encodeURIComponent(slug)}/fields/ai-analysis`,
+      { method: "POST" }
+    ),
+
+  getFieldDictionarySummaries: (): Promise<Record<string, FieldDictionarySummaryOut>> =>
+    request<Record<string, FieldDictionarySummaryOut>>(
+      "/api/technologies/fields/summaries"
+    ),
+
+  // Agendamentos Automatizados (Dicionário + Curadoria)
+  getSystemSchedules: (): Promise<ScheduleSettingsOut> =>
+    request<ScheduleSettingsOut>("/api/system/schedules"),
+
+  updateSystemSchedules: (
+    payload: ScheduleSettingsUpdateRequest
+  ): Promise<ScheduleSettingsOut> =>
+    request<ScheduleSettingsOut>("/api/system/schedules", {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
 
   getAlertHistory: (hours?: number): Promise<AlertHistoryResponse> =>
     request<AlertHistoryResponse>(

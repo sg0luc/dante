@@ -1288,3 +1288,92 @@ export interface PausedRulesMatchesResponse {
   window: string;
   rules: PausedRuleMatchItem[];
 }
+
+// =============================================================================
+// Dicionário de Campos, IA e Agendamentos Personalizados
+// =============================================================================
+export interface FieldDictionaryClientItem {
+  client_uid: string;
+  client_name: string;
+  total_fields: number;
+  fields: string[];
+  sample_values: Record<string, string[]>;
+  last_scanned_at?: string | null;
+}
+
+export interface FieldDictionaryDiscrepancyItem {
+  field: string;
+  present_in_clients: string[];
+  missing_in_clients: string[];
+  category: string;
+  impact: string;
+  notes: string;
+}
+
+export interface FieldDictionaryAIAnalysisOut {
+  technology_slug: string;
+  technology_name: string;
+  analyzed_at: string;
+  ai_model_used?: string | null;
+  summary: string;
+  version_analysis: string;
+  format_and_schema_analysis: string;
+  language_and_localization: string;
+  recommendations: string[];
+  discrepancies: FieldDictionaryDiscrepancyItem[];
+}
+
+export interface FieldDictionaryDetailOut {
+  technology_slug: string;
+  technology_name: string;
+  rule_groups_regex: string;
+  total_unique_fields: number;
+  all_fields: string[];
+  client_count: number;
+  clients: FieldDictionaryClientItem[];
+  last_updated_at?: string | null;
+  is_scanning: boolean;
+  ai_analysis?: FieldDictionaryAIAnalysisOut | null;
+}
+
+export interface FieldDictionarySummaryOut {
+  technology_slug: string;
+  total_unique_fields: number;
+  client_count_with_telemetry: number;
+  last_updated_at?: string | null;
+  is_scanning: boolean;
+}
+
+export interface FieldDictionaryScanResponse {
+  status: string;
+  message: string;
+  technology_slug: string;
+  queued: boolean;
+}
+
+export interface FieldDictionaryScheduleSettings {
+  enabled: boolean;
+  day_of_week: number; // 0=Segunda, 6=Domingo
+  hour: number;
+  minute: number;
+  timezone_offset_hours: number;
+}
+
+export interface CurationScheduleSettings {
+  enabled: boolean;
+  hour: number;
+  minute: number;
+  timezone_offset_hours: number;
+}
+
+export interface ScheduleSettingsOut {
+  field_dictionary: FieldDictionaryScheduleSettings;
+  curation: CurationScheduleSettings;
+  next_field_dictionary_run_at?: string | null;
+  next_curation_run_at?: string | null;
+}
+
+export interface ScheduleSettingsUpdateRequest {
+  field_dictionary?: FieldDictionaryScheduleSettings | null;
+  curation?: CurationScheduleSettings | null;
+}

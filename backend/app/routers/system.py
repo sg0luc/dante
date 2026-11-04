@@ -12,9 +12,13 @@ from ..schemas import (
     BaselinePrefixPreviewRequest,
     BaselinePrefixPreviewResponse,
     BaselinePrefixSettings,
+    CurationScheduleSettings,
+    FieldDictionaryScheduleSettings,
     HealthStatus,
     PortalConfig,
     ReadinessStatus,
+    ScheduleSettingsOut,
+    ScheduleSettingsUpdateRequest,
     SetBaselineFolderRequest,
     UpgradeStatusResponse,
     UpgradeTriggerRequest,
@@ -255,3 +259,69 @@ async def preview_baseline_prefix_endpoint(
         preview_title=formatted,
         evaluated_prefix=evaluated,
     )
+
+
+# =============================================================================
+# Configuração Personalizada de Agendamentos (Dicionário + Curadoria)
+# =============================================================================
+@router.get(
+    "/system/schedules",
+    response_model=ScheduleSettingsOut,
+    dependencies=[Depends(get_current_user)],
+)
+async def get_system_schedules(
+    sys_settings: SystemSettingsStore = Depends(get_system_settings_store),
+) -> ScheduleSettingsOut:
+    """Retorna as configurações e próximos disparos dos agendamentos automatizados."""
+    from ..field_dictionary import compute_next_weekly_run
+    from ..curation import compute_next_08h00_run
+
+    f_sched = sys_settings.get_field_dictionary_schedule()
+    c_sched = sys_settings.get_curation_schedule()
+
+    next_f = (
+        compute_next_weekly_run(
+            day_of_week=f_sched.day_of_week,
+            hour=f_sched.hour,
+            minute=f_sched.minute,
+            tz_offset=f_sched.timezone_offset_hours,
+        ).isoformat()
+        if f_sched.enabled
+        else None
+    )
+
+    # Computa próximo disparo da curadoria com os parâmetros customizados
+    next_c = (
+        compute_next_08h00_run(
+            schedule_settings=c_sched,
+        ).isoformat()
+        if c_sched.enabled
+        else None
+    )
+
+    return ScheduleSettingsOut(
+        field_dictionary=f_sched,
+        curation=c_sched,
+        next_field_dictionary_run_at=next_f,
+        next_curation_run_at=next_c,
+    )
+
+
+@router.put(
+    "/system/schedules",
+    response_model=ScheduleSettingsOut,
+    dependencies=[Depends(require_csrf_header)],
+)
+async def update_system_schedules(
+    payload: ScheduleSettingsUpdateRequest,
+    sys_settings: SystemSettingsStore = Depends(get_system_settings_store),
+    _user: Session = Depends(get_current_user),
+) -> ScheduleSettingsOut:
+    """Atualiza as configurações de agendamento da coleta semanal e da curadoria."""
+    if payload.field_dictionary is not None:
+        sys_settings.set_field_dictionary_schedule(payload.field_dictionary)
+    if payload.curation is not None:
+        sys_settings.set_curation_schedule(payload.curation)
+
+    return await get_system_schedules(sys_settings=sys_settings)
+

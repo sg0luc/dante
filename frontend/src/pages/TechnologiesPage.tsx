@@ -3,6 +3,9 @@ import { api } from "../api";
 import { Modal } from "../components/Modal";
 import { ConfirmModal } from "../components/ConfirmModal";
 import {
+  FieldDictionaryDetailOut,
+  FieldDictionarySummaryOut,
+  ScheduleSettingsOut,
   TechnologyClientCompliance,
   TechnologyLogCheckResult,
   TechnologyOverview,
@@ -92,6 +95,7 @@ export const TechnologiesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [perimeterFilter, setPerimeterFilter] = useState<string>("all");
 
@@ -121,12 +125,118 @@ export const TechnologiesPage: React.FC = () => {
   const [baselineError, setBaselineError] = useState<string | null>(null);
   const [baselineConfirmOpen, setBaselineConfirmOpen] = useState(false);
 
+  // Dicionário de Campos e Modal
+  const [fieldSummaries, setFieldSummaries] = useState<Record<string, FieldDictionarySummaryOut>>({});
+  const [selectedDictTech, setSelectedDictTech] = useState<TechnologyOverviewItem | null>(null);
+  const [dictDetail, setDictDetail] = useState<FieldDictionaryDetailOut | null>(null);
+  const [dictLoading, setDictLoading] = useState(false);
+  const [dictRescanning, setDictRescanning] = useState(false);
+  const [dictAiAnalyzing, setDictAiAnalyzing] = useState(false);
+  const [dictActiveTab, setDictActiveTab] = useState<"clients" | "ai">("clients");
+
+  // Agendamentos (Dicionário + Curadoria)
+  const [schedulesModalOpen, setSchedulesModalOpen] = useState(false);
+  const [schedulesData, setSchedulesData] = useState<ScheduleSettingsOut | null>(null);
+  const [schedulesSaving, setSchedulesSaving] = useState(false);
+  const [schedulesSuccess, setSchedulesSuccess] = useState<string | null>(null);
+
+  const loadFieldSummaries = useCallback(async () => {
+    try {
+      const summaries = await api.getFieldDictionarySummaries();
+      setFieldSummaries(summaries);
+    } catch {
+      // Ignora erro silencioso de resumo
+    }
+  }, []);
+
+  const openDictionaryModal = async (tech: TechnologyOverviewItem) => {
+    setSelectedDictTech(tech);
+    setDictLoading(true);
+    setDictActiveTab("clients");
+    try {
+      const data = await api.getFieldDictionary(tech.slug);
+      setDictDetail(data);
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : "Erro ao carregar o dicionário de campos.");
+    } finally {
+      setDictLoading(false);
+    }
+  };
+
+  const handleRescanDictionary = async () => {
+    if (!selectedDictTech) return;
+    setDictRescanning(true);
+    try {
+      await api.rescanFieldDictionary(selectedDictTech.slug);
+      setActionSuccess(`Reanálise de campos iniciada para ${selectedDictTech.name}.`);
+      // Recarrega os dados após breve intervalo
+      setTimeout(async () => {
+        try {
+          const updated = await api.getFieldDictionary(selectedDictTech.slug);
+          setDictDetail(updated);
+          loadFieldSummaries();
+        } finally {
+          setDictRescanning(false);
+        }
+      }, 3000);
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : "Erro ao disparar reanálise de campos.");
+      setDictRescanning(false);
+    }
+  };
+
+  const handleRunAiAnalysis = async () => {
+    if (!selectedDictTech) return;
+    setDictAiAnalyzing(true);
+    try {
+      const analysis = await api.analyzeFieldDictionaryAI(selectedDictTech.slug);
+      setDictDetail((prev) => (prev ? { ...prev, ai_analysis: analysis } : null));
+      setDictActiveTab("ai");
+      setActionSuccess("Análise de IA concluída com sucesso.");
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : "Erro ao executar análise de IA.");
+    } finally {
+      setDictAiAnalyzing(false);
+    }
+  };
+
+  const openSchedulesModal = async () => {
+    setSchedulesModalOpen(true);
+    setSchedulesSuccess(null);
+    try {
+      const data = await api.getSystemSchedules();
+      setSchedulesData(data);
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : "Erro ao carregar agendamentos.");
+    }
+  };
+
+  const handleSaveSchedules = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!schedulesData) return;
+    setSchedulesSaving(true);
+    try {
+      const updated = await api.updateSystemSchedules({
+        field_dictionary: schedulesData.field_dictionary,
+        curation: schedulesData.curation,
+      });
+      setSchedulesData(updated);
+      setSchedulesSuccess("Configurações de agendamento salvas com sucesso.");
+      setTimeout(() => setSchedulesModalOpen(false), 1200);
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : "Erro ao salvar agendamentos.");
+    } finally {
+      setSchedulesSaving(false);
+    }
+  };
+
   const loadOverview = useCallback(async () => {
     try {
       setError(null);
       const [data, tenantsData] = await Promise.all([
         api.getTechnologyOverview(),
         api.getTenants().catch(() => [] as TenantSummary[]),
+        loadFieldSummaries(),
       ]);
       setOverview(data);
       if (tenantsData && tenantsData.length > 0) {
@@ -410,6 +520,15 @@ export const TechnologiesPage: React.FC = () => {
         <div className="flex items-center gap-space-sm self-start lg:self-center shrink-0">
           <button
             className="h-8 px-space-md rounded bg-surface-container-high hover:bg-surface-bright text-on-surface flex items-center gap-1.5 font-headline-md text-body-sm transition-all shadow-sm active:scale-95 disabled:opacity-50"
+            onClick={openSchedulesModal}
+            type="button"
+            title="Configurar dia e horário da coleta automática de campos e curadoria"
+          >
+            <span className="material-symbols-outlined text-[16px] text-tertiary">schedule</span>
+            <span>Agendamentos</span>
+          </button>
+          <button
+            className="h-8 px-space-md rounded bg-surface-container-high hover:bg-surface-bright text-on-surface flex items-center gap-1.5 font-headline-md text-body-sm transition-all shadow-sm active:scale-95 disabled:opacity-50"
             onClick={loadOverview}
             disabled={loading}
             type="button"
@@ -432,6 +551,13 @@ export const TechnologiesPage: React.FC = () => {
         <div className="p-space-sm rounded-lg bg-tertiary/15 border border-tertiary/30 text-tertiary text-sm flex justify-between items-center">
           <span>{actionSuccess}</span>
           <button onClick={() => setActionSuccess(null)} className="text-xs text-on-surface underline">Fechar</button>
+        </div>
+      )}
+
+      {actionError && (
+        <div className="p-space-sm rounded-lg bg-error-container text-on-error-container text-sm flex justify-between items-center">
+          <span>{actionError}</span>
+          <button onClick={() => setActionError(null)} className="text-xs text-on-surface underline">Fechar</button>
         </div>
       )}
 
@@ -550,7 +676,8 @@ export const TechnologiesPage: React.FC = () => {
               <tr className="bg-surface-container-high text-outline font-label-uppercase text-label-uppercase uppercase tracking-wider">
                 <th className="py-2.5 px-space-md w-48 font-semibold">Tecnologia</th>
                 <th className="py-2.5 px-space-md w-44 font-semibold">Perímetro</th>
-                <th className="py-2.5 px-space-md w-44 font-semibold">Recorte SS_Groups</th>
+                <th className="py-2.5 px-space-md w-44 font-semibold">rule_groups</th>
+                <th className="py-2.5 px-space-md w-36 font-semibold text-center">Dicionário</th>
                 <th className="py-2.5 px-space-md w-56 font-semibold">Cobertura por Cliente</th>
                 <th className="py-2.5 px-space-md font-semibold">Clientes Atribuídos</th>
                 <th className="py-2.5 px-space-md text-right w-36 font-semibold">Regras em Clientes</th>
@@ -581,6 +708,29 @@ export const TechnologiesPage: React.FC = () => {
                       <span className="font-code-sm text-code-sm bg-surface-container-highest px-2 py-0.5 rounded text-secondary-fixed-dim">
                         {tech.rule_groups_regex}
                       </span>
+                    </td>
+                    <td className="py-3 px-space-md text-center">
+                      {(() => {
+                        const dictSum = fieldSummaries[tech.slug.toLowerCase()];
+                        const count = dictSum?.total_unique_fields ?? 0;
+                        const isScanning = Boolean(dictSum?.is_scanning);
+
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => openDictionaryModal(tech)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container hover:bg-surface-container-high border border-outline/20 hover:border-primary/40 text-on-surface hover:text-primary transition-all font-code-sm text-code-sm cursor-pointer shadow-sm active:scale-95 group"
+                            title="Clique para ver o dicionário de campos por cliente e análise de IA"
+                          >
+                            <span className={`material-symbols-outlined text-[15px] ${isScanning ? "animate-spin text-tertiary" : "text-primary group-hover:scale-110 transition-transform"}`}>
+                              {isScanning ? "sync" : "menu_book"}
+                            </span>
+                            <span className="font-semibold">
+                              {count > 0 ? `${count} campos` : "0 campos"}
+                            </span>
+                          </button>
+                        );
+                      })()}
                     </td>
                     <td className="py-3 px-space-md">
                       <div className="flex flex-col space-y-1">
@@ -1133,6 +1283,498 @@ export const TechnologiesPage: React.FC = () => {
           ) : null
         }
       />
+
+      {/* Modal Pop-up do Dicionário de Campos */}
+      <Modal
+        isOpen={Boolean(selectedDictTech)}
+        onClose={() => {
+          setSelectedDictTech(null);
+          setDictDetail(null);
+        }}
+        title={`Dicionário de Campos — ${selectedDictTech?.name ?? ""}`}
+        maxWidth="840px"
+      >
+        <div className="flex flex-col space-y-space-md text-on-surface">
+          {/* Header do Dicionário */}
+          <div className="p-3 rounded-lg bg-surface-container-high/40 border border-outline/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-headline-md font-bold text-on-surface">
+                  {selectedDictTech?.name}
+                </span>
+                <span className="font-code-sm text-outline font-mono">
+                  {selectedDictTech?.slug}
+                </span>
+              </div>
+              <p className="font-body-sm text-on-surface-variant mt-0.5">
+                Total de <strong className="text-primary">{dictDetail?.total_unique_fields ?? 0} campos únicos</strong> mapeados na telemetria de <strong>{dictDetail?.client_count ?? 0} cliente(s)</strong>.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleRescanDictionary}
+                disabled={dictRescanning || dictLoading}
+                className="h-8 px-3 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                title="Reanalisa e atualiza o schema de logs nos clientes"
+              >
+                <span className={`material-symbols-outlined text-[15px] ${dictRescanning ? "animate-spin text-tertiary" : "text-tertiary"}`}>
+                  sync
+                </span>
+                <span>{dictRescanning ? "Reanalisando..." : "Reanalisar Tecnologia"}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleRunAiAnalysis}
+                disabled={dictAiAnalyzing || dictLoading || !dictDetail || dictDetail.client_count === 0}
+                className="h-8 px-3 rounded bg-sky-950/70 border border-sky-500/40 hover:bg-sky-900/80 text-sky-300 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                title="Executar análise de discrepâncias e schemas via IA"
+              >
+                <span className={`material-symbols-outlined text-[15px] ${dictAiAnalyzing ? "animate-spin text-sky-400" : "text-sky-400"}`}>
+                  psychology
+                </span>
+                <span>{dictAiAnalyzing ? "Analisando..." : "Análise com IA"}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Abas do Pop-up */}
+          <div className="flex border-b border-outline-variant/30 gap-2">
+            <button
+              type="button"
+              onClick={() => setDictActiveTab("clients")}
+              className={`pb-2 px-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-1.5 ${
+                dictActiveTab === "clients"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-outline hover:text-on-surface"
+              }`}
+            >
+              <span className="material-symbols-outlined text-[16px]">group</span>
+              <span>Campos por Cliente ({dictDetail?.client_count ?? 0})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setDictActiveTab("ai")}
+              className={`pb-2 px-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-1.5 ${
+                dictActiveTab === "ai"
+                  ? "border-sky-400 text-sky-300"
+                  : "border-transparent text-outline hover:text-on-surface"
+              }`}
+            >
+              <span className="material-symbols-outlined text-[16px]">psychology</span>
+              <span>Parecer da IA &amp; Discrepâncias</span>
+              {dictDetail?.ai_analysis && (
+                <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
+              )}
+            </button>
+          </div>
+
+          {/* Conteúdo Aba 1: Clientes */}
+          {dictActiveTab === "clients" && (
+            <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
+              {dictLoading ? (
+                <div className="py-12 flex flex-col items-center justify-center text-outline gap-2">
+                  <span className="material-symbols-outlined text-[28px] animate-spin text-primary">sync</span>
+                  <span className="text-sm">Carregando dicionário de campos...</span>
+                </div>
+              ) : !dictDetail || dictDetail.clients.length === 0 ? (
+                <div className="py-8 text-center text-outline text-sm">
+                  Nenhum campo coletado para esta tecnologia ainda. Clique em "Reanalisar Tecnologia" para varrer o Loki de todos os clientes.
+                </div>
+              ) : (
+                dictDetail.clients.map((c) => (
+                  <div
+                    key={c.client_uid}
+                    className="p-3 rounded-lg bg-surface-container-low border border-outline/10 flex flex-col space-y-2 hover:bg-surface-container transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-on-surface">{c.client_name}</span>
+                        <span className="font-code-sm text-outline text-xs">({c.client_uid})</span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded bg-surface-container-highest text-primary font-code-sm text-xs font-bold">
+                        {c.total_fields} campos mapeados
+                      </span>
+                    </div>
+
+                    {c.fields.length > 0 ? (
+                      <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto pt-1">
+                        {c.fields.map((f) => (
+                          <span
+                            key={f}
+                            className="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-code-sm text-[11px] font-mono hover:text-primary transition-colors"
+                            title={c.sample_values[f]?.length ? `Exemplos: ${c.sample_values[f].join(", ")}` : f}
+                          >
+                            {f}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-outline italic">Nenhum evento desta tecnologia registrado no Loki deste cliente.</p>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {/* Conteúdo Aba 2: IA & Discrepâncias */}
+          {dictActiveTab === "ai" && (
+            <div className="space-y-4 max-h-[460px] overflow-y-auto pr-1">
+              {!dictDetail?.ai_analysis ? (
+                <div className="py-12 flex flex-col items-center justify-center text-outline gap-3 text-center">
+                  <span className="material-symbols-outlined text-[36px] text-sky-400">psychology</span>
+                  <div className="max-w-md">
+                    <p className="text-sm font-semibold text-on-surface mb-1">Nenhuma análise de IA gerada ainda</p>
+                    <p className="text-xs text-outline">
+                      A IA pode comparar os clientes e identificar campos encontrados no cliente X mas ausentes no cliente Y, avaliando versões de log, formato, idioma e riscos de compatibilidade.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRunAiAnalysis}
+                    disabled={dictAiAnalyzing || !dictDetail || dictDetail.client_count === 0}
+                    className="mt-2 px-4 py-1.5 rounded bg-primary-container hover:bg-primary text-on-primary text-xs font-semibold flex items-center gap-1.5"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">play_arrow</span>
+                    <span>Executar Análise de IA Agora</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {/* Banner Parecer Executivo */}
+                  <div className="p-3.5 rounded-lg bg-sky-950/40 border border-sky-500/30 text-sky-200 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 font-semibold text-sm">
+                        <span className="material-symbols-outlined text-[18px] text-sky-400">auto_awesome</span>
+                        <span>Parecer da IA ({dictDetail.ai_analysis.ai_model_used || "DeepSeek"})</span>
+                      </div>
+                      <span className="text-[11px] font-mono text-outline">
+                        {dictDetail.ai_analysis.analyzed_at ? new Date(dictDetail.ai_analysis.analyzed_at).toLocaleString("pt-BR") : ""}
+                      </span>
+                    </div>
+                    <p className="text-xs text-on-surface leading-relaxed">{dictDetail.ai_analysis.summary}</p>
+                  </div>
+
+                  {/* Grid de Diagnósticos */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                    <div className="p-2.5 rounded bg-surface-container-low border border-outline/10 space-y-1">
+                      <div className="flex items-center gap-1 text-xs font-semibold text-amber-300">
+                        <span className="material-symbols-outlined text-[15px]">layers</span>
+                        <span>Versão do Produto/Log</span>
+                      </div>
+                      <p className="text-xs text-outline-variant">{dictDetail.ai_analysis.version_analysis || "Versões homogêneas."}</p>
+                    </div>
+
+                    <div className="p-2.5 rounded bg-surface-container-low border border-outline/10 space-y-1">
+                      <div className="flex items-center gap-1 text-xs font-semibold text-secondary">
+                        <span className="material-symbols-outlined text-[15px]">schema</span>
+                        <span>Formato do Schema</span>
+                      </div>
+                      <p className="text-xs text-outline-variant">{dictDetail.ai_analysis.format_and_schema_analysis || "Formato de ingestão padronizado."}</p>
+                    </div>
+
+                    <div className="p-2.5 rounded bg-surface-container-low border border-outline/10 space-y-1">
+                      <div className="flex items-center gap-1 text-xs font-semibold text-tertiary">
+                        <span className="material-symbols-outlined text-[15px]">translate</span>
+                        <span>Idioma / Localização</span>
+                      </div>
+                      <p className="text-xs text-outline-variant">{dictDetail.ai_analysis.language_and_localization || "Canais sem divergência de locale."}</p>
+                    </div>
+                  </div>
+
+                  {/* Discrepâncias Entre Clientes */}
+                  {dictDetail.ai_analysis.discrepancies.length > 0 && (
+                    <div className="space-y-1.5 pt-2">
+                      <h4 className="text-xs font-semibold text-outline uppercase tracking-wider flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[14px] text-amber-400">warning</span>
+                        <span>Campos Divergentes Entre Clientes ({dictDetail.ai_analysis.discrepancies.length})</span>
+                      </h4>
+                      <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                        {dictDetail.ai_analysis.discrepancies.map((d, i) => (
+                          <div key={i} className="p-2 rounded bg-surface-container-high/60 text-xs flex flex-col space-y-1">
+                            <div className="flex items-center justify-between">
+                              <span className="font-mono font-bold text-on-surface">{d.field}</span>
+                              <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold uppercase ${
+                                d.impact === "high" ? "bg-error-container/40 text-error" : "bg-amber-950/40 text-amber-300"
+                              }`}>
+                                Impacto {d.impact}
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap gap-x-3 text-[11px]">
+                              <span className="text-tertiary">
+                                Presente em: {d.present_in_clients.join(", ") || "Nenhum"}
+                              </span>
+                              <span className="text-error">
+                                Ausente em: {d.missing_in_clients.join(", ") || "Nenhum"}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Recomendações */}
+                  {dictDetail.ai_analysis.recommendations.length > 0 && (
+                    <div className="p-3 rounded-lg bg-surface-container-low border border-outline/10 space-y-1.5">
+                      <div className="text-xs font-semibold text-primary flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[15px]">lightbulb</span>
+                        <span>Recomendações da IA para Curadoria</span>
+                      </div>
+                      <ul className="list-disc list-inside space-y-0.5 text-xs text-on-surface-variant">
+                        {dictDetail.ai_analysis.recommendations.map((r, i) => (
+                          <li key={i}>{r}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex justify-end pt-2 border-t border-outline-variant/20">
+            <button
+              type="button"
+              className="px-4 py-1.5 rounded bg-surface-container-high text-on-surface text-sm"
+              onClick={() => setSelectedDictTech(null)}
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal de Agendamentos Automatizados (Dicionário + Curadoria) */}
+      <Modal
+        isOpen={schedulesModalOpen}
+        onClose={() => setSchedulesModalOpen(false)}
+        title="Agendamentos Automatizados do D.A.N.T.E."
+        maxWidth="640px"
+      >
+        <form onSubmit={handleSaveSchedules} className="space-y-4 text-on-surface">
+          <p className="text-xs text-outline">
+            Configure os dias e horários para execução das rotinas autônomas de coleta semanal de campos e curadoria de regras.
+          </p>
+
+          {schedulesSuccess && (
+            <div className="p-2.5 rounded bg-tertiary-container/30 border border-tertiary/40 text-tertiary text-xs font-semibold flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[16px]">check_circle</span>
+              <span>{schedulesSuccess}</span>
+            </div>
+          )}
+
+          {schedulesData && (
+            <div className="space-y-4">
+              {/* Seção 1: Dicionário de Campos Semanal */}
+              <div className="p-3.5 rounded-lg bg-surface-container-low border border-outline/10 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 font-semibold text-sm">
+                    <span className="material-symbols-outlined text-primary text-[18px]">menu_book</span>
+                    <span>Coleta Semanal de Campos (Dicionário)</span>
+                  </div>
+                  <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={schedulesData.field_dictionary.enabled}
+                      onChange={(e) =>
+                        setSchedulesData({
+                          ...schedulesData,
+                          field_dictionary: {
+                            ...schedulesData.field_dictionary,
+                            enabled: e.target.checked,
+                          },
+                        })
+                      }
+                      className="rounded accent-primary"
+                    />
+                    <span>Ativo</span>
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <label className="block text-outline mb-1 font-semibold">Dia da Semana</label>
+                    <select
+                      className="w-full p-2 rounded bg-surface-container-high text-on-surface border border-outline/20"
+                      value={schedulesData.field_dictionary.day_of_week}
+                      onChange={(e) =>
+                        setSchedulesData({
+                          ...schedulesData,
+                          field_dictionary: {
+                            ...schedulesData.field_dictionary,
+                            day_of_week: parseInt(e.target.value, 10),
+                          },
+                        })
+                      }
+                    >
+                      <option value={0}>Segunda-feira</option>
+                      <option value={1}>Terça-feira</option>
+                      <option value={2}>Quarta-feira</option>
+                      <option value={3}>Quinta-feira</option>
+                      <option value={4}>Sexta-feira</option>
+                      <option value={5}>Sábado</option>
+                      <option value={6}>Domingo</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-outline mb-1 font-semibold">Horário (HH:MM)</label>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min={0}
+                        max={23}
+                        value={schedulesData.field_dictionary.hour}
+                        onChange={(e) =>
+                          setSchedulesData({
+                            ...schedulesData,
+                            field_dictionary: {
+                              ...schedulesData.field_dictionary,
+                              hour: parseInt(e.target.value, 10) || 0,
+                            },
+                          })
+                        }
+                        className="w-16 p-2 rounded bg-surface-container-high text-on-surface border border-outline/20 text-center font-mono"
+                      />
+                      <span>:</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={59}
+                        value={schedulesData.field_dictionary.minute}
+                        onChange={(e) =>
+                          setSchedulesData({
+                            ...schedulesData,
+                            field_dictionary: {
+                              ...schedulesData.field_dictionary,
+                              minute: parseInt(e.target.value, 10) || 0,
+                            },
+                          })
+                        }
+                        className="w-16 p-2 rounded bg-surface-container-high text-on-surface border border-outline/20 text-center font-mono"
+                      />
+                      <span className="text-outline text-[11px] ml-1">UTC-3</span>
+                    </div>
+                  </div>
+                </div>
+
+                {schedulesData.next_field_dictionary_run_at && (
+                  <p className="text-[11px] text-outline font-mono">
+                    Próxima coleta: {new Date(schedulesData.next_field_dictionary_run_at).toLocaleString("pt-BR")}
+                  </p>
+                )}
+              </div>
+
+              {/* Seção 2: Curadoria de Regras Diária */}
+              <div className="p-3.5 rounded-lg bg-surface-container-low border border-outline/10 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 font-semibold text-sm">
+                    <span className="material-symbols-outlined text-secondary text-[18px]">verified</span>
+                    <span>Curadoria de Regras (Diária)</span>
+                  </div>
+                  <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={schedulesData.curation.enabled}
+                      onChange={(e) =>
+                        setSchedulesData({
+                          ...schedulesData,
+                          curation: {
+                            ...schedulesData.curation,
+                            enabled: e.target.checked,
+                          },
+                        })
+                      }
+                      className="rounded accent-secondary"
+                    />
+                    <span>Ativo</span>
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <label className="block text-outline mb-1 font-semibold">Frequência</label>
+                    <input
+                      type="text"
+                      disabled
+                      value="Todos os dias"
+                      className="w-full p-2 rounded bg-surface-container-high/50 text-outline border border-outline/20 cursor-not-allowed"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-outline mb-1 font-semibold">Horário Diário (HH:MM)</label>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min={0}
+                        max={23}
+                        value={schedulesData.curation.hour}
+                        onChange={(e) =>
+                          setSchedulesData({
+                            ...schedulesData,
+                            curation: {
+                              ...schedulesData.curation,
+                              hour: parseInt(e.target.value, 10) || 0,
+                            },
+                          })
+                        }
+                        className="w-16 p-2 rounded bg-surface-container-high text-on-surface border border-outline/20 text-center font-mono"
+                      />
+                      <span>:</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={59}
+                        value={schedulesData.curation.minute}
+                        onChange={(e) =>
+                          setSchedulesData({
+                            ...schedulesData,
+                            curation: {
+                              ...schedulesData.curation,
+                              minute: parseInt(e.target.value, 10) || 0,
+                            },
+                          })
+                        }
+                        className="w-16 p-2 rounded bg-surface-container-high text-on-surface border border-outline/20 text-center font-mono"
+                      />
+                      <span className="text-outline text-[11px] ml-1">UTC-3</span>
+                    </div>
+                  </div>
+                </div>
+
+                {schedulesData.next_curation_run_at && (
+                  <p className="text-[11px] text-outline font-mono">
+                    Próxima curadoria: {new Date(schedulesData.next_curation_run_at).toLocaleString("pt-BR")}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-outline-variant/20">
+            <button
+              type="button"
+              className="px-4 py-1.5 rounded bg-surface-container-high text-on-surface text-sm"
+              onClick={() => setSchedulesModalOpen(false)}
+              disabled={schedulesSaving}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={schedulesSaving}
+              className="px-4 py-1.5 rounded bg-primary-container hover:bg-primary text-on-primary text-sm font-semibold disabled:opacity-50"
+            >
+              {schedulesSaving ? "Salvando..." : "Salvar Agendamentos"}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

@@ -34,6 +34,10 @@ from ..grafana_client import GrafanaClient, GrafanaError
 from ..loki_presence import check_technology_logs
 from ..schemas import (
     DetectionPerimeterOut,
+    FieldDictionaryAIAnalysisOut,
+    FieldDictionaryDetailOut,
+    FieldDictionaryScanResponse,
+    FieldDictionarySummaryOut,
     ImplementBaselineRequest,
     ImplementBaselineResponse,
     ImplementedRuleResult,
@@ -74,6 +78,15 @@ from ..technology_store import (
 from ..rule_prefix import format_rule_title
 from ..system_settings_store import SystemSettingsStore
 from ..tenant_technologies import TenantTechnologyStore, TenantTechnologyStoreError
+from ..field_dictionary import (
+    FieldDictionaryStore,
+    _build_detail_out_from_dict,
+    analyze_technology_discrepancies_with_ai,
+    get_field_dictionary_store,
+    scan_technology_fields_across_clients,
+)
+from ..ai import AIService
+from .ai import get_ai_service_dep
 from ..tenants import (
     RULE_GROUP_INTERVAL_SECONDS,
     bind_rule_datasource,
@@ -760,7 +773,20 @@ async def create_technology(
             )
 
     try:
-        return _to_out(store.create(payload))
+        created_tech = store.create(payload)
+        out = _to_out(created_tech)
+        # Dispara varredura do Dicionário de Campos em background em todos os clientes
+        dict_store = get_field_dictionary_store()
+        sys_settings = get_system_settings_store()
+        asyncio.create_task(
+            scan_technology_fields_across_clients(
+                technology=created_tech,
+                grafana=grafana,
+                store=dict_store,
+                sys_settings=sys_settings,
+            )
+        )
+        return out
     except TechnologyStoreError as exc:
         raise _handle_store_error(exc) from exc
 
@@ -806,3 +832,110 @@ async def delete_technology(
         message=f"Tecnologia '{removed.name}' removida do catálogo.",
         slug=removed.slug,
     )
+
+
+# =============================================================================
+# Endpoints do Dicionário de Campos
+# =============================================================================
+@router.get(
+    "/technologies/{slug}/fields",
+    response_model=FieldDictionaryDetailOut,
+    tags=["technologies", "field_dictionary"],
+)
+async def get_technology_field_dictionary(
+    slug: str = Path(pattern=SLUG_PATTERN),
+    store: TechnologyStore = Depends(get_technology_store),
+) -> FieldDictionaryDetailOut:
+    """Retorna os campos mapeados da tecnologia somando e detalhando por cliente."""
+    tech = store.get(slug)
+    dict_store = get_field_dictionary_store()
+    raw = dict_store.get_technology_data(slug)
+    if not raw:
+        return FieldDictionaryDetailOut(
+            technology_slug=tech.slug,
+            technology_name=tech.name,
+            rule_groups_regex=tech.effective_groups_regex,
+            total_unique_fields=0,
+            all_fields=[],
+            client_count=0,
+            clients=[],
+            last_updated_at=None,
+            is_scanning=False,
+            ai_analysis=None,
+        )
+    return _build_detail_out_from_dict(raw, tech)
+
+
+@router.post(
+    "/technologies/{slug}/fields/rescan",
+    response_model=FieldDictionaryScanResponse,
+    dependencies=[Depends(require_csrf_header)],
+    tags=["technologies", "field_dictionary"],
+)
+async def rescan_technology_fields(
+    slug: str = Path(pattern=SLUG_PATTERN),
+    store: TechnologyStore = Depends(get_technology_store),
+    grafana: GrafanaClient = Depends(get_grafana),
+    sys_settings: SystemSettingsStore = Depends(get_system_settings_store),
+    ai_service: AIService = Depends(get_ai_service_dep),
+) -> FieldDictionaryScanResponse:
+    """Dispara uma reanálise imediata dos campos da tecnologia em todos os clientes."""
+    tech = store.get(slug)
+    dict_store = get_field_dictionary_store()
+    asyncio.create_task(
+        scan_technology_fields_across_clients(
+            technology=tech,
+            grafana=grafana,
+            store=dict_store,
+            sys_settings=sys_settings,
+            ai_service=ai_service,
+        )
+    )
+    return FieldDictionaryScanResponse(
+        status="scanning",
+        message=f"Reanálise de campos iniciada em background para a tecnologia '{tech.name}'.",
+        technology_slug=tech.slug,
+        queued=True,
+    )
+
+
+@router.post(
+    "/technologies/{slug}/fields/ai-analysis",
+    response_model=FieldDictionaryAIAnalysisOut,
+    dependencies=[Depends(require_csrf_header)],
+    tags=["technologies", "field_dictionary"],
+)
+async def run_field_dictionary_ai_analysis(
+    slug: str = Path(pattern=SLUG_PATTERN),
+    store: TechnologyStore = Depends(get_technology_store),
+    ai_service: AIService = Depends(get_ai_service_dep),
+) -> FieldDictionaryAIAnalysisOut:
+    """Executa a análise da IA sobre discrepâncias de campos entre clientes na tecnologia."""
+    tech = store.get(slug)
+    dict_store = get_field_dictionary_store()
+    raw = dict_store.get_technology_data(slug)
+    if not raw or not raw.get("clients"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nenhum dado de cliente encontrado para esta tecnologia. Execute uma reanálise primeiro.",
+        )
+    client_data = list(raw["clients"].values())
+    analysis = await analyze_technology_discrepancies_with_ai(
+        technology=tech,
+        client_data=client_data,
+        ai_service=ai_service,
+    )
+    dict_store.save_ai_analysis(slug, analysis.model_dump())
+    return analysis
+
+
+@router.get(
+    "/technologies/fields/summaries",
+    response_model=dict[str, FieldDictionarySummaryOut],
+    tags=["technologies", "field_dictionary"],
+)
+async def get_all_technologies_field_summaries() -> dict[str, FieldDictionarySummaryOut]:
+    """Retorna os resumos do dicionário de todas as tecnologias (total de campos únicos e status)."""
+    dict_store = get_field_dictionary_store()
+    return dict_store.get_all_summaries()
+

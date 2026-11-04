@@ -769,6 +769,10 @@ export const CuradoriaPage: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-space-sm shrink-0">
+          <span className="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-code-sm text-[11px] flex items-center gap-1" title="Curadoria orientada pelo Dicionário de Campos das Tecnologias">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
+            Dicionário de Campos Integrado
+          </span>
           <span className="px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-code-sm text-[11px] flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
             Filtro Ativo: Apenas Candidatas Qualificadas (Compatibilidade ≥ 80%)
