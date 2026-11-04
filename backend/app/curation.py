@@ -2607,6 +2607,14 @@ async def evaluate_rule_across_clients(
                             else set()
                         )
                         known_client_fields.update(dict_fields)
+                        # Popula amostras reais registradas no dicionário para exibição no card
+                        if c_dict.get("sample_values") and isinstance(c_dict["sample_values"], dict):
+                            for s_k, s_vals in c_dict["sample_values"].items():
+                                if s_vals and isinstance(s_vals, list):
+                                    b_samp = global_field_samples.setdefault(s_k, [])
+                                    for sv in s_vals:
+                                        if sv not in b_samp and len(b_samp) < 4:
+                                            b_samp.append(sv)
             except Exception:
                 pass
 
@@ -2631,12 +2639,23 @@ async def evaluate_rule_across_clients(
                 else set()
             )
 
+            # Otimização prioritária do Dicionário de Campos:
+            # Se a tecnologia já foi escaneada no Dicionário de Campos para este cliente e os campos
+            # não existem no dicionário nem foram vistos nos logs, evita consultas lentas de 3d no Loki
+            has_client_dict_coverage = bool(
+                tech_dict_data
+                and "clients" in tech_dict_data
+                and c_uid in tech_dict_data["clients"]
+                and tech_dict_data["clients"][c_uid].get("fields") is not None
+            )
+
             # Verifica primeiro se algum campo faltante já foi confirmado anteriormente neste cliente/tecnologia
             unobserved_to_query: list[str] = []
             for mf in missing_in_client:
                 if mf in known_client_fields or mf.lower() in {k.lower() for k in known_client_fields}:
                     targeted_found_fields.add(mf)
-                else:
+                elif not has_client_dict_coverage:
+                    # Só dispara a query lenta no Loki se este cliente ainda NÃO tiver cobertura do dicionário de campos
                     unobserved_to_query.append(mf)
 
             # Para os que ainda não foram confirmados no cache, dispara a query direcionada ao Loki
