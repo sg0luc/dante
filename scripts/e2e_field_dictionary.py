@@ -162,24 +162,6 @@ def run_e2e() -> None:
     code, del_resp = call("DELETE", f"/api/technologies/{test_slug}", csrf=True)
     record(code == 200, "9. DELETE /api/technologies/{slug} (limpeza)", f"status={code}")
 
-    # 10. Restauração do agendamento padrão para outras suítes
-    default_sched = {
-        "field_dictionary": {
-            "enabled": True,
-            "day_of_week": 0,
-            "hour": 3,
-            "minute": 0,
-            "timezone_offset_hours": -3,
-        },
-        "curation": {
-            "enabled": True,
-            "hour": 8,
-            "minute": 0,
-            "timezone_offset_hours": -3,
-        },
-    }
-    call("PUT", "/api/system/schedules", default_sched, csrf=True)
-
     print("\n=== RESUMO DA SUÍTE ===")
     total = len(results)
     passed = sum(1 for ok, _ in results if ok)
