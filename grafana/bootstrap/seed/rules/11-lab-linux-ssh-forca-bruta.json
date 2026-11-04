@@ -1,0 +1,107 @@
+{
+  "uid": "ghp-det-lab-ssh-bruteforce",
+  "title": "Linux - SSH Forca Bruta Detectada",
+  "folderUID": "global",
+  "ruleGroup": "global-detections",
+  "condition": "C",
+  "noDataState": "OK",
+  "execErrState": "Error",
+  "for": "0s",
+  "isPaused": false,
+  "labels": {
+    "severity": "high",
+    "category": "authentication",
+    "mitre_tactic": "credential-access",
+    "mitre_technique": "T1110",
+    "scope": "baseline",
+    "client": "global",
+    "siem_tier": "global",
+    "technology": "linux",
+    "technology_name": "Linux",
+    "team": "soc"
+  },
+  "annotations": {
+    "summary": "Falhas consecutivas de autenticacao SSH (Wazuh 5710/5712)",
+    "description": "Cenario 'SSH forca bruta' do laboratorio de logs sinteticos. Conta tentativas de login SSH para usuario inexistente ou senha invalida. Mais de 5 falhas em 5 minutos no mesmo tipo de evento indica forca bruta. Tecnica MITRE T1110 (Brute Force).",
+    "logql_query": "sum(count_over_time({job=\"wazuh\", rule_groups=\"linux\"} | json | rule_id=\"5710\" [5m]))",
+    "runbook_url": "https://attack.mitre.org/techniques/T1110/"
+  },
+  "notification_settings": {
+    "receiver": "dev"
+  },
+  "data": [
+    {
+      "refId": "A",
+      "queryType": "range",
+      "relativeTimeRange": {
+        "from": 300,
+        "to": 0
+      },
+      "datasourceUid": "loki",
+      "model": {
+        "refId": "A",
+        "editorMode": "code",
+        "expr": "sum(count_over_time({job=\"wazuh\", rule_groups=\"linux\"} | json | rule_id=\"5710\" [5m]))",
+        "queryType": "range",
+        "legendFormat": "__auto",
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "intervalMs": 1000,
+        "maxDataPoints": 43200
+      }
+    },
+    {
+      "refId": "B",
+      "queryType": "",
+      "relativeTimeRange": {
+        "from": 0,
+        "to": 0
+      },
+      "datasourceUid": "__expr__",
+      "model": {
+        "refId": "B",
+        "type": "reduce",
+        "expression": "A",
+        "reducer": "last",
+        "datasource": {
+          "type": "__expr__",
+          "uid": "__expr__"
+        },
+        "intervalMs": 1000,
+        "maxDataPoints": 43200
+      }
+    },
+    {
+      "refId": "C",
+      "queryType": "",
+      "relativeTimeRange": {
+        "from": 0,
+        "to": 0
+      },
+      "datasourceUid": "__expr__",
+      "model": {
+        "refId": "C",
+        "type": "threshold",
+        "expression": "B",
+        "datasource": {
+          "type": "__expr__",
+          "uid": "__expr__"
+        },
+        "conditions": [
+          {
+            "evaluator": {
+              "type": "gt",
+              "params": [
+                5
+              ]
+            }
+          }
+        ],
+        "intervalMs": 1000,
+        "maxDataPoints": 43200
+      }
+    }
+  ]
+}

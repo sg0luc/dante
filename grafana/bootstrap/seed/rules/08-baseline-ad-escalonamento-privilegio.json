@@ -1,0 +1,107 @@
+{
+  "uid": "ghp-det-ad-privesc",
+  "title": "AD/Windows - Escalonamento de Privilegio em Controlador de Dominio",
+  "folderUID": "global",
+  "ruleGroup": "global-detections",
+  "condition": "C",
+  "noDataState": "OK",
+  "execErrState": "Error",
+  "for": "0s",
+  "isPaused": false,
+  "labels": {
+    "severity": "critical",
+    "category": "identity",
+    "mitre_tactic": "persistence",
+    "mitre_technique": "T1098",
+    "scope": "baseline",
+    "client": "global",
+    "siem_tier": "global",
+    "technology": "ad_windows",
+    "technology_name": "AD/Windows",
+    "team": "soc"
+  },
+  "annotations": {
+    "summary": "Membro adicionado a grupo privilegiado do Active Directory (4720/4728/4732/4756)",
+    "description": "Detecta criacao de conta ou insercao de membro em grupo privilegiado (Domain Admins, Enterprise Admins, Administrators) em controlador de dominio. Evento de altissima fidelidade: exige confirmacao do dono da mudanca em janela de mudanca. Tecnica MITRE T1098 (Account Manipulation).",
+    "logql_query": "sum(count_over_time({job=\"wazuh\", rule_groups=~\".*windows.*\"} | json | win_system_eventID=~\"4720|4728|4732|4756\" [5m]))",
+    "runbook_url": "https://attack.mitre.org/techniques/T1098/"
+  },
+  "notification_settings": {
+    "receiver": "dev"
+  },
+  "data": [
+    {
+      "refId": "A",
+      "queryType": "range",
+      "relativeTimeRange": {
+        "from": 300,
+        "to": 0
+      },
+      "datasourceUid": "loki",
+      "model": {
+        "refId": "A",
+        "editorMode": "code",
+        "expr": "sum(count_over_time({job=\"wazuh\", rule_groups=~\".*windows.*\"} | json | win_system_eventID=~\"4720|4728|4732|4756\" [5m]))",
+        "queryType": "range",
+        "legendFormat": "__auto",
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "intervalMs": 1000,
+        "maxDataPoints": 43200
+      }
+    },
+    {
+      "refId": "B",
+      "queryType": "",
+      "relativeTimeRange": {
+        "from": 0,
+        "to": 0
+      },
+      "datasourceUid": "__expr__",
+      "model": {
+        "refId": "B",
+        "type": "reduce",
+        "expression": "A",
+        "reducer": "last",
+        "datasource": {
+          "type": "__expr__",
+          "uid": "__expr__"
+        },
+        "intervalMs": 1000,
+        "maxDataPoints": 43200
+      }
+    },
+    {
+      "refId": "C",
+      "queryType": "",
+      "relativeTimeRange": {
+        "from": 0,
+        "to": 0
+      },
+      "datasourceUid": "__expr__",
+      "model": {
+        "refId": "C",
+        "type": "threshold",
+        "expression": "B",
+        "datasource": {
+          "type": "__expr__",
+          "uid": "__expr__"
+        },
+        "conditions": [
+          {
+            "evaluator": {
+              "type": "gt",
+              "params": [
+                0
+              ]
+            }
+          }
+        ],
+        "intervalMs": 1000,
+        "maxDataPoints": 43200
+      }
+    }
+  ]
+}

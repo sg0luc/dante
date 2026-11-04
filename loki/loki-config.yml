@@ -1,0 +1,78 @@
+# =============================================================================
+# Loki single-binary do D.A.N.T.E.
+# -----------------------------------------------------------------------------
+# Objetivo: dar à stack um Loki REAL (não TestData) para que:
+#   1. as regras LogQL do baseline possam ser avaliadas contra logs de verdade;
+#   2. a página "Logs Sintéticos" injete linhas JSON de teste e elas fiquem
+#      consultáveis no Grafana Explore.
+#
+# Decisões:
+#   * auth_enabled=false  -> uma única organização; o Loki NÃO fica exposto na
+#     rede externa por padrão (porta publicada só em 127.0.0.1, ver compose).
+#   * storage filesystem  -> sem dependência de S3/MinIO; volume nomeado
+#     `loki-data` persiste os chunks entre reinícios.
+#   * retenção 168h (7 dias) com compactor ligado: dados de teste não crescem
+#     indefinidamente no volume.
+#   * schema v13 + tsdb   -> formato atual recomendado a partir do Loki 3.x.
+#
+# Documentação: https://grafana.com/docs/loki/latest/configure/
+# =============================================================================
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  grpc_listen_port: 9096
+  # Evita ruído no `docker compose logs`; o portal usa a API HTTP para checar saúde.
+  log_level: warn
+
+common:
+  instance_addr: 127.0.0.1
+  path_prefix: /loki
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+
+schema_config:
+  configs:
+    - from: 2024-01-01
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+limits_config:
+  # Permite logs JSON com metadados estruturados (usado pelo push do portal).
+  allow_structured_metadata: true
+  volume_enabled: true
+  # Retenção de 7 dias: janela suficiente para laboratório de detecção.
+  retention_period: 168h
+  # Um único tenant (auth desabilitado) e ingestão em rajada vinda do laboratório.
+  ingestion_rate_mb: 8
+  ingestion_burst_size_mb: 16
+  max_streams_per_user: 5000
+  max_entries_limit_per_query: 5000
+  # O push do portal aceita spread de até 24h na mesma requisição.
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h
+
+compactor:
+  working_directory: /loki/compactor
+  delete_request_store: filesystem
+  retention_enabled: true
+  retention_delete_delay: 30m
+  retention_delete_worker_count: 150
+
+# CACHE: o cache de resultados do query_range fica DESLIGADO de propósito.
+# Em laboratório ele serve resultados velhos para janelas que terminam em "now"
+# (o cache é indexado pela janela arredondada), fazendo uma linha recém-injetada
+# "desaparecer" por alguns segundos — sintoma inaceitável numa página de teste.
+
+analytics:
+  reporting_enabled: false

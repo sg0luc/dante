@@ -1,0 +1,227 @@
+# =============================================================================
+# Grafana Hunter Portal - Orquestração Docker
+# -----------------------------------------------------------------------------
+# Modos de Implantação:
+#   1. Padrão (Grafana Embutido):
+#      Sobe grafana, bootstrap, backend e frontend.
+#      Comando: docker compose up -d
+#
+#   2. Conectado a um Grafana Existente:
+#      No .env, defina:
+#        COMPOSE_PROFILES=external
+#        GRAFANA_URL=https://grafana.minhaempresa.com.br (ou http://ip-ou-host:3000)
+#        GRAFANA_TOKEN=glsa_...
+#      Comando: docker compose up -d
+# =============================================================================
+name: dante
+
+x-hardening: &hardening
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  # ---------------------------------------------------------------------------
+  # Grafana OSS Embutido (Sobe por padrão; desativado se COMPOSE_PROFILES=external)
+  # ---------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:${GRAFANA_VERSION:-12.4.0}
+    container_name: dante-grafana
+    restart: unless-stopped
+    <<: *hardening
+    profiles:
+      - internal
+      - default
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-GrafanaAdmin@2026!Pass}
+      GF_SERVER_ROOT_URL: ${GRAFANA_PUBLIC_URL:-http://localhost:3000}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_SECURITY_COOKIE_SAMESITE: strict
+      GF_SECURITY_DISABLE_GRAVATAR: "true"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_UNIFIED_ALERTING_ENABLED: "true"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "${BIND_ADDRESS:-0.0.0.0}:${GRAFANA_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks:
+      - core-net
+
+  # ---------------------------------------------------------------------------
+  # Loki single-binary (logs reais da stack; provisionado como datasource)
+  # ---------------------------------------------------------------------------
+  loki:
+    image: grafana/loki:${LOKI_VERSION:-3.4.2}
+    container_name: dante-loki
+    restart: unless-stopped
+    <<: *hardening
+    cap_drop: [ALL]
+    command: -config.file=/etc/loki/config.yml
+    volumes:
+      - loki-data:/loki
+      - ./loki/loki-config.yml:/etc/loki/config.yml:ro
+    # Sem auth no Loki: a porta só é publicada no loopback do host, para
+    # inspeção/push manual. O portal e o Grafana acessam pela rede interna.
+    ports:
+      - "${LOKI_BIND_ADDRESS:-127.0.0.1}:${LOKI_PORT:-3100}:3100"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3100/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks:
+      - core-net
+
+  # ---------------------------------------------------------------------------
+  # Bootstrap (Apenas quando o Grafana embutido estiver ativo)
+  # ---------------------------------------------------------------------------
+  grafana-bootstrap:
+    build: ./grafana/bootstrap
+    container_name: dante-grafana-bootstrap
+    restart: "no"
+    <<: *hardening
+    profiles:
+      - internal
+      - default
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE]
+    environment:
+      GRAFANA_URL: http://grafana:3000
+      GRAFANA_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GRAFANA_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-GrafanaAdmin@2026!Pass}
+      PORTAL_SA_NAME: hunter-portal
+      TOKEN_FILE: /secrets/grafana_token
+      TOKEN_OWNER: "10001:10001"
+    volumes:
+      - portal-secrets:/secrets
+    depends_on:
+      grafana:
+        condition: service_healthy
+    networks:
+      - core-net
+
+  # ---------------------------------------------------------------------------
+  # Backend API - FastAPI (Conecta ao Grafana interno OU existente)
+  # ---------------------------------------------------------------------------
+  backend:
+    image: ghcr.io/sg0luc/dante-backend:${DANTE_VERSION:-latest}
+    build:
+      context: ./backend
+      args:
+        APP_VERSION: ${APP_VERSION:-}
+    container_name: dante-backend
+    restart: unless-stopped
+    <<: *hardening
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      # Modo de implantação: external desativa a obrigatoriedade da âncora/grupo canônico 5m
+      COMPOSE_PROFILES: ${COMPOSE_PROFILES:-default}
+      GRAFANA_URL: ${GRAFANA_URL:-http://grafana:3000}
+      GRAFANA_PUBLIC_URL: ${GRAFANA_PUBLIC_URL:-http://localhost:3000}
+      GRAFANA_TOKEN: ${GRAFANA_TOKEN:-}
+      GRAFANA_TOKEN_FILE: /run/portal-secrets/grafana_token
+      GRAFANA_VERIFY_TLS: ${GRAFANA_VERIFY_TLS:-true}
+      PORTAL_ADMIN_USER: ${PORTAL_ADMIN_USER:?Defina PORTAL_ADMIN_USER no arquivo .env}
+      PORTAL_ADMIN_PASSWORD: ${PORTAL_ADMIN_PASSWORD:?Defina PORTAL_ADMIN_PASSWORD no arquivo .env}
+      SESSION_TTL_MINUTES: ${SESSION_TTL_MINUTES:-480}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      APP_VERSION: ${APP_VERSION:-}
+      GITHUB_REPO: ${GITHUB_REPO:-sg0luc/dante}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      UPDATER_URL: ${UPDATER_URL:-http://updater:8080}
+      UPDATER_TOKEN: ${UPDATER_TOKEN:-dante-updater-secret-2026}
+      # Catálogo de tecnologias (ss_groups -> datasource) persistido em volume
+      TECHNOLOGIES_STORE_PATH: ${TECHNOLOGIES_STORE_PATH:-/data/technologies.json}
+      # Inventário declarado de tecnologias por cliente (escopo do baseline)
+      TENANT_TECHNOLOGIES_STORE_PATH: ${TENANT_TECHNOLOGIES_STORE_PATH:-/data/tenant-technologies.json}
+      # URL padrão do Loki usada ao criar o data source dedicado de cada tenant
+      LOKI_TENANT_DATASOURCE_URL: ${LOKI_TENANT_DATASOURCE_URL:-http://loki:3100}
+    volumes:
+      - portal-secrets:/run/portal-secrets:ro
+      - portal-data:/data
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import sys,urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3).status == 200 else 1)"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - core-net
+      - edge-net
+
+  # ---------------------------------------------------------------------------
+  # Frontend - React SPA & Nginx
+  # ---------------------------------------------------------------------------
+  frontend:
+    image: ghcr.io/sg0luc/dante-frontend:${DANTE_VERSION:-latest}
+    build:
+      context: ./frontend
+      args:
+        APP_VERSION: ${APP_VERSION:-}
+    container_name: dante-frontend
+    restart: unless-stopped
+    <<: *hardening
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    cap_drop: [ALL]
+    ports:
+      - "${BIND_ADDRESS:-0.0.0.0}:${PORTAL_PORT:-8080}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - edge-net
+
+  # ---------------------------------------------------------------------------
+  # Updater - Orquestrador seguro de atualização in-app via Watchtower HTTP API
+  # ---------------------------------------------------------------------------
+  updater:
+    image: containrrr/watchtower:latest
+    container_name: dante-updater
+    restart: unless-stopped
+    <<: *hardening
+    environment:
+      DOCKER_API_VERSION: "1.44"
+      DOCKER_CONFIG: "/config"
+      WATCHTOWER_HTTP_API_UPDATE: "true"
+      WATCHTOWER_HTTP_API_TOKEN: ${UPDATER_TOKEN:-dante-updater-secret-2026}
+      WATCHTOWER_HTTP_API_PERIODIC_POLLS: "false"
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_LABEL_ENABLE: "true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portal-data:/config:ro
+    networks:
+      - core-net
+
+volumes:
+  grafana-data:
+  loki-data:
+  portal-secrets:
+  portal-data:
+
+networks:
+  core-net:
+  edge-net:

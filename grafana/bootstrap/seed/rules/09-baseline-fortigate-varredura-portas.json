@@ -1,0 +1,107 @@
+{
+  "uid": "ghp-det-fortigate-portscan",
+  "title": "Fortigate - Varredura de Portas Detectada",
+  "folderUID": "global",
+  "ruleGroup": "global-detections",
+  "condition": "C",
+  "noDataState": "OK",
+  "execErrState": "Error",
+  "for": "0s",
+  "isPaused": false,
+  "labels": {
+    "severity": "high",
+    "category": "network",
+    "mitre_tactic": "discovery",
+    "mitre_technique": "T1046",
+    "scope": "baseline",
+    "client": "global",
+    "siem_tier": "global",
+    "technology": "fortigate",
+    "technology_name": "Fortigate",
+    "team": "soc"
+  },
+  "annotations": {
+    "summary": "Volume anormal de conexoes negadas pelo firewall a partir do mesmo IP de origem",
+    "description": "Agrega por IP de origem as negativas (action=deny/blocked) registradas pelo FortiGate. Acima de 20 negativas em 5 minutos o padrao e de varredura de portas / reconhecimento, nao de trafego legitimo bloqueado. Tecnica MITRE T1046 (Network Service Discovery).",
+    "logql_query": "sum by (data_srcip) (count_over_time({job=\"wazuh\", rule_groups=~\".*fortigate.*\"} | json | data_action=~\"deny|blocked\" [5m]))",
+    "runbook_url": "https://attack.mitre.org/techniques/T1046/"
+  },
+  "notification_settings": {
+    "receiver": "dev"
+  },
+  "data": [
+    {
+      "refId": "A",
+      "queryType": "range",
+      "relativeTimeRange": {
+        "from": 300,
+        "to": 0
+      },
+      "datasourceUid": "loki",
+      "model": {
+        "refId": "A",
+        "editorMode": "code",
+        "expr": "sum by (data_srcip) (count_over_time({job=\"wazuh\", rule_groups=~\".*fortigate.*\"} | json | data_action=~\"deny|blocked\" [5m]))",
+        "queryType": "range",
+        "legendFormat": "__auto",
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "intervalMs": 1000,
+        "maxDataPoints": 43200
+      }
+    },
+    {
+      "refId": "B",
+      "queryType": "",
+      "relativeTimeRange": {
+        "from": 0,
+        "to": 0
+      },
+      "datasourceUid": "__expr__",
+      "model": {
+        "refId": "B",
+        "type": "reduce",
+        "expression": "A",
+        "reducer": "last",
+        "datasource": {
+          "type": "__expr__",
+          "uid": "__expr__"
+        },
+        "intervalMs": 1000,
+        "maxDataPoints": 43200
+      }
+    },
+    {
+      "refId": "C",
+      "queryType": "",
+      "relativeTimeRange": {
+        "from": 0,
+        "to": 0
+      },
+      "datasourceUid": "__expr__",
+      "model": {
+        "refId": "C",
+        "type": "threshold",
+        "expression": "B",
+        "datasource": {
+          "type": "__expr__",
+          "uid": "__expr__"
+        },
+        "conditions": [
+          {
+            "evaluator": {
+              "type": "gt",
+              "params": [
+                20
+              ]
+            }
+          }
+        ],
+        "intervalMs": 1000,
+        "maxDataPoints": 43200
+      }
+    }
+  ]
+}

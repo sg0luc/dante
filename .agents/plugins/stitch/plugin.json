@@ -1,0 +1,5 @@
+{
+  "name": "stitch",
+  "description": "Google Stitch MCP Server - Integração para geração de telas, inspeção de design tokens e conversão de UI em código.",
+  "version": "1.0.0"
+}

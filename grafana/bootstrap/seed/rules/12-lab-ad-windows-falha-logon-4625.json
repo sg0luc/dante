@@ -1,0 +1,107 @@
+{
+  "uid": "ghp-det-lab-win-4625",
+  "title": "AD/Windows - Falha de Logon em Massa (4625)",
+  "folderUID": "global",
+  "ruleGroup": "global-detections",
+  "condition": "C",
+  "noDataState": "OK",
+  "execErrState": "Error",
+  "for": "0s",
+  "isPaused": false,
+  "labels": {
+    "severity": "high",
+    "category": "authentication",
+    "mitre_tactic": "credential-access",
+    "mitre_technique": "T1110",
+    "scope": "baseline",
+    "client": "global",
+    "siem_tier": "global",
+    "technology": "ad_windows",
+    "technology_name": "AD/Windows",
+    "team": "soc"
+  },
+  "annotations": {
+    "summary": "Volume anormal de falhas de logon (Event ID 4625) em controlador de dominio",
+    "description": "Cenario 'Windows 4625' do laboratorio de logs sinteticos. Conta falhas de logon em controlador de dominio; acima de 5 em 5 minutos indica forca bruta ou password spraying contra contas do dominio. Tecnica MITRE T1110 (Brute Force).",
+    "logql_query": "sum(count_over_time({job=\"wazuh\", rule_groups=~\".*windows.*\"} | json | win_system_eventID=\"4625\" [5m]))",
+    "runbook_url": "https://attack.mitre.org/techniques/T1110/"
+  },
+  "notification_settings": {
+    "receiver": "dev"
+  },
+  "data": [
+    {
+      "refId": "A",
+      "queryType": "range",
+      "relativeTimeRange": {
+        "from": 300,
+        "to": 0
+      },
+      "datasourceUid": "loki",
+      "model": {
+        "refId": "A",
+        "editorMode": "code",
+        "expr": "sum(count_over_time({job=\"wazuh\", rule_groups=~\".*windows.*\"} | json | win_system_eventID=\"4625\" [5m]))",
+        "queryType": "range",
+        "legendFormat": "__auto",
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "intervalMs": 1000,
+        "maxDataPoints": 43200
+      }
+    },
+    {
+      "refId": "B",
+      "queryType": "",
+      "relativeTimeRange": {
+        "from": 0,
+        "to": 0
+      },
+      "datasourceUid": "__expr__",
+      "model": {
+        "refId": "B",
+        "type": "reduce",
+        "expression": "A",
+        "reducer": "last",
+        "datasource": {
+          "type": "__expr__",
+          "uid": "__expr__"
+        },
+        "intervalMs": 1000,
+        "maxDataPoints": 43200
+      }
+    },
+    {
+      "refId": "C",
+      "queryType": "",
+      "relativeTimeRange": {
+        "from": 0,
+        "to": 0
+      },
+      "datasourceUid": "__expr__",
+      "model": {
+        "refId": "C",
+        "type": "threshold",
+        "expression": "B",
+        "datasource": {
+          "type": "__expr__",
+          "uid": "__expr__"
+        },
+        "conditions": [
+          {
+            "evaluator": {
+              "type": "gt",
+              "params": [
+                5
+              ]
+            }
+          }
+        ],
+        "intervalMs": 1000,
+        "maxDataPoints": 43200
+      }
+    }
+  ]
+}
