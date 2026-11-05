@@ -91,6 +91,11 @@ class FieldDictionaryStore:
             raw = json.loads(self._path.read_text(encoding="utf-8"))
             if isinstance(raw, dict):
                 self._data = raw
+                # Varredura nao sobrevive a restart do processo: limpa flags orfas
+                # para o botao "Reanalisar" nao ficar travado para sempre.
+                for item in self._data.values():
+                    if isinstance(item, dict) and item.get("is_scanning"):
+                        item["is_scanning"] = False
             else:
                 self._data = {}
         except Exception as exc:
@@ -190,7 +195,8 @@ class FieldDictionaryStore:
                 "all_fields": sorted(list(unique_all)),
                 "clients": clients_dict,
                 "last_updated_at": datetime.now(timezone.utc).isoformat(),
-                "is_scanning": False,
+                # A varredura so termina de fato em set_scanning(False) (apos a analise de IA).
+                "is_scanning": bool(existing.get("is_scanning", False)),
                 "last_error": last_error,
                 "ai_analysis": saved_ai,
             }
@@ -200,9 +206,32 @@ class FieldDictionaryStore:
         slug_clean = slug.strip().lower()
         with self._lock:
             self._load_locked()
-            if slug_clean in self._data:
+            if slug_clean not in self._data:
+                if not is_scanning:
+                    return
+                self._data[slug_clean] = {
+                    "technology_slug": slug_clean,
+                    "technology_name": slug_clean,
+                    "rule_groups_regex": "",
+                    "total_unique_fields": 0,
+                    "all_fields": [],
+                    "clients": {},
+                    "last_updated_at": None,
+                    "is_scanning": True,
+                    "last_error": None,
+                    "ai_analysis": None,
+                }
+            else:
                 self._data[slug_clean]["is_scanning"] = is_scanning
-                self._persist_locked()
+                if is_scanning:
+                    self._data[slug_clean]["last_error"] = None
+            self._persist_locked()
+
+    def is_scanning(self, slug: str) -> bool:
+        with self._lock:
+            self._load_locked()
+            item = self._data.get(slug.strip().lower())
+            return bool(isinstance(item, dict) and item.get("is_scanning"))
 
     def set_error(self, slug: str, error_msg: str) -> None:
         slug_clean = slug.strip().lower()

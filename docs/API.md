@@ -86,6 +86,12 @@ Lista todas as regras visíveis no Engine de Alertas, já normalizadas.
 `deploy_status` ∈ `active | homolog | paused | unassigned` (derivado do Contact
 Point — ver seção [Homologação](#homologação--estágio-de-deploy-por-contact-point)).
 
+### `GET /baseline/adherence` 🔒
+Mapa de Adesão: métricas globais, distribuição de clientes por faixa, severidades,
+conformidade por tecnologia, por cliente e por regra do baseline (com a situação da
+regra em cada cliente: `active | paused | not_implemented | not_applicable`).
+Tenants ocultos e clientes sem a tecnologia ficam fora do cálculo.
+
 ### `GET /rules/global-matrix` 🔒
 Matriz de cobertura das regras da pasta `global` por cliente.
 
@@ -472,6 +478,12 @@ query, os labels e a severidade não mudam). A resposta é o estado **relido do 
 `400` para o tenant `global` ou quando existem regras na pasta (mensagem informa a
 quantidade). Sucesso: remove a pasta **e o data source Telemetria** e devolve
 `{"message": "Tenant excluído com sucesso (data source Telemetria: removido).", "uid": "..."}`.
+
+### `PUT /tenants/{uid}/hidden` (CSRF) 🔒
+Marca (`{"hidden": true}`) ou desmarca um tenant como **Oculto**. Tenant oculto fica
+fora do Mapa de Adesão, do controle de tecnologias por cliente, das varreduras e de
+todas as métricas (regras, alertas, histórico, homologação, curadoria). Nenhum dado
+no Grafana é alterado. `GET /tenants` continua listando o tenant, com `hidden: true`.
 
 ### `POST /tenants/{uid}/toggle-pause` (CSRF) 🔒
 Pausa/reativa todas as regras do tenant.

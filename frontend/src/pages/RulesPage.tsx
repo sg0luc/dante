@@ -313,7 +313,7 @@ export const RulesPage: React.FC = () => {
     description: "",
   });
 
-  // Linting + execução de Query LogQL (hook compartilhado com a tela Controle de Baseline)
+  // Linting + execução de Query LogQL (hook compartilhado com a tela Mapa de Adesão)
   const logqlAssist = useLogQLAssist(createRuleLogQL);
   const { lintResult, linting, queryResult: queryExecutionResult, executing: executingQuery, timeoutNotification: queryTimeoutNotification } = logqlAssist;
 
@@ -338,7 +338,7 @@ export const RulesPage: React.FC = () => {
       setRules(enrichedRules);
       setFoldersList(f);
       setTechnologies(t);
-      setTenantsList(tenants);
+      setTenantsList(tenants.filter((tn) => !tn.hidden));
       setAlertsList(al);
     } catch (err: unknown) {
       if (err instanceof Error) {

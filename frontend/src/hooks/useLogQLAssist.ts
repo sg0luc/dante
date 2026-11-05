@@ -40,7 +40,7 @@ function toMessage(err: unknown, fallback: string): string {
  *
  * Usado tanto pelo modal de criação de regra (página "Regras") quanto pelo
  * modal de implementação de uma regra baseline em um cliente
- * (página "Controle de Baseline"), para que os dois fluxos tenham exatamente
+ * (página "Mapa de Adesão"), para que os dois fluxos tenham exatamente
  * o mesmo poder de validação antes de persistir a regra.
  *
  * Qualquer alteração em `query` invalida o linting anterior (cache local),

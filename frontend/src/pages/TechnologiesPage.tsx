@@ -161,6 +161,8 @@ export const TechnologiesPage: React.FC = () => {
   }, []);
 
   const openDictionaryModal = async (tech: TechnologyOverviewItem) => {
+    dictPollTokenRef.current += 1; // cancela polling de outra tecnologia
+    setDictRescanning(false);
     setSelectedDictTech(tech);
     setDictLoading(true);
     setDictActiveTab("clients");
@@ -171,6 +173,9 @@ export const TechnologiesPage: React.FC = () => {
       if (data.last_error) {
         setDictModalError(`Último erro registrado na coleta: ${data.last_error}`);
       }
+      if (data.is_scanning) {
+        void pollDictionaryUntilDone(tech.slug);
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Erro ao carregar o dicionário de campos.";
       setDictModalError(msg);
@@ -180,6 +185,56 @@ export const TechnologiesPage: React.FC = () => {
     }
   };
 
+  const closeDictionaryModal = () => {
+    dictPollTokenRef.current += 1;
+    setDictRescanning(false);
+    setSelectedDictTech(null);
+  };
+
+  // Acompanha a varredura ate o backend informar is_scanning=false (varredura concluida).
+  const dictPollTokenRef = useRef(0);
+
+  const pollDictionaryUntilDone = useCallback(
+    async (slug: string) => {
+      const token = ++dictPollTokenRef.current;
+      const startedAt = Date.now();
+      const MAX_WAIT_MS = 30 * 60 * 1000;
+      setDictRescanning(true);
+      try {
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          if (!isMountedRef.current || dictPollTokenRef.current !== token) return;
+          try {
+            const updated = await api.getFieldDictionary(slug);
+            if (!isMountedRef.current || dictPollTokenRef.current !== token) return;
+            setDictDetail(updated);
+            if (!updated.is_scanning) {
+              if (updated.last_error) {
+                setDictModalError(`Erro durante a varredura: ${updated.last_error}`);
+              } else {
+                setActionSuccess("Reanálise de campos concluída.");
+              }
+              loadFieldSummaries();
+              return;
+            }
+          } catch {
+            // falha transitoria de rede: continua tentando ate o limite
+          }
+          if (Date.now() - startedAt > MAX_WAIT_MS) {
+            setDictModalError("A varredura excedeu o tempo máximo de espera. Reabra o modal para consultar o status.");
+            return;
+          }
+        }
+      } finally {
+        if (isMountedRef.current && dictPollTokenRef.current === token) {
+          setDictRescanning(false);
+        }
+      }
+    },
+    [loadFieldSummaries]
+  );
+
   const handleRescanDictionary = async () => {
     if (!selectedDictTech) return;
     setDictRescanning(true);
@@ -187,22 +242,7 @@ export const TechnologiesPage: React.FC = () => {
     try {
       await api.rescanFieldDictionary(selectedDictTech.slug);
       setActionSuccess(`Reanálise de campos iniciada para ${selectedDictTech.name}.`);
-      // Recarrega os dados após breve intervalo
-      setTimeout(async () => {
-        try {
-          const updated = await api.getFieldDictionary(selectedDictTech.slug);
-          setDictDetail(updated);
-          if (updated.last_error) {
-            setDictModalError(`Erro durante a varredura: ${updated.last_error}`);
-          }
-          loadFieldSummaries();
-        } catch (err: unknown) {
-          const msg = err instanceof Error ? err.message : "Falha ao consultar atualização do dicionário.";
-          setDictModalError(msg);
-        } finally {
-          setDictRescanning(false);
-        }
-      }, 3000);
+      void pollDictionaryUntilDone(selectedDictTech.slug);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Erro ao disparar reanálise de campos.";
       setDictModalError(msg);
@@ -269,7 +309,8 @@ export const TechnologiesPage: React.FC = () => {
       ]);
       setOverview(data);
       if (tenantsData && tenantsData.length > 0) {
-        setTenants(tenantsData);
+        // Tenants Ocultos nao entram no controle de tecnologias por cliente.
+        setTenants(tenantsData.filter((t) => !t.hidden));
       }
     } catch (err: unknown) {
       setError(
@@ -1348,7 +1389,7 @@ export const TechnologiesPage: React.FC = () => {
       <Modal
         isOpen={Boolean(selectedDictTech)}
         onClose={() => {
-          setSelectedDictTech(null);
+          closeDictionaryModal();
           setDictDetail(null);
           setDictModalError(null);
         }}
@@ -1392,7 +1433,7 @@ export const TechnologiesPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleRescanDictionary}
-                disabled={dictRescanning || dictLoading}
+                disabled={dictRescanning || dictLoading || !!dictDetail?.is_scanning}
                 className="h-8 px-3 rounded bg-surface-container-high hover:bg-surface-bright text-on-surface text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 disabled:opacity-50"
                 title="Reanalisa e atualiza o schema de logs nos clientes"
               >
@@ -1617,7 +1658,7 @@ export const TechnologiesPage: React.FC = () => {
             <button
               type="button"
               className="px-4 py-1.5 rounded bg-surface-container-high text-on-surface text-sm"
-              onClick={() => setSelectedDictTech(null)}
+              onClick={() => closeDictionaryModal()}
             >
               Fechar
             </button>

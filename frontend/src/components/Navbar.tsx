@@ -62,10 +62,10 @@ export const Navbar: React.FC = () => {
           </li>
           <li>
             <Link
-              to="/baseline"
-              className={`nav-link ${location.pathname.startsWith("/baseline") || location.pathname.startsWith("/global-rules") ? "active" : ""}`}
+              to="/adesao"
+              className={`nav-link ${location.pathname.startsWith("/adesao") || location.pathname.startsWith("/global-rules") ? "active" : ""}`}
             >
-              Controle de Baseline
+              Mapa de Adesão
             </Link>
           </li>
           <li>

@@ -322,6 +322,20 @@ class TenantSummary(BaseModel):
     sandbox_datasource_present: bool = False
     sandbox_datasource_name: str | None = None
     sandbox_datasource_uid: str | None = None
+    # Tenant Oculto: fora de conformidade, tecnologias por cliente e demais metricas.
+    hidden: bool = False
+
+
+class SetTenantHiddenRequest(BaseModel):
+    """Marca ou desmarca um tenant como Oculto."""
+
+    hidden: bool
+
+
+class SetTenantHiddenResponse(BaseModel):
+    uid: str
+    hidden: bool
+    message: str
 
 
 class TenantTechnologyScanRequest(BaseModel):
@@ -1811,3 +1825,116 @@ class ScheduleSettingsUpdateRequest(BaseModel):
     field_dictionary: FieldDictionaryScheduleSettings | None = None
     curation: CurationScheduleSettings | None = None
 
+
+
+# --- Mapa de Adesão ao Baseline ----------------------------------------------
+AdherenceCellStatus = Literal["active", "paused", "not_implemented", "not_applicable"]
+
+
+class AdherenceClientCell(BaseModel):
+    """Situação de uma regra do baseline em um cliente."""
+
+    client_uid: str
+    client_name: str
+    applicable: bool = True
+    status: AdherenceCellStatus = "not_implemented"
+    rule_uid: str | None = None
+    rule_title: str | None = None
+
+
+class AdherenceRule(BaseModel):
+    """Regra do baseline com suas métricas de adesão."""
+
+    uid: str
+    title: str
+    base_title: str
+    technology_slug: str | None = None
+    technology_name: str | None = None
+    severity: str = ""
+    mitre_tactic: str = ""
+    rule_group: str = ""
+    is_paused: bool = False
+    logql: str = ""
+    counted: bool = True
+    """``False`` quando a regra não resolve para uma tecnologia do catálogo (fora das métricas globais)."""
+    applicable_clients: int = 0
+    implemented_clients: int = 0
+    active_clients: int = 0
+    paused_clients: int = 0
+    missing_clients: int = 0
+    compliance_pct: float = 0.0
+    clients: list[AdherenceClientCell] = Field(default_factory=list)
+
+
+class AdherenceTechnology(BaseModel):
+    """Métricas de adesão de uma tecnologia."""
+
+    slug: str
+    name: str
+    icon: str = "category"
+    baseline_rules_count: int = 0
+    applicable_clients_count: int = 0
+    fully_compliant_clients: int = 0
+    implemented_slots: int = 0
+    total_slots: int = 0
+    missing_slots: int = 0
+    compliance_pct: float = 0.0
+    rule_uids: list[str] = Field(default_factory=list)
+
+
+class AdherenceClientTechnology(BaseModel):
+    slug: str
+    name: str
+    applicable: bool = False
+    implemented: int = 0
+    total: int = 0
+    missing: int = 0
+    compliance_pct: float = 0.0
+    status: TechnologyComplianceStatus = "none"
+
+
+class AdherenceClient(BaseModel):
+    """Conformidade de um cliente ao baseline."""
+
+    client_uid: str
+    client_name: str
+    applicable_slots: int = 0
+    implemented_slots: int = 0
+    missing_slots: int = 0
+    compliance_pct: float = 0.0
+    status: TechnologyComplianceStatus = "none"
+    technologies: list[AdherenceClientTechnology] = Field(default_factory=list)
+
+
+class AdherenceMetrics(BaseModel):
+    clients_total: int = 0
+    hidden_clients_total: int = 0
+    technologies_total: int = 0
+    baseline_rules_total: int = 0
+    baseline_rules_unmapped: int = 0
+    applicable_slots: int = 0
+    implemented_slots: int = 0
+    missing_slots: int = 0
+    not_applicable_slots: int = 0
+    compliance_pct: float = 0.0
+    clients_complete: int = 0
+    clients_partial: int = 0
+    clients_none: int = 0
+    clients_not_applicable: int = 0
+
+
+class AdherenceBucket(BaseModel):
+    label: str
+    count: int = 0
+
+
+class BaselineAdherenceResponse(BaseModel):
+    generated_at: str
+    baseline_folder_uid: str
+    baseline_folder_title: str
+    metrics: AdherenceMetrics
+    distribution: list[AdherenceBucket] = Field(default_factory=list)
+    severity_breakdown: list[AdherenceBucket] = Field(default_factory=list)
+    technologies: list[AdherenceTechnology] = Field(default_factory=list)
+    clients: list[AdherenceClient] = Field(default_factory=list)
+    rules: list[AdherenceRule] = Field(default_factory=list)

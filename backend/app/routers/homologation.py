@@ -51,6 +51,7 @@ from ..schemas import (
 from ..security import get_current_user, require_csrf_header
 from ..system_settings_store import SystemSettingsStore
 from ..technology_store import get_system_settings_store
+from ..technology_insights import exclude_hidden_rules
 from ..tenants import detection_rules, is_internal_rule
 from .deps import get_app_settings, get_grafana
 
@@ -192,7 +193,7 @@ async def get_homologation_overview(
     # Regras-âncora dos grupos de avaliação são internas do portal: nunca entram
     # nas contagens (mesmo filtro usado por /api/rules, matriz e tenants).
     rules = build_rule_summaries(
-        detection_rules(raw_rules), groups, folder_titles(folders), stage_mapping=stage_mapping
+        exclude_hidden_rules(detection_rules(raw_rules)), groups, folder_titles(folders), stage_mapping=stage_mapping
     )
 
     metrics = HomologationMetrics(

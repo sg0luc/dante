@@ -8,9 +8,9 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import { api } from "./api";
 import { AlertsPage } from "./pages/AlertsPage";
 import { ApiKeysPage } from "./pages/ApiKeysPage";
-import { BaselinePrefixPage } from "./pages/BaselinePrefixPage";
+import { BaselinePage } from "./pages/BaselinePage";
 import { CuradoriaPage } from "./pages/CuradoriaPage";
-import { GlobalMatrixPage } from "./pages/GlobalMatrixPage";
+import { AdherenceMapPage } from "./pages/AdherenceMapPage";
 import { HomologationPage } from "./pages/HomologationPage";
 import { LoginPage } from "./pages/LoginPage";
 import { LokiLabPage } from "./pages/LokiLabPage";
@@ -195,21 +195,23 @@ export const App: React.FC = () => {
             }
           />
           <Route
+            path="/adesao"
+            element={
+              <ProtectedLayout>
+                <AdherenceMapPage />
+              </ProtectedLayout>
+            }
+          />
+          <Route path="/global-rules" element={<Navigate to="/adesao" replace />} />
+          <Route
             path="/baseline"
             element={
               <ProtectedLayout>
-                <GlobalMatrixPage />
+                <BaselinePage />
               </ProtectedLayout>
             }
           />
-          <Route
-            path="/global-rules"
-            element={
-              <ProtectedLayout>
-                <GlobalMatrixPage />
-              </ProtectedLayout>
-            }
-          />
+          <Route path="/baseline-prefix" element={<Navigate to="/baseline" replace />} />
           <Route
             path="/tenants"
             element={
@@ -223,14 +225,6 @@ export const App: React.FC = () => {
             element={
               <ProtectedLayout>
                 <ApiKeysPage />
-              </ProtectedLayout>
-            }
-          />
-          <Route
-            path="/baseline-prefix"
-            element={
-              <ProtectedLayout>
-                <BaselinePrefixPage />
               </ProtectedLayout>
             }
           />
