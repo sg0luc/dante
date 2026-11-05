@@ -33,6 +33,7 @@ from ..contact_points import apply_contact_point, resolve_stage_receiver
 from ..grafana_client import GrafanaClient, GrafanaError
 from ..loki_presence import check_technology_logs
 from ..schemas import (
+    BaselineAdherenceResponse,
     DetectionPerimeterOut,
     FieldDictionaryAIAnalysisOut,
     FieldDictionaryDetailOut,
@@ -61,12 +62,14 @@ from ..technologies import (
     TechnologyValidationError,
     validate_technology_payload,
 )
+from ..baseline_adherence import build_adherence
 from ..technology_insights import (
     baseline_rules_for_technology,
     build_overview,
     client_footprint,
     client_has_technology,
     find_implemented_rule,
+    exclude_hidden_rules,
     is_client_folder,
     strip_scope_prefix,
 )
@@ -127,6 +130,7 @@ def _handle_store_error(exc: TechnologyStoreError, slug: str | None = None) -> H
 
 async def _load_rules_and_folders(
     grafana: GrafanaClient,
+    include_hidden: bool = False,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Carrega regras e pastas do Grafana em paralelo."""
     rules, folders = await asyncio.gather(
@@ -134,7 +138,11 @@ async def _load_rules_and_folders(
     )
     # Artefatos internos (âncora do grupo de avaliação) não são detecções e não
     # podem contar como cobertura de tecnologia/baseline.
-    return detection_rules(rules), list(folders or [])
+    # Tenants Ocultos nao entram em conformidade/tecnologias por cliente.
+    visible = detection_rules(rules)
+    if not include_hidden:
+        visible = exclude_hidden_rules(visible)
+    return visible, list(folders or [])
 
 
 # --- Catálogo de Perímetros de Detecção -------------------------------------
@@ -210,6 +218,41 @@ async def technologies_overview(
         folders,
         declared,
         baseline_folder_uid=sys_settings.get_baseline_folder_uid(),
+    )
+
+
+@router.get(
+    "/baseline/adherence",
+    response_model=BaselineAdherenceResponse,
+    tags=["technologies", "baseline"],
+)
+async def baseline_adherence(
+    store: TechnologyStore = Depends(get_technology_store),
+    footprint_store: TenantTechnologyStore = Depends(get_tenant_technology_store),
+    grafana: GrafanaClient = Depends(get_grafana),
+    sys_settings: SystemSettingsStore = Depends(get_system_settings_store),
+) -> BaselineAdherenceResponse:
+    """Mapa de Adesao: conformidade dos clientes (nao Ocultos) ao baseline, por cliente, tecnologia e regra."""
+    try:
+        technologies = store.list_all()
+    except TechnologyStoreError as exc:
+        raise _handle_store_error(exc) from exc
+    try:
+        declared = footprint_store.declared_map()
+    except TenantTechnologyStoreError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    try:
+        rules, folders = await _load_rules_and_folders(grafana)
+    except GrafanaError as exc:
+        raise HTTPException(status_code=502, detail=exc.message) from exc
+
+    return build_adherence(
+        technologies,
+        rules,
+        folders,
+        declared,
+        baseline_folder_uid=sys_settings.get_baseline_folder_uid(),
+        hidden_uids=sys_settings.get_hidden_tenant_uids(),
     )
 
 
@@ -506,7 +549,7 @@ async def implement_technology_baseline(
         )
 
     try:
-        rules, folders = await _load_rules_and_folders(grafana)
+        rules, folders = await _load_rules_and_folders(grafana, include_hidden=True)
     except GrafanaError as exc:
         raise HTTPException(status_code=502, detail=exc.message) from exc
 
@@ -520,7 +563,7 @@ async def implement_technology_baseline(
                 "Cadastre o tenant antes de implementar o baseline."
             ),
         )
-    if not is_client_folder(target_folder, baseline_folder_uid=baseline_uid):
+    if not is_client_folder(target_folder, baseline_folder_uid=baseline_uid, include_hidden=True):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="A pasta informada não representa um cliente.",
@@ -883,6 +926,15 @@ async def rescan_technology_fields(
     """Dispara uma reanálise imediata dos campos da tecnologia em todos os clientes."""
     tech = store.get(slug)
     dict_store = get_field_dictionary_store()
+    if dict_store.is_scanning(tech.slug):
+        return FieldDictionaryScanResponse(
+            status="scanning",
+            message=f"Ja existe uma varredura em andamento para a tecnologia '{tech.name}'.",
+            technology_slug=tech.slug,
+            queued=False,
+        )
+    # Marca antes de responder: o front passa a enxergar is_scanning=true imediatamente.
+    dict_store.set_scanning(tech.slug, True)
     asyncio.create_task(
         scan_technology_fields_across_clients(
             technology=tech,

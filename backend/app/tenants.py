@@ -180,7 +180,11 @@ def get_client_datasource_uids(
     """Identifica os UIDs de datasources de PRODUÇÃO pertencentes a pastas de clientes (tenants)."""
     from .technology_insights import is_client_folder
 
-    client_folders = [f for f in folders if is_client_folder(f, baseline_folder_uid=baseline_uid)]
+    client_folders = [
+        f
+        for f in folders
+        if is_client_folder(f, baseline_folder_uid=baseline_uid, include_hidden=True)
+    ]
     client_uids: set[str] = set()
     for folder in client_folders:
         title = str(folder.get("title") or "")
@@ -202,7 +206,11 @@ def get_client_sandbox_datasource_uids(
     """Identifica os UIDs de datasources de SANDBOX pertencentes a pastas de clientes (tenants)."""
     from .technology_insights import is_client_folder
 
-    client_folders = [f for f in folders if is_client_folder(f, baseline_folder_uid=baseline_uid)]
+    client_folders = [
+        f
+        for f in folders
+        if is_client_folder(f, baseline_folder_uid=baseline_uid, include_hidden=True)
+    ]
     sandbox_uids: set[str] = set()
     for folder in client_folders:
         title = str(folder.get("title") or "")

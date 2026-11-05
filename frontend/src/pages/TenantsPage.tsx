@@ -53,6 +53,13 @@ export const TenantsPage: React.FC = () => {
     pause: boolean;
   } | null>(null);
 
+  // Modal Confirmação de Ocultar/Reexibir Tenant
+  const [tenantToHide, setTenantToHide] = useState<{
+    tenant: TenantSummary;
+    hide: boolean;
+  } | null>(null);
+  const [hideLoading, setHideLoading] = useState(false);
+
   // Pop-up de baseline e tecnologias do tenant
   const [techModalTenant, setTechModalTenant] = useState<TenantSummary | null>(null);
   const [techData, setTechData] = useState<TenantTechnologiesResult | null>(null);
@@ -76,12 +83,14 @@ export const TenantsPage: React.FC = () => {
   }, []);
 
   const metrics = useMemo(() => {
-    const totalTenants = tenants.length;
-    const totalRules = tenants.reduce((acc, t) => acc + t.rules_count, 0);
-    const activeTenants = tenants.filter((t) => t.active_rules_count > 0).length;
-    const emptyTenants = tenants.filter((t) => t.rules_count === 0).length;
-    const withDatasource = tenants.filter((t) => t.loki_datasource_present).length;
-    const withGroup = tenants.filter((t) => t.evaluation_group_present).length;
+    // Tenants Ocultos ficam fora de todas as métricas.
+    const visible = tenants.filter((t) => !t.hidden);
+    const totalTenants = visible.length;
+    const totalRules = visible.reduce((acc, t) => acc + t.rules_count, 0);
+    const activeTenants = visible.filter((t) => t.active_rules_count > 0).length;
+    const emptyTenants = visible.filter((t) => t.rules_count === 0).length;
+    const withDatasource = visible.filter((t) => t.loki_datasource_present).length;
+    const withGroup = visible.filter((t) => t.evaluation_group_present).length;
 
     return {
       totalTenants,
@@ -92,7 +101,8 @@ export const TenantsPage: React.FC = () => {
       withoutDatasource: totalTenants - withDatasource,
       withGroup,
       withoutGroup: totalTenants - withGroup,
-      tenantsWithoutGroup: tenants.filter((t) => !t.evaluation_group_present),
+      tenantsWithoutGroup: visible.filter((t) => !t.evaluation_group_present),
+      hiddenTenants: tenants.length - visible.length,
     };
   }, [tenants]);
 
@@ -242,6 +252,24 @@ export const TenantsPage: React.FC = () => {
     setConfirmPauseModalOpen(true);
   };
 
+  const handleConfirmHideTenant = async () => {
+    if (!tenantToHide) return;
+    setHideLoading(true);
+    setError(null);
+    try {
+      const res = await api.setTenantHidden(tenantToHide.tenant.uid, tenantToHide.hide);
+      setActionSuccess(res.message);
+      setTenantToHide(null);
+      await loadTenants();
+      setTimeout(() => setActionSuccess(null), 4000);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao alterar a visibilidade do tenant.");
+      setTenantToHide(null);
+    } finally {
+      setHideLoading(false);
+    }
+  };
+
   const handleToggleTenantPause = async (tenant: TenantSummary, pause: boolean) => {
     setActionLoadingUid(tenant.uid);
     setActionSuccess(null);
@@ -363,7 +391,7 @@ export const TenantsPage: React.FC = () => {
               <span className="material-symbols-outlined text-[12px]">trending_flat</span> 100%
             </span>
           </div>
-          <span className="font-body-sm text-body-sm text-outline">Clientes SIEM cadastrados</span>
+          <span className="font-body-sm text-body-sm text-outline">Clientes SIEM cadastrados{metrics.hiddenTenants > 0 ? ` · ${metrics.hiddenTenants} oculto(s) fora das métricas` : ""}</span>
         </div>
 
         {/* Card 2 */}
@@ -488,10 +516,18 @@ export const TenantsPage: React.FC = () => {
                   const isPaused = t.rules_count > 0 && t.active_rules_count === 0;
 
                   return (
-                    <tr key={t.uid} className="hover:bg-surface-container transition-colors group">
+                    <tr key={t.uid} className={`hover:bg-surface-container transition-colors group ${t.hidden ? "opacity-60" : ""}`}>
                       <td className="py-3 px-space-md align-top">
                         <div className="flex flex-col gap-1.5">
-                          <span className="font-headline-md text-headline-md text-on-surface font-semibold tracking-tight">{t.title}</span>
+                          <span className="font-headline-md text-headline-md text-on-surface font-semibold tracking-tight">
+                            {t.title}
+                            {t.hidden && (
+                              <span className="ml-2 inline-flex items-center gap-1 align-middle px-2 py-0.5 rounded bg-surface-container-highest text-outline font-code-sm text-xs border border-outline-variant/40">
+                                <span className="material-symbols-outlined text-[13px]">visibility_off</span>
+                                Oculto
+                              </span>
+                            )}
+                          </span>
                           <div className="flex flex-wrap items-center gap-1.5">
                             <span className="inline-flex items-center gap-1 bg-surface-container-highest px-2 py-0.5 rounded text-outline font-code-sm text-code-sm">
                               {t.evaluation_group || "5m"} [{t.rules_count} regras]
@@ -612,6 +648,15 @@ export const TenantsPage: React.FC = () => {
                               {isPaused ? "Reativar" : "Pausar"}
                             </button>
                           )}
+                          <button
+                            onClick={() => setTenantToHide({ tenant: t, hide: !t.hidden })}
+                            disabled={isActionLoading}
+                            className="px-2.5 py-1 rounded bg-surface-container hover:bg-surface-bright text-on-surface font-body-sm text-body-sm transition-colors disabled:opacity-50"
+                            type="button"
+                            title={t.hidden ? "Voltar a considerar este tenant nas métricas" : "Remover este tenant de conformidade e métricas"}
+                          >
+                            {t.hidden ? "Reexibir" : "Ocultar"}
+                          </button>
                           <button
                             onClick={() => handleRequestDelete(t)}
                             className="px-2.5 py-1 rounded bg-surface-container hover:bg-error-container hover:text-on-error-container text-on-surface font-body-sm text-body-sm transition-colors"
@@ -837,6 +882,33 @@ export const TenantsPage: React.FC = () => {
               </div>
             </div>
           ) : null
+        }
+      />
+
+      {/* ConfirmModal Ocultar / Reexibir Tenant */}
+      <ConfirmModal
+        isOpen={tenantToHide !== null}
+        onClose={() => setTenantToHide(null)}
+        onConfirm={handleConfirmHideTenant}
+        title={tenantToHide?.hide ? "Ocultar Tenant" : "Reexibir Tenant"}
+        confirmLabel={tenantToHide?.hide ? "Ocultar Tenant" : "Reexibir Tenant"}
+        variant={tenantToHide?.hide ? "warning" : "primary"}
+        isLoading={hideLoading}
+        message={
+          tenantToHide ? (
+            <div className="space-y-2">
+              <p>
+                {tenantToHide.hide
+                  ? `Deseja ocultar o tenant "${tenantToHide.tenant.title}" (${tenantToHide.tenant.uid})?`
+                  : `Deseja voltar a considerar o tenant "${tenantToHide.tenant.title}"?`}
+              </p>
+              <p className="text-xs opacity-80">
+                {tenantToHide.hide
+                  ? `Enquanto oculto, ele NÃO contabiliza no Mapa de Adesão ao baseline, não aparece no controle de tecnologias por cliente nem em nenhuma outra métrica do D.A.N.T.E. (${tenantToHide.tenant.rules_count} regra(s) deixam de ser contadas). Nenhum dado no Grafana é alterado e a ação é reversível.`
+                  : "Ele voltará a contar na conformidade ao baseline, no controle de tecnologias por cliente e nas demais métricas."}
+              </p>
+            </div>
+          ) : undefined
         }
       />
 

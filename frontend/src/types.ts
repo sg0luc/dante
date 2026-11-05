@@ -629,6 +629,14 @@ export interface TenantSummary {
   technologies_count: number;
   /** Timestamp ISO do último escaneamento de tecnologias (null = nunca escaneado). */
   technologies_scanned_at: string | null;
+  /** Tenant Oculto: fora de conformidade, tecnologias por cliente e demais métricas. */
+  hidden?: boolean;
+}
+
+export interface SetTenantHiddenResult {
+  uid: string;
+  hidden: boolean;
+  message: string;
 }
 
 export interface TenantTechnologyScanItem {
@@ -1379,4 +1387,108 @@ export interface ScheduleSettingsOut {
 export interface ScheduleSettingsUpdateRequest {
   field_dictionary?: FieldDictionaryScheduleSettings | null;
   curation?: CurationScheduleSettings | null;
+}
+
+// --- Mapa de Adesão ao Baseline ---------------------------------------------
+export type AdherenceCellStatus = "active" | "paused" | "not_implemented" | "not_applicable";
+export type AdherenceStatus = "complete" | "partial" | "none" | "not_applicable";
+
+export interface AdherenceClientCell {
+  client_uid: string;
+  client_name: string;
+  applicable: boolean;
+  status: AdherenceCellStatus;
+  rule_uid: string | null;
+  rule_title: string | null;
+}
+
+export interface AdherenceRule {
+  uid: string;
+  title: string;
+  base_title: string;
+  technology_slug: string | null;
+  technology_name: string | null;
+  severity: string;
+  mitre_tactic: string;
+  rule_group: string;
+  is_paused: boolean;
+  logql: string;
+  counted: boolean;
+  applicable_clients: number;
+  implemented_clients: number;
+  active_clients: number;
+  paused_clients: number;
+  missing_clients: number;
+  compliance_pct: number;
+  clients: AdherenceClientCell[];
+}
+
+export interface AdherenceTechnology {
+  slug: string;
+  name: string;
+  icon: string;
+  baseline_rules_count: number;
+  applicable_clients_count: number;
+  fully_compliant_clients: number;
+  implemented_slots: number;
+  total_slots: number;
+  missing_slots: number;
+  compliance_pct: number;
+  rule_uids: string[];
+}
+
+export interface AdherenceClientTechnology {
+  slug: string;
+  name: string;
+  applicable: boolean;
+  implemented: number;
+  total: number;
+  missing: number;
+  compliance_pct: number;
+  status: AdherenceStatus;
+}
+
+export interface AdherenceClient {
+  client_uid: string;
+  client_name: string;
+  applicable_slots: number;
+  implemented_slots: number;
+  missing_slots: number;
+  compliance_pct: number;
+  status: AdherenceStatus;
+  technologies: AdherenceClientTechnology[];
+}
+
+export interface AdherenceMetrics {
+  clients_total: number;
+  hidden_clients_total: number;
+  technologies_total: number;
+  baseline_rules_total: number;
+  baseline_rules_unmapped: number;
+  applicable_slots: number;
+  implemented_slots: number;
+  missing_slots: number;
+  not_applicable_slots: number;
+  compliance_pct: number;
+  clients_complete: number;
+  clients_partial: number;
+  clients_none: number;
+  clients_not_applicable: number;
+}
+
+export interface AdherenceBucket {
+  label: string;
+  count: number;
+}
+
+export interface BaselineAdherence {
+  generated_at: string;
+  baseline_folder_uid: string;
+  baseline_folder_title: string;
+  metrics: AdherenceMetrics;
+  distribution: AdherenceBucket[];
+  severity_breakdown: AdherenceBucket[];
+  technologies: AdherenceTechnology[];
+  clients: AdherenceClient[];
+  rules: AdherenceRule[];
 }

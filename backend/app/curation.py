@@ -84,6 +84,7 @@ from .technologies import (
 from .technology_insights import (
     client_has_technology,
     find_implemented_rule,
+    exclude_hidden_rules,
     is_client_folder,
     strip_scope_prefix,
 )
@@ -4109,7 +4110,7 @@ async def _run_curation_cycle_unlocked(
             _safe_list_datasources(),
         )
 
-        all_rules = detection_rules(raw_rules_grafana)
+        all_rules = exclude_hidden_rules(detection_rules(raw_rules_grafana))
         client_folders = sorted(
             [f for f in raw_folders if is_client_folder(f, baseline_folder_uid=baseline_uid)],
             key=lambda f: str(f.get("title") or "").lower(),
@@ -4923,7 +4924,7 @@ async def implement_curated_rule(
         grafana.list_datasources(),
         grafana.list_contact_points(),
     )
-    all_rules = detection_rules(raw_rules)
+    all_rules = exclude_hidden_rules(detection_rules(raw_rules))
     baseline_folder_uid = sys_settings.get_baseline_folder_uid()
     baseline_ds = resolve_baseline_loki_datasource(raw_datasources)
     loki_ds_uid = str(baseline_ds.get("uid") or "loki")

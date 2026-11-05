@@ -2,6 +2,8 @@ import {
   AlertHistoryResponse,
   AlertInstance,
   AppVersionInfo,
+  BaselineAdherence,
+  SetTenantHiddenResult,
   BaselinePrefixPreviewRequest,
   BaselinePrefixPreviewResponse,
   BaselinePrefixSettings,
@@ -441,6 +443,13 @@ export const api = {
   getTenants: (): Promise<TenantSummary[]> =>
     request<TenantSummary[]>("/api/tenants"),
 
+  /** Marca/desmarca o tenant como Oculto (fora de conformidade e métricas). */
+  setTenantHidden: (uid: string, hidden: boolean): Promise<SetTenantHiddenResult> =>
+    request<SetTenantHiddenResult>(`/api/tenants/${encodeURIComponent(uid)}/hidden`, {
+      method: "PUT",
+      body: JSON.stringify({ hidden }),
+    }),
+
   createTenant: (payload: CreateTenantPayload): Promise<TenantSummary> =>
     request<TenantSummary>("/api/tenants", {
       method: "POST",
@@ -553,6 +562,10 @@ export const api = {
         stream_labels,
       }),
     }),
+
+  // Mapa de Adesão ao Baseline (conformidade por cliente, tecnologia e regra)
+  getBaselineAdherence: (): Promise<BaselineAdherence> =>
+    request<BaselineAdherence>("/api/baseline/adherence"),
 
   // Matriz de Regras Globais por Cliente
   getGlobalMatrix: (): Promise<GlobalRuleMatrixItem[]> =>

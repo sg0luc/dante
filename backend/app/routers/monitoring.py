@@ -72,6 +72,8 @@ from ..schemas import (
     TenantDatasourceResponse,
     TenantEvaluationGroupResponse,
     RepairEvaluationGroupRequest,
+    SetTenantHiddenRequest,
+    SetTenantHiddenResponse,
     TenantSummary,
     TenantTechnologiesResponse,
     TenantTechnologyBaselineState,
@@ -102,7 +104,9 @@ from ..technologies import (
 from ..technology_insights import (
     baseline_rules_for_technology,
     client_has_technology,
+    exclude_hidden_rules,
     find_implemented_rule,
+    hidden_tenant_uids,
     is_client_folder,
 )
 from ..synthetic_alerts import SyntheticAlertsStore
@@ -200,7 +204,7 @@ async def list_rules(
 
     stage_mapping = sys_settings.get_stage_contact_points()
     return build_rule_summaries(
-        detection_rules(rules),
+        exclude_hidden_rules(detection_rules(rules)),
         groups,
         folder_titles(folders),
         stage_mapping=stage_mapping,
@@ -242,7 +246,7 @@ async def get_paused_rules_matches(
         grafana.list_folders(),
         grafana.list_datasources(),
     )
-    real_rules = detection_rules(raw_rules)
+    real_rules = exclude_hidden_rules(detection_rules(raw_rules))
     folder_map = {str(f.get("uid") or ""): str(f.get("title") or "") for f in raw_folders}
     baseline_uid = sys_settings.get_baseline_folder_uid()
 
@@ -350,10 +354,12 @@ async def get_global_rules_matrix(
     )
 
     # Identificar todas as pastas de clientes (excluindo a pasta de baseline e 'global')
+    hidden_uids = hidden_tenant_uids()
     client_folders = [
         f
         for f in raw_folders
-        if str(f.get("uid", "")).lower() != baseline_uid.lower()
+        if str(f.get("uid", "")) not in hidden_uids
+        and str(f.get("uid", "")).lower() != baseline_uid.lower()
         and str(f.get("uid", "")).lower() != "global"
         and str(f.get("title", "")).lower() != baseline_uid.lower()
         and str(f.get("title", "")).lower() != "global"
@@ -1051,6 +1057,27 @@ def _extract_annotation_labels(raw: dict[str, Any]) -> dict[str, str]:
     return labels
 
 
+async def _hidden_folder_titles(grafana: GrafanaClient) -> set[str]:
+    """Titulos (lowercase) das pastas de tenants Ocultos: alertas usam ``grafana_folder``=titulo."""
+    hidden = hidden_tenant_uids()
+    if not hidden:
+        return set()
+    try:
+        folders = await grafana.list_folders()
+    except GrafanaError:
+        return set()
+    return {
+        str(f.get("title") or "").strip().lower()
+        for f in folders
+        if str(f.get("uid") or "") in hidden
+    }
+
+
+def _labels_in_hidden_folder(labels: dict[str, Any] | None, hidden_titles: set[str]) -> bool:
+    folder = str((labels or {}).get("grafana_folder") or "").strip().lower()
+    return bool(folder) and folder in hidden_titles
+
+
 @router.get("/alerts/history", response_model=AlertHistoryResponse, tags=["alerts"])
 async def get_alerts_history(
     hours: float = Query(default=168.0, ge=0.5, le=720.0),
@@ -1174,6 +1201,13 @@ async def get_alerts_history(
             ),
         )
 
+    hidden_titles = await _hidden_folder_titles(grafana)
+    if hidden_titles:
+        events_by_id = {
+            k: e
+            for k, e in events_by_id.items()
+            if not _labels_in_hidden_folder(e.labels, hidden_titles)
+        }
     events_list = sorted(events_by_id.values(), key=lambda e: e.timestamp, reverse=True)
     firing_cnt = sum(1 for e in events_list if e.state == "firing")
     silenced_cnt = sum(1 for e in events_list if e.state == "silenced")
@@ -1194,6 +1228,7 @@ async def list_alerts(
 ) -> list[AlertInstance]:
     """Instâncias de alerta atuais (reais do Alertmanager + fictícias/sintéticas)."""
     raw_alerts = await grafana.list_alerts()
+    hidden_titles = await _hidden_folder_titles(grafana)
     alerts = build_alerts(raw_alerts)
     synthetic = synthetic_store.list_alerts()
     if synthetic:
@@ -1204,6 +1239,8 @@ async def list_alerts(
                 seen.add(syn.fingerprint)
         alerts.sort(key=lambda a: a.starts_at or "", reverse=True)
         alerts.sort(key=lambda a: 0 if a.state == "active" else 1)
+    if hidden_titles:
+        alerts = [a for a in alerts if not _labels_in_hidden_folder(a.labels, hidden_titles)]
     return alerts
 
 
@@ -1394,9 +1431,11 @@ async def delete_silence(
 async def list_folders(grafana: GrafanaClient = Depends(get_grafana)) -> list[FolderItem]:
     """Lista todas as pastas do Grafana (representando os clientes integrados)."""
     raw_folders = await grafana.list_folders()
+    hidden = hidden_tenant_uids()
     return [
         FolderItem(id=f.get("id"), uid=str(f.get("uid", "")), title=str(f.get("title", "")))
         for f in raw_folders
+        if str(f.get("uid", "")) not in hidden
     ]
 
 
@@ -1621,6 +1660,7 @@ def _tenant_summary(
         sandbox_datasource_present=sandbox_datasource is not None,
         sandbox_datasource_name=str((sandbox_datasource or {}).get("name") or "") or None,
         sandbox_datasource_uid=str((sandbox_datasource or {}).get("uid") or "") or None,
+        hidden=str(folder.get("uid") or "") in hidden_tenant_uids(),
     )
 
 
@@ -2229,6 +2269,38 @@ async def delete_tenant(
     }
 
 
+@router.put(
+    "/tenants/{uid}/hidden",
+    response_model=SetTenantHiddenResponse,
+    dependencies=[Depends(require_csrf_header)],
+    tags=["tenants"],
+)
+async def set_tenant_hidden(
+    payload: SetTenantHiddenRequest,
+    uid: str = Path(pattern=UID_PATTERN),
+    grafana: GrafanaClient = Depends(get_grafana),
+    sys_settings: SystemSettingsStore = Depends(get_system_settings_store),
+) -> SetTenantHiddenResponse:
+    """Marca/desmarca o tenant como Oculto.
+
+    Tenant Oculto fica fora do mapa de adesao ao baseline, do controle de tecnologias
+    por cliente, das varreduras e de todas as metricas do portal. Nenhum dado do
+    Grafana e alterado: a marcacao e reversivel.
+    """
+    folder = await _require_client_folder(grafana, uid)
+    sys_settings.set_tenant_hidden(uid, payload.hidden)
+    title = str(folder.get("title") or uid)
+    return SetTenantHiddenResponse(
+        uid=uid,
+        hidden=payload.hidden,
+        message=(
+            f"Tenant '{title}' marcado como Oculto."
+            if payload.hidden
+            else f"Tenant '{title}' voltou a ficar visivel."
+        ),
+    )
+
+
 @router.post(
     "/tenants/{uid}/toggle-pause",
     response_model=BatchToggleRulesPauseResponse,
@@ -2336,7 +2408,7 @@ async def _require_client_folder(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Tenant nÃ£o encontrado: a pasta '{uid}' nÃ£o existe no Grafana.",
         )
-    if not is_client_folder(folder):
+    if not is_client_folder(folder, include_hidden=True):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="A pasta informada nÃ£o representa um cliente.",
@@ -2742,7 +2814,18 @@ async def duplicate_rule(
 
     # REGRA DE NEGÃ“CIO: toda replicaÃ§Ã£o nasce com o Contact Point 'dev'
     # (HomologaÃ§Ã£o), jamais herdando 'prod' da regra de origem.
-    apply_contact_point(rule_copy)
+    # Contact Point do estagio 'stg' resolvido dinamicamente (mapeamento configurado
+    # em Homologacao), nunca o 'dev' estatico.
+    try:
+        available_cps = await grafana.list_contact_points()
+    except GrafanaError:
+        available_cps = []
+    stg_contact_point = resolve_stage_receiver(
+        "stg",
+        stage_mapping=sys_settings.get_stage_contact_points(),
+        available_contact_points=available_cps,
+    )
+    apply_contact_point(rule_copy, contact_point=stg_contact_point)
 
     await grafana.create_alert_rule(rule_copy)
     await grafana.set_rule_group_interval(
@@ -2757,7 +2840,7 @@ async def duplicate_rule(
         "title": payload.new_title,
         "folder_uid": target_folder_uid,
         "client": payload.client_name,
-        "contact_point": DEFAULT_CONTACT_POINT,
+        "contact_point": stg_contact_point,
         "datasource_uid": str(client_ds.get("uid") or ""),
         "datasource_name": str(client_ds.get("name") or ""),
     }

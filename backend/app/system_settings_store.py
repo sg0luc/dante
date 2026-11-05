@@ -49,6 +49,10 @@ class SystemSettingsData(BaseModel):
         default=DEFAULT_BASELINE_FOLDER_UID,
         description="UID da pasta do Grafana que representa o catálogo Baseline Global.",
     )
+    hidden_tenant_uids: list[str] = Field(
+        default_factory=list,
+        description="UIDs de pastas (tenants) marcadas como Ocultas: fora de metricas e conformidade.",
+    )
     ai_settings: AISettingsData = Field(
         default_factory=AISettingsData,
         description="Configurações e credenciais de Inteligência Artificial para Curadoria.",
@@ -136,7 +140,15 @@ class SystemSettingsStore:
                 else:
                     c_sched_data = CurationScheduleSettings()
 
+                hidden_raw = raw.get("hidden_tenant_uids")
+                hidden_uids = (
+                    sorted({str(u).strip() for u in hidden_raw if isinstance(u, str) and u.strip()})
+                    if isinstance(hidden_raw, list)
+                    else []
+                )
+
                 self._data = SystemSettingsData(
+                    hidden_tenant_uids=hidden_uids,
                     stage_contact_points=cleaned_cps,
                     baseline_folder_uid=folder_uid,
                     ai_settings=ai_data,
@@ -198,6 +210,27 @@ class SystemSettingsStore:
             self._data.stage_contact_points = updated
             self._persist_locked()
             return dict(self._data.stage_contact_points)
+
+    def get_hidden_tenant_uids(self) -> set[str]:
+        with self._lock:
+            self._load_locked()
+            return set(self._data.hidden_tenant_uids)
+
+    def set_tenant_hidden(self, uid: str, hidden: bool) -> bool:
+        """Marca/desmarca um tenant como Oculto. Devolve o estado final."""
+        clean = (uid or "").strip()
+        if not clean:
+            return False
+        with self._lock:
+            self._load_locked()
+            current = set(self._data.hidden_tenant_uids)
+            if hidden:
+                current.add(clean)
+            else:
+                current.discard(clean)
+            self._data.hidden_tenant_uids = sorted(current)
+            self._persist_locked()
+            return clean in current
 
     def get_baseline_folder_uid(self) -> str:
         with self._lock:

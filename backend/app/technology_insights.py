@@ -119,12 +119,44 @@ def resolve_rule_technology(
     return matched[0] if len(matched) == 1 else None
 
 
-def is_client_folder(folder: dict[str, Any], baseline_folder_uid: str = "global") -> bool:
-    """Indica se a pasta representa um cliente (tudo menos a pasta arbitrada como baseline)."""
+def hidden_tenant_uids() -> set[str]:
+    """UIDs dos tenants marcados como Ocultos (persistidos em system-settings)."""
+    try:
+        from .technology_store import get_system_settings_store  # import tardio (ciclo)
+
+        return get_system_settings_store().get_hidden_tenant_uids()
+    except Exception:  # pragma: no cover - nunca derruba metricas por falha de leitura
+        return set()
+
+
+def is_client_folder(
+    folder: dict[str, Any],
+    baseline_folder_uid: str = "global",
+    include_hidden: bool = False,
+) -> bool:
+    """Indica se a pasta representa um cliente (tudo menos a pasta arbitrada como baseline).
+
+    Tenants marcados como Ocultos NAO contam como cliente (conformidade, tecnologias
+    por cliente, varreduras e demais metricas), salvo ``include_hidden=True``.
+    """
     uid = str(folder.get("uid") or "").strip().lower()
     title = str(folder.get("title") or "").strip().lower()
     b_uid = (baseline_folder_uid or "global").strip().lower()
-    return uid != b_uid and uid != "global" and title != b_uid and title != "global"
+    if uid == b_uid or uid == "global" or title == b_uid or title == "global":
+        return False
+    if not include_hidden and str(folder.get("uid") or "").strip() in hidden_tenant_uids():
+        return False
+    return True
+
+
+def exclude_hidden_rules(
+    rules: Iterable[dict[str, Any]], hidden: set[str] | None = None
+) -> list[dict[str, Any]]:
+    """Remove regras que residem em pastas de tenants Ocultos."""
+    hidden_set = hidden_tenant_uids() if hidden is None else hidden
+    if not hidden_set:
+        return list(rules)
+    return [r for r in rules if str(r.get("folderUID") or "").strip() not in hidden_set]
 
 
 def client_footprint(
@@ -230,11 +262,13 @@ def build_overview(
         if str(rule.get("folderUID") or "").strip().lower() == b_uid
         or str(rule.get("folderUID") or "").strip().lower() == "global"
     ]
+    # Apenas regras de pastas de clientes visiveis (tenants Ocultos ficam de fora).
     client_rules = [
         rule
         for rule in rules
         if str(rule.get("folderUID") or "").strip().lower() != b_uid
         and str(rule.get("folderUID") or "").strip().lower() != "global"
+        and str(rule.get("folderUID") or "") in client_by_uid
     ]
 
     rules_by_client: dict[str, list[dict[str, Any]]] = {}
@@ -405,6 +439,8 @@ __all__ = [
     "client_footprint",
     "client_has_technology",
     "find_implemented_rule",
+    "exclude_hidden_rules",
+    "hidden_tenant_uids",
     "is_client_folder",
     "normalize_rule_title",
     "resolve_rule_technology",

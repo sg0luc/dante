@@ -217,14 +217,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </Link>
 
             <Link
-              to="/baseline"
-              className={navItemClass(isActive("/baseline") || isActive("/global-rules"))}
-              title="Controle de Baseline"
+              to="/adesao"
+              className={navItemClass(isActive("/adesao") || isActive("/global-rules"))}
+              title="Mapa de Adesão"
             >
               <div className="flex items-center gap-space-sm">
-                <span className="material-symbols-outlined text-[18px]">tune</span>
+                <span className="material-symbols-outlined text-[18px]">monitoring</span>
                 {!collapsed && (
-                  <span className="font-body-sm text-body-sm">Controle de Baseline</span>
+                  <span className="font-body-sm text-body-sm">Mapa de Adesão</span>
                 )}
               </div>
             </Link>
@@ -296,13 +296,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </Link>
 
             <Link
-              to="/baseline-prefix"
-              className={navItemClass(isActive("/baseline-prefix"))}
-              title="Prefixo Baseline"
+              to="/baseline"
+              className={navItemClass(isActive("/baseline") || isActive("/baseline-prefix"))}
+              title="Baseline"
             >
               <div className="flex items-center gap-space-sm">
-                <span className="material-symbols-outlined text-[18px]">title</span>
-                {!collapsed && <span className="font-body-sm text-body-sm">Prefixo Baseline</span>}
+                <span className="material-symbols-outlined text-[18px]">tune</span>
+                {!collapsed && <span className="font-body-sm text-body-sm">Baseline</span>}
               </div>
             </Link>
 
