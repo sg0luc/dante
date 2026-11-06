@@ -434,6 +434,16 @@ export interface RuleImportFileInput {
   content: string;
 }
 
+export interface RuleRequiredAdjustment {
+  code: string;
+  title: string;
+  detail: string;
+  action: string;
+  severity: "blocker" | "warning";
+  items: string[];
+  clients: string[];
+}
+
 export interface RuleImportItemValidation {
   index: number;
   title: string;
@@ -469,6 +479,7 @@ export interface RuleImportItemValidation {
   has_query_results?: boolean;
   matched_windows_summary?: string[];
   observed_fields_in_logs?: string[];
+  required_adjustments?: RuleRequiredAdjustment[];
   missing_fields_in_logs?: string[];
   sample_query_results?: string[];
   mapped_fields?: CurationFieldMapping[];
