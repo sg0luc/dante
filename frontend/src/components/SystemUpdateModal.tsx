@@ -425,10 +425,10 @@ export const SystemUpdateModal: React.FC<SystemUpdateModalProps> = ({
               {!manualCommandRequired ? (
                 <>
                   <div className="relative">
-                    <div className="w-16 h-16 rounded-full border-4 border-outline-variant/30 border-t-primary-container animate-spin flex items-center justify-center"></div>
-                    <span className="material-symbols-outlined text-[24px] text-primary-fixed-dim absolute inset-0 flex items-center justify-center">
+                    <div className="w-16 h-16 rounded-full border-4 border-outline-variant/30 border-b-primary-container flex items-center justify-center"></div>
+                    <span className="absolute inset-0 flex items-center justify-center"><span className="material-symbols-outlined text-[24px] text-primary-fixed-dim animate-spin">
                       sync
-                    </span>
+                    </span></span>
                   </div>
                   <div className="space-y-1.5 max-w-md">
                     <h3 className="font-headline-md font-bold text-on-surface">
