@@ -46,6 +46,7 @@ from .schemas import (
     CurationFieldMapping,
     CurationQualificationFactor,
     RuleImportAIOpinionResponse,
+    RuleRequiredAdjustment,
     RuleImportExecuteResponse,
     RuleImportFileInput,
     RuleImportItemValidation,
@@ -505,6 +506,119 @@ def generate_imported_rule_opinion(
     return opinion_text, ai_model, curation_engine
 
 
+def _build_required_adjustments(
+    item: RuleImportItemValidation,
+    technology: Technology | None,
+    schema_compat_pct: float,
+) -> list[RuleRequiredAdjustment]:
+    """Descreve, por cenario, o ajuste necessario para a regra deixar de ser bloqueada (< 80%)."""
+    adjustments: list[RuleRequiredAdjustment] = []
+
+    if item.errors:
+        adjustments.append(RuleRequiredAdjustment(
+            code="invalid_rule",
+            title="Regra inválida",
+            detail="A validação estrutural/LogQL rejeitou a regra: " + " | ".join(item.errors),
+            action="Corrija a sintaxe LogQL ou os campos obrigatórios no arquivo de origem e reenvie.",
+            items=list(item.errors),
+        ))
+    if item.technology_missing or technology is None:
+        adjustments.append(RuleRequiredAdjustment(
+            code="technology_missing",
+            title="Tecnologia não cadastrada",
+            detail="Não há tecnologia correspondente cadastrada para esta regra"
+            + (f" (sugerida: {item.suggested_technology_name})." if item.suggested_technology_name else "."),
+            action="Use o botão 'Criar Tecnologia' para cadastrar a tecnologia e reavalie a regra.",
+        ))
+
+    if item.classification != "bad" and not item.errors:
+        return adjustments
+
+    incompatible = [m for m in item.mapped_fields if not m.compatible]
+    if incompatible:
+        adjustments.append(RuleRequiredAdjustment(
+            code="fields_not_in_schema",
+            title="Campos sem correspondência no schema Wazuh",
+            detail=(
+                f"{len(incompatible)} de {len(item.mapped_fields)} campo(s) da regra não existem no schema/dicionário "
+                f"da tecnologia (aderência de {schema_compat_pct:.0f}%; mínimo recomendado: 80%)."
+            ),
+            action="Renomeie esses campos para os equivalentes Wazuh (prefixo data_) ou remova-os da query.",
+            items=[f"{m.original_field} → {m.logql_field}" for m in incompatible],
+        ))
+
+    evals = item.client_evaluations
+    if evals:
+        no_logs = [e.client_name for e in evals if e.tech_logs_count == 0]
+        if len(no_logs) == len(evals):
+            adjustments.append(RuleRequiredAdjustment(
+                code="no_technology_logs",
+                title="Sem logs da tecnologia nos clientes",
+                detail="Nenhum cliente avaliado possui logs desta tecnologia no Loki.",
+                action="Habilite a coleta/ingestão da tecnologia no Wazuh e confirme o envio ao Loki do cliente.",
+                clients=no_logs,
+            ))
+        specialized_by_client: dict[str, list[str]] = {}
+        field_missing_by_client: dict[str, list[str]] = {}
+        for e in evals:
+            if e.tech_logs_count == 0:
+                continue
+            obs = _expand_observed_field_aliases(set(e.total_observed_log_fields or e.observed_fields_in_logs or []))
+            _, _, missing_labels = _evaluate_client_telemetry_readiness(
+                mapped_fields=item.mapped_fields,
+                observed_fields=obs,
+                tech_logs_count=e.tech_logs_count,
+                has_query_results=bool(e.has_query_results or e.matched_lines_count > 0),
+            )
+            if missing_labels:
+                specialized_by_client[e.client_name] = missing_labels
+            obs_lower = {f.lower() for f in obs}
+            miss = [
+                m.logql_field for m in item.mapped_fields
+                if m.compatible and m.logql_field not in obs and m.logql_field.lower() not in obs_lower
+            ]
+            if miss:
+                field_missing_by_client[e.client_name] = miss
+        if specialized_by_client:
+            labels = sorted({l for v in specialized_by_client.values() for l in v})
+            adjustments.append(RuleRequiredAdjustment(
+                code="specialized_telemetry_missing",
+                title="Telemetria específica não habilitada",
+                detail="A regra depende de telemetria avançada que não aparece nos logs dos clientes.",
+                action="Habilite no(s) endpoint(s) do cliente a política/auditoria listada e aguarde novos eventos.",
+                items=labels,
+                clients=sorted(specialized_by_client),
+            ))
+        if field_missing_by_client:
+            all_missing = sorted({f for v in field_missing_by_client.values() for f in v})
+            adjustments.append(RuleRequiredAdjustment(
+                code="fields_not_observed",
+                title="Campos não observados nos logs dos clientes",
+                detail="Os campos existem no schema, mas não foram vistos nos logs reais dos clientes avaliados.",
+                action="Verifique decoders/normalização do Wazuh ou a coleta da fonte para que estes campos sejam populados.",
+                items=all_missing,
+                clients=sorted(field_missing_by_client),
+                severity="warning",
+            ))
+    elif technology is not None and not item.errors:
+        adjustments.append(RuleRequiredAdjustment(
+            code="no_client_evidence",
+            title="Sem avaliação em clientes",
+            detail="A regra não foi confrontada com a telemetria real de nenhum cliente; a nota vem apenas do schema.",
+            action="Garanta ao menos um cliente com datasource Loki ativo e logs da tecnologia para validar a regra.",
+            severity="warning",
+        ))
+
+    if not adjustments:
+        adjustments.append(RuleRequiredAdjustment(
+            code="low_compatibility",
+            title="Compatibilidade abaixo de 80%",
+            detail=item.classification_reason or "A pontuação dinâmica ficou abaixo do limiar mínimo.",
+            action="Revise os campos da query e a telemetria dos clientes para elevar a compatibilidade.",
+        ))
+    return adjustments
+
+
 def _populate_imported_item_curation(
     item: RuleImportItemValidation,
     technology: Technology | None,
@@ -711,6 +825,7 @@ def _populate_imported_item_curation(
     factors.append(CurationQualificationFactor(criterion="Compatibilidade de Campos", status=f3_status, impact=f3_impact, summary=f3_desc))
 
     item.qualification_factors = factors
+    item.required_adjustments = _build_required_adjustments(item, technology, schema_compat_pct)
 
 
 def validate_rule_item(

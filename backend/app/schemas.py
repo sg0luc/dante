@@ -674,6 +674,18 @@ class CurationFieldMapping(BaseModel):
     sample_values: list[str] = Field(default_factory=list)
 
 
+class RuleRequiredAdjustment(BaseModel):
+    """Ajuste necessario para tornar uma regra importavel (cenario de bloqueio/baixa compatibilidade)."""
+
+    code: str
+    title: str
+    detail: str
+    action: str
+    severity: Literal["blocker", "warning"] = "blocker"
+    items: list[str] = Field(default_factory=list)
+    clients: list[str] = Field(default_factory=list)
+
+
 class CurationQualificationFactor(BaseModel):
     """Fator determinante para qualificar a regra como excelente, boa ou ma candidata."""
 
@@ -776,6 +788,7 @@ class RuleImportItemValidation(BaseModel):
     client_evaluations: list[CurationClientEvaluation] = Field(default_factory=list)
     excellent_clients_count: int = 0
     good_clients_count: int = 0
+    required_adjustments: list[RuleRequiredAdjustment] = Field(default_factory=list)
     ai_model: str | None = None
     ai_rationale: str | None = None
     curation_engine: Literal["ai", "heuristic"] = "heuristic"

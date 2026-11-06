@@ -1069,6 +1069,58 @@ export const RuleImportModal: React.FC<RuleImportModalProps> = ({
                           </div>
                         </div>
 
+                        {/* Ajustes necessários (cenários de bloqueio / compatibilidade < 80%) */}
+                        {(item.required_adjustments ?? []).length > 0 && (
+                          <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-950/20 p-3 space-y-2 text-xs">
+                            <div className="flex items-center gap-1.5 text-amber-300 font-semibold uppercase tracking-wider text-[11px]">
+                              <span className="material-symbols-outlined text-[15px]">build</span>
+                              <span>Ajuste necessário para importar</span>
+                            </div>
+                            <ul className="space-y-2">
+                              {(item.required_adjustments ?? []).map((adj) => (
+                                <li
+                                  key={adj.code}
+                                  className="rounded-md border border-slate-800 bg-slate-950/50 p-2.5 space-y-1"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className={`px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase ${
+                                        adj.severity === "blocker"
+                                          ? "bg-rose-950/50 text-rose-300 border border-rose-500/30"
+                                          : "bg-amber-950/50 text-amber-300 border border-amber-500/30"
+                                      }`}
+                                    >
+                                      {adj.severity === "blocker" ? "Bloqueio" : "Atenção"}
+                                    </span>
+                                    <span className="font-semibold text-slate-100">{adj.title}</span>
+                                  </div>
+                                  <p className="text-slate-400">{adj.detail}</p>
+                                  {adj.items.length > 0 && (
+                                    <div className="flex flex-wrap gap-1">
+                                      {adj.items.map((it) => (
+                                        <span
+                                          key={it}
+                                          className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono text-[10px] border border-slate-700"
+                                        >
+                                          {it}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                  {adj.clients.length > 0 && (
+                                    <p className="text-slate-500">
+                                      Clientes: <span className="text-slate-300">{adj.clients.join(", ")}</span>
+                                    </p>
+                                  )}
+                                  <p className="text-emerald-300">
+                                    <span className="font-semibold">Como ajustar:</span> {adj.action}
+                                  </p>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
                         {/* Painel Expandido: Parecer Técnico de IA, Compatibilidade e Query */}
                         {isExpanded && (
                           <div className="mt-3 pt-3 border-t border-slate-800 space-y-3 text-xs">
